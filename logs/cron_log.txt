@@ -1,0 +1,2 @@
+2026-05-15 20:19:45 - Expired bookings cancelled: 0 bookings
+2026-05-15 20:20:51 - Expired bookings cancelled: 1 bookings
