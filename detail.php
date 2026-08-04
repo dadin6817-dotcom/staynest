@@ -153,9 +153,9 @@ $prop_desc = isset($property['description']) ? $property['description'] : '';
 // GAMBAR UTAMA KONTRAKAN (HERO SECTION) dari folder images
 // =============================================
 $hero_images = [
-    1 => '/staynest/assets/images/babelan-2.jpeg',    // StayNest Vela
-    2 => '/staynest/assets/images/alamanda-2.jpeg',   // StayNest Aera
-    3 => '/staynest/assets/images/Vip-1.jpeg',        // StayNest Elora
+    1 => '/assets/images/babelan-2.jpeg',    // StayNest Vela
+    2 => '/assets/images/alamanda-2.jpeg',   // StayNest Aera
+    3 => '/assets/images/Vip-1.jpeg',        // StayNest Elora
 ];
 
 // Gunakan gambar hero dari folder images
@@ -163,14 +163,14 @@ if (array_key_exists($prop_id, $hero_images)) {
     $prop_image = $hero_images[$prop_id];
 } else {
     // Fallback ke gambar default
-    $prop_image = '/staynest/assets/images/default-property.jpg';
+    $prop_image = '/assets/images/default-property.jpg';
 }
 
 // =============================================
 // GAMBAR UNIT dari folder uploads (TIDAK BERUBAH)
 // =============================================
 function getUnitImages($property_id, $unit_number) {
-    $base_path = '/staynest/uploads/';  // ← TETAP MENGGUNAKAN UPLOADS
+    $base_path = '/uploads/';  // ← TETAP MENGGUNAKAN UPLOADS
     $images = array();
     
     // For StayNest Elora (id=3)
@@ -521,7 +521,7 @@ if ($prop_id == 3) {
                                         <div class="swiper-slide">
                                             <img src="<?php echo htmlspecialchars($image); ?>" 
                                                  alt="Unit <?php echo str_pad($unit['unit_number'], 2, '0', STR_PAD_LEFT); ?> Image"
-                                                 onerror="this.src='/staynest/uploads/default-unit.jpg'">
+                                                 onerror="this.src='/uploads/default-unit.jpg'">
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
@@ -553,7 +553,7 @@ if ($prop_id == 3) {
                                 </div>
                                 
                                 <?php if($unit['is_available']): ?>
-                                    <a href="/staynest/bookings/my_bookings.php?book=<?php echo $prop_id; ?>&unit=<?php echo $unit['unit_number']; ?>" 
+                                    <a href="/bookings/my_bookings.php?book=<?php echo $prop_id; ?>&unit=<?php echo $unit['unit_number']; ?>" 
                                        class="w-full gradient-bg text-white py-2 rounded-full font-semibold hover:shadow-lg transition flex items-center justify-center gap-2 mt-2 text-center">
                                         Book Now <i class="fas fa-arrow-right"></i>
                                     </a>
@@ -593,7 +593,7 @@ if ($prop_id == 3) {
                                         <div class="swiper-slide">
                                             <img src="<?php echo htmlspecialchars($image); ?>" 
                                                  alt="Unit <?php echo str_pad($unit['unit_number'], 2, '0', STR_PAD_LEFT); ?> Image"
-                                                 onerror="this.src='/staynest/uploads/default-unit.jpg'">
+                                                 onerror="this.src='/uploads/default-unit.jpg'">
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
@@ -625,7 +625,7 @@ if ($prop_id == 3) {
                                 </div>
                                 
                                 <?php if($unit['is_available']): ?>
-                                    <a href="/staynest/bookings/my_bookings.php?book=<?php echo $prop_id; ?>&unit=<?php echo $unit['unit_number']; ?>" 
+                                    <a href="/bookings/my_bookings.php?book=<?php echo $prop_id; ?>&unit=<?php echo $unit['unit_number']; ?>" 
                                        class="w-full gradient-bg text-white py-2 rounded-full font-semibold hover:shadow-lg transition flex items-center justify-center gap-2 mt-2 text-center">
                                         Book Now <i class="fas fa-arrow-right"></i>
                                     </a>
@@ -651,7 +651,7 @@ if ($prop_id == 3) {
                                     <div class="swiper-slide">
                                         <img src="<?php echo htmlspecialchars($image); ?>" 
                                              alt="Unit <?php echo str_pad($unit['unit_number'], 2, '0', STR_PAD_LEFT); ?> Image"
-                                             onerror="this.src='/staynest/uploads/default-unit.jpg'">
+                                             onerror="this.src='/uploads/default-unit.jpg'">
                                     </div>
                                 <?php endforeach; ?>
                             </div>
@@ -689,7 +689,7 @@ if ($prop_id == 3) {
                             </div>
                             
                             <?php if($unit['is_available']): ?>
-                                <a href="/staynest/bookings/my_bookings.php?book=<?php echo $prop_id; ?>&unit=<?php echo $unit['unit_number']; ?>" 
+                                <a href="/bookings/my_bookings.php?book=<?php echo $prop_id; ?>&unit=<?php echo $unit['unit_number']; ?>" 
                                    class="w-full gradient-bg text-white py-2 rounded-full font-semibold hover:shadow-lg transition flex items-center justify-center gap-2 mt-2 text-center">
                                     Book Now <i class="fas fa-arrow-right"></i>
                                 </a>
