@@ -29,10 +29,10 @@
             <div>
                 <h3 class="text-lg font-bold mb-4">Quick Links</h3>
                 <ul class="space-y-2 text-gray-400">
-                    <li><a href="/staynest/index.php" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs text-purple-500"></i> Home</a></li>
-                    <li><a href="/staynest/properties.php" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs text-purple-500"></i> Properties</a></li>
-                    <li><a href="/staynest/bookings/my_bookings.php" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs text-purple-500"></i> My Bookings</a></li>
-                    <li><a href="/staynest/admin/login.php" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs text-purple-500"></i> Admin Panel</a></li>
+                    <li><a href="/index.php" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs text-purple-500"></i> Home</a></li>
+                    <li><a href="/properties.php" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs text-purple-500"></i> Properties</a></li>
+                    <li><a href="/bookings/my_bookings.php" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs text-purple-500"></i> My Bookings</a></li>
+                    <li><a href="/admin/login.php" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-chevron-right text-xs text-purple-500"></i> Admin Panel</a></li>
                 </ul>
             </div>
             
@@ -103,6 +103,5 @@ if (file_exists($chatbot_path)) {
     include_once $chatbot_path;
 }
 ?>
-
 </body>
 </html>
