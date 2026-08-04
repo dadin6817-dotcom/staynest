@@ -57,16 +57,16 @@ if ($pdo) {
 // ==============================================
 function getPropertyImage($property_id, $property_name) {
     $property_images = [
-        1 => '/staynest/assets/images/babelan-2.jpeg',    // StayNest Vela
-        2 => '/staynest/assets/images/alamanda-2.jpeg',   // StayNest Aera
-        3 => '/staynest/assets/images/Vip-1.jpeg',        // StayNest Elora
+        1 => '/assets/images/babelan-2.jpeg',    // StayNest Vela
+        2 => '/assets/images/alamanda-2.jpeg',   // StayNest Aera
+        3 => '/assets/images/Vip-1.jpeg',        // StayNest Elora
     ];
     
     if (isset($property_images[$property_id])) {
         return $property_images[$property_id];
     }
     
-    return '/staynest/assets/images/default-property.jpg';
+    return '/assets/images/default-property.jpg';
 }
 
 // DATA PROPERTI DENGAN DATA BARU (UPDATED)
@@ -487,7 +487,7 @@ if (empty($locations)) {
                     <div class="property-img">
                         <img src="<?php echo htmlspecialchars($property_image); ?>" 
                              alt="<?php echo htmlspecialchars($property['name']); ?>"
-                             onerror="this.src='/staynest/assets/images/default-property.jpg'">
+                             onerror="this.src='/assets/images/default-property.jpg'">
                         
                         <?php if(isset($property['is_vip']) && ($property['is_vip'] == 1 || $property['is_vip'] === true)): ?>
                             <div class="vip-badge">
