@@ -3,6 +3,14 @@
 $page_title = "StayNest - Find Your Cozy Home ✨";
 
 require_once dirname(__FILE__) . '/config/database.php';
+
+// Redirect ke welcome page di kunjungan pertama
+if (!isset($_SESSION['has_visited'])) {
+    $_SESSION['has_visited'] = true;
+    header('Location: welcome.php');
+    exit;
+}
+
 require_once dirname(__FILE__) . '/includes/header.php';
 
 // ==============================================
@@ -11,9 +19,9 @@ require_once dirname(__FILE__) . '/includes/header.php';
 function getPropertyImage($property_id, $property_name) {
     // Mapping gambar properti dari folder assets/images
     $property_images = [
-        1 => '/staynest/assets/images/babelan-2.jpeg',    // StayNest Vela
-        2 => '/staynest/assets/images/alamanda-2.jpeg',   // StayNest Aera
-        3 => '/staynest/assets/images/Vip-1.jpeg',        // StayNest Elora
+        1 => '/assets/images/babelan-2.jpeg',    // StayNest Vela
+        2 => '/assets/images/alamanda-2.jpeg',   // StayNest Aera
+        3 => '/assets/images/Vip-1.jpeg',        // StayNest Elora
     ];
     
     if (isset($property_images[$property_id])) {
@@ -21,7 +29,7 @@ function getPropertyImage($property_id, $property_name) {
     }
     
     // Fallback ke gambar default
-    return '/staynest/assets/images/default-property.jpg';
+    return '/assets/images/default-property.jpg';
 }
 
 // Fetch featured properties
@@ -623,7 +631,7 @@ if (empty($featured_properties)) {
                 <div class="property-img">
                     <img src="<?php echo htmlspecialchars($property_image); ?>" 
                          alt="<?php echo htmlspecialchars($property['name']); ?>" 
-                         onerror="this.src='/staynest/assets/images/default-property.jpg'">
+                         onerror="this.src='/assets/images/default-property.jpg'">
                     <?php if($property['is_vip']): ?>
                         <div class="vip-badge"><i class="fas fa-crown mr-1"></i> VIP</div>
                     <?php endif; ?>
