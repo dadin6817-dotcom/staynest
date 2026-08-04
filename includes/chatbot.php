@@ -380,7 +380,7 @@
     let isOperational = true;
     
     // Tentukan base URL untuk API
-    const baseUrl = window.location.origin + '/staynest';
+    const baseUrl = window.location.origin;
     const apiUrl = baseUrl + '/api/chatbot.php';
     
     // Fungsi untuk mendapatkan hari dalam bahasa Indonesia
