@@ -1,600 +1,466 @@
 <?php
-// includes/chatbot.php - Widget Chatbot Component (Floating Button)
-// Jam Operasional: Senin - Sabtu (08:00 - 17:00 WIB) | Minggu TUTUP
-// Kontak: WA 0858-1117-7617 | Email: adinda.auliap24@gmail.com
+date_default_timezone_set('Asia/Jakarta');
+// api/chatbot.php - API untuk chatbot
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, GET');
+header('Access-Control-Allow-Headers: Content-Type');
+
+// Koneksi database (opsional, untuk menyimpan history chat)
+try {
+    require_once dirname(__DIR__) . '/config/database.php';
+} catch(Exception $e) {
+    // Jika database error, tetap lanjutkan
+}
+
+// Mulai session untuk tracking chat
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Generate atau ambil session ID
+if (!isset($_SESSION['chat_session_id'])) {
+    $_SESSION['chat_session_id'] = session_id();
+}
+$session_id = $_SESSION['chat_session_id'];
+
+// ==============================================
+// FUNGSI CEK JAM OPERASIONAL
+// Senin - Sabtu: 08:00 - 17:00 WIB
+// Minggu: OFF (Tidak bisa chat)
+// ==============================================
+function isOperationalHours() {
+    $currentHour = (int)date('H');
+    $currentMinute = (int)date('i');
+    $currentTime = $currentHour + ($currentMinute / 60);
+    $currentDay = (int)date('N'); // 1=Senin, 2=Selasa, 3=Rabu, 4=Kamis, 5=Jumat, 6=Sabtu, 7=Minggu
+    
+    // Minggu (hari ke-7) - OFF sepanjang hari
+    if ($currentDay == 7) {
+        return false;
+    }
+    
+    // Senin - Sabtu (hari ke-1 sampai ke-6)
+    // Jam operasional: 08:00 - 17:00
+    $startTime = 8.0;  // 08:00
+    $endTime = 17.0;   // 17:00
+    
+    return ($currentTime >= $startTime && $currentTime <= $endTime);
+}
+
+// Fungsi untuk mendapatkan pesan di luar jam operasional
+function getOfflineMessage() {
+    $currentHour = (int)date('H');
+    $currentMinute = (int)date('i');
+    $currentDay = (int)date('N');
+    
+    $dayNames = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    $dayName = $dayNames[$currentDay];
+    
+    // Cek apakah hari Minggu
+    if ($currentDay == 7) {
+        return "⏰ *MAAF, HARI MINGGU TUTUP* ⏰\n\n" .
+               "Hari ini adalah hari *Minggu* - *Libur Operasional*\n\n" .
+               "📅 *Jam operasional kami:*\n" .
+               "• Senin - Sabtu: 08:00 - 17:00 WIB\n" .
+               "• Minggu: *TUTUP / LIBUR*\n\n" .
+               "Silakan kembali pada hari Senin - Sabtu jam 08:00 - 17:00 WIB ya! 😊\n\n" .
+               "📞 Atau hubungi langsung:\n" .
+               "WA: 0858-1117-7617\n" .
+               "Email: adinda.auliap24@gmail.com";
+    }
+    
+    return "⏰ *MAAF, DI LUAR JAM OPERASIONAL* ⏰\n\n" .
+           "Saat ini jam " . sprintf("%02d:%02d", $currentHour, $currentMinute) . " WIB (Hari " . $dayName . ")\n\n" .
+           "📅 *Jam operasional kami:*\n" .
+           "• Senin - Sabtu: 08:00 - 17:00 WIB\n" .
+           "• Minggu: *TUTUP / LIBUR*\n\n" .
+           "Silakan kembali saat jam operasional ya! 😊\n\n" .
+           "📞 Atau hubungi langsung:\n" .
+           "WA: 0858-1117-7617\n" .
+           "Email: adinda.auliap24@gmail.com";
+}
+
+// Fungsi untuk mendapatkan informasi jam operasional
+function getOperationalHoursInfo() {
+    return "📅 *JAM OPERASIONAL STAYNEST*\n\n" .
+           "⏰ *Senin - Sabtu:* 08:00 - 17:00 WIB\n" .
+           "❌ *Minggu:* TUTUP / LIBUR\n\n" .
+           "✅ Chat akan langsung dibalas selama jam operasional\n" .
+           "💬 Di luar jam operasional atau hari Minggu, pesan akan dibalas saat jam kerja berikutnya\n\n" .
+           "📞 *Atau hubungi langsung:*\n" .
+           "📱 WhatsApp: 0858-1117-7617\n" .
+           "📧 Email: adinda.auliap24@gmail.com";
+}
+
+// Fungsi untuk menyimpan pesan (opsional)
+function saveMessage($pdo, $session_id, $user_message, $bot_response) {
+    if (!$pdo) return;
+    try {
+        // Cek apakah tabel chat_messages ada
+        $stmt = $pdo->prepare("CREATE TABLE IF NOT EXISTS chat_messages (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            session_id VARCHAR(100) NOT NULL,
+            user_message TEXT NOT NULL,
+            bot_response TEXT NOT NULL,
+            is_offline INT DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )");
+        $stmt->execute();
+        
+        $is_offline = isOperationalHours() ? 0 : 1;
+        $stmt = $pdo->prepare("INSERT INTO chat_messages (session_id, user_message, bot_response, is_offline) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$session_id, $user_message, $bot_response, $is_offline]);
+    } catch(Exception $e) {}
+}
+
+// Fungsi untuk mendapatkan respons dari chatbot (LENGKAP BAHASA INDONESIA)
+function getBotResponse($message) {
+    $message = strtolower(trim($message));
+    $originalMessage = $message;
+    
+    // Hapus karakter khusus untuk pencarian keyword
+    $message = preg_replace('/[^a-z0-9\s]/', '', $message);
+    
+    // ============== RESPONSE UNTUK JAM OPERASIONAL ==============
+    if (preg_match('/(jam operasional|jam kerja|operasional|jam layanan)/i', $message)) {
+        return getOperationalHoursInfo();
+    }
+    
+    // ============== RESPONSE UNTUK SAPAAN ==============
+    if (preg_match('/(halo|hai|hello|hey|haii|hallo|helo)/i', $message)) {
+        $operationalInfo = getOperationalHoursInfo();
+        return "👋 Halo juga! Selamat datang di StayNest!\n\n" .
+               "Ada yang bisa saya bantu tentang kontrakan? 😊\n\n" .
+               "💬 *Saya bisa bantu:*\n" .
+               "• Info harga kontrakan\n" .
+               "• Lokasi properti\n" .
+               "• Fasilitas yang tersedia\n" .
+               "• Cara booking\n" .
+               "• Ketersediaan unit\n" .
+               "• Info unit VIP\n\n" .
+               $operationalInfo . "\n\n" .
+               "Atau ketik *bantuan* untuk menu lengkap!";
+    }
+    
+    if (preg_match('/(makasih|terima kasih|thank|thanks)/i', $message)) {
+        return "Sama-sama! 🙏\n\n" .
+               "Senang bisa membantu Anda!\n\n" .
+               "Ada pertanyaan lain tentang kontrakan StayNest? 😊\n\n" .
+               "📅 *Jam operasional:*\n" .
+               "Senin - Sabtu: 08:00 - 17:00 WIB\n" .
+               "Minggu: TUTUP\n\n" .
+               "Jangan ragu untuk bertanya lagi ya! ✨";
+    }
+    
+    if (preg_match('/(assalamualaikum|assalam|salam)/i', $message)) {
+        return "Wa'alaikumsalam warahmatullahi wabarakatuh! 👋\n\n" .
+               "Selamat datang di StayNest Support!\n\n" .
+               "Ada yang bisa saya bantu tentang kontrakan? 😊\n\n" .
+               getOperationalHoursInfo();
+    }
+    
+    // ============== RESPONSE UNTUK KONTAK ==============
+    if (preg_match('/(kontak|contact|whatsapp|wa|telepon|hubungi|no wa|nomor)/i', $message)) {
+        return "📞 *KONTAK STAYNEST*\n\n" .
+               "📱 WhatsApp: *0858-1117-7617*\n" .
+               "📧 Email: *adinda.auliap24@gmail.com*\n" .
+               "🌐 Website: *www.staynest.com*\n\n" .
+               "🏢 *Kantor Pusat:*\n" .
+               "Jl. Raya Babelan No. 123, Bekasi\n\n" .
+               getOperationalHoursInfo() . "\n\n" .
+               "🤝 Tim kami siap membantu Anda!";
+    }
+    
+    // ============== RESPONSE UNTUK BANTUAN / MENU ==============
+    if (preg_match('/(bantuan|help|menu|tolong)/i', $message)) {
+        return "🆘 *MENU BANTUAN STAYNEST*\n\n" .
+               "Ketik kata kunci berikut:\n\n" .
+               "🏠 *Lihat properti* - Daftar properti\n" .
+               "📝 *Cara booking* - Cara booking\n" .
+               "💰 *Harga* - Info harga kontrakan\n" .
+               "📍 *Lokasi* - Alamat properti\n" .
+               "🏠 *Fasilitas* - Fasilitas tersedia\n" .
+               "✅ *Ketersediaan* - Unit available\n" .
+               "👑 *VIP* - Info unit VIP\n" .
+               "📞 *Kontak* - Nomor kontak kami\n" .
+               "⏰ *Jam operasional* - Info jam kerja\n\n" .
+               "Atau ketik pertanyaan Anda langsung! 😊";
+    }
+    
+    // ============== RESPONSE UNTUK LIHAT PROPERTI ==============
+    if (preg_match('/(lihat properti|properties|daftar properti|semua properti)/i', $message)) {
+        return "🏠 *DAFTAR PROPERTI STAYNEST*\n\n" .
+               "1️⃣ *StayNest Vela*\n" .
+               "📍 Babelan, Bekasi\n" .
+               "💰 Rp 700.000/bulan\n" .
+               "✅ 2 unit tersedia\n\n" .
+               "2️⃣ *StayNest Aera (VIP)* ⭐\n" .
+               "📍 Tambun Utara, Bekasi\n" .
+               "💰 Rp 700.000/bulan\n" .
+               "✅ 4 unit tersedia\n\n" .
+               "3️⃣ *StayNest Elora (VIP)* ⭐\n" .
+               "📍 Babelan, Bekasi\n" .
+               "💰 Lantai 1: Rp 1.200.000/bulan\n" .
+               "💰 Lantai 2: Rp 1.000.000/bulan\n" .
+               "✅ 10 unit tersedia\n\n" .
+               "🔗 Kunjungi halaman Properties untuk detail lengkap!\n\n" .
+               getOperationalHoursInfo();
+    }
+    
+    // ============== RESPONSE UNTUK CARA BOOKING ==============
+    if (preg_match('/(cara booking|booking|pesan|menyewa|sewa)/i', $message)) {
+        return "📝 *CARA BOOKING KONTRAKAN STAYNEST*\n\n" .
+               "1️⃣ Pilih properti favorit Anda\n" .
+               "2️⃣ Klik tombol 'View Details'\n" .
+               "3️⃣ Pilih unit yang tersedia (Available)\n" .
+               "4️⃣ Klik tombol 'Book Now'\n" .
+               "5️⃣ Isi formulir pemesanan\n" .
+               "6️⃣ Konfirmasi booking\n\n" .
+               "✅ Tim kami akan menghubungi Anda dalam 1x24 jam!\n\n" .
+               "📞 Atau hubungi langsung:\n" .
+               "WA: 0858-1117-7617";
+    }
+    
+    // ============== RESPONSE UNTUK HARGA ==============
+    if (preg_match('/(harga|price|biaya|berapa)/i', $message)) {
+        return "💰 *HARGA KONTRAKAN STAYNEST*\n\n" .
+               "🏠 *StayNest Vela*\n" .
+               "Rp 700.000/bulan\n\n" .
+               "🏠 *StayNest Aera*\n" .
+               "Rp 700.000/bulan\n\n" .
+               "🏠 *StayNest Elora Lantai 1*\n" .
+               "Rp 1.200.000/bulan\n\n" .
+               "🏠 *StayNest Elora Lantai 2*\n" .
+               "Rp 1.000.000/bulan\n\n" .
+               "✅ Sudah termasuk listrik token & air tanah jetpump!\n" .
+               "💡 Minimal sewa 3 bulan\n" .
+               "🎉 Bayar 3 bulan langsung dapat diskon 5%!";
+    }
+    
+    // ============== RESPONSE UNTUK LOKASI ==============
+    if (preg_match('/(lokasi|location|dimana|alamat)/i', $message)) {
+        return "📍 *LOKASI KONTRAKAN STAYNEST*\n\n" .
+               "🏠 *StayNest Vela*\n" .
+               "Kavling Harapan Manunggal Utara, Kec. Bahagia, Babelan, Bekasi\n\n" .
+               "🏠 *StayNest Aera*\n" .
+               "Jl. Pandawa 15, Kp. Gebang, Karang Satria, Tambun Utara, Bekasi\n\n" .
+               "🏠 *StayNest Elora*\n" .
+               "Kavling Bumi Mas 2, Kec. Bahagia, Babelan, Bekasi\n\n" .
+               "✅ Akses mobil sampai depan kontrakan\n" .
+               "✅ Bebas banjir\n" .
+               "✅ Dekat dengan pusat kota";
+    }
+    
+    // ============== RESPONSE UNTUK FASILITAS ==============
+    if (preg_match('/(fasilitas|facility|fitur)/i', $message)) {
+        return "🏠 *FASILITAS KONTRAKAN STAYNEST*\n\n" .
+               "✅ Ruang Tengah\n" .
+               "✅ Kamar Mandi Dalam\n" .
+               "✅ Dapur dengan Westafel\n" .
+               "✅ Ruang Jemur\n" .
+               "✅ Listrik Token (900-1300 kWh)\n" .
+               "✅ Air Tanah Jetpump\n" .
+               "✅ Parkir Luas\n" .
+               "✅ Akses Mobil Depan Kontrakan\n" .
+               "✅ Bebas Banjir\n" .
+               "✅ CCTV 24 Jam\n" .
+               "✅ Lingkungan Asri dan Aman\n" .
+               "✅ Penerangan yang baik";
+    }
+    
+    // ============== RESPONSE UNTUK KETERSEDIAAN ==============
+    if (preg_match('/(ketersediaan|tersedia|available|unit kosong)/i', $message)) {
+        return "✅ *UNIT TERSEDIA SAAT INI*\n\n" .
+               "🏠 StayNest Vela: *2 unit* tersedia\n" .
+               "🏠 StayNest Aera: *4 unit* tersedia\n" .
+               "🏠 StayNest Elora Lantai 1: *5 unit* tersedia\n" .
+               "🏠 StayNest Elora Lantai 2: *5 unit* tersedia\n\n" .
+               "📊 *Total: 16 unit siap huni!*\n\n" .
+               "🔥 Cepat booking sebelum kehabisan!";
+    }
+    
+    // ============== RESPONSE UNTUK VIP ==============
+    if (preg_match('/(vip|premium|mewah)/i', $message)) {
+        return "👑 *INFO UNIT VIP STAYNEST*\n\n" .
+               "Unit VIP tersedia di:\n" .
+               "⭐ *StayNest Aera*\n" .
+               "⭐ *StayNest Elora*\n\n" .
+               "✨ *KEUNGGULAN UNIT VIP:*\n" .
+               "✅ Interior lebih modern & mewah\n" .
+               "✅ Kamar lebih luas\n" .
+               "✅ Pencahayaan lebih baik\n" .
+               "✅ Desain instagramable\n" .
+               "✅ Fasilitas premium\n" .
+               "✅ Baru direnovasi\n\n" .
+               "💰 Harga mulai Rp 1.000.000 - Rp 1.200.000/bulan\n\n" .
+               "🔥 Buruan booking sebelum kehabisan!";
+    }
+    
+    // ============== RESPONSE UNTUK PROPERTI SPESIFIK ==============
+    if (preg_match('/(vela|babelan)/i', $message)) {
+        return "🏠 *STAYNEST VELA*\n\n" .
+               "📍 Lokasi: Kavling Harapan Manunggal Utara, Kec. Bahagia, Babelan, Bekasi\n" .
+               "💰 Harga: Rp 700.000/bulan\n" .
+               "🚪 Total Unit: 2 unit\n" .
+               "✅ Tersedia: 2 unit\n\n" .
+               "📝 *FASILITAS:*\n" .
+               "✅ 1 Ruang Tengah\n" .
+               "✅ 1 Kamar Tidur\n" .
+               "✅ 1 Kamar Mandi\n" .
+               "✅ Dapur (Westafel)\n" .
+               "✅ Listrik Token (900 kWh)\n" .
+               "✅ Air Tanah Jetpump\n" .
+               "✅ Akses Mobil Depan Kontrakan\n" .
+               "✅ Bebas Banjir\n\n" .
+               "Tertarik? Booking sekarang juga! 😊";
+    }
+    
+    if (preg_match('/(aera|alamanda)/i', $message)) {
+        return "🏠 *STAYNEST AERA (VIP)* ⭐\n\n" .
+               "📍 Lokasi: Jl. Pandawa 15, Kp. Gebang, Karang Satria, Tambun Utara, Bekasi\n" .
+               "💰 Harga: Rp 700.000/bulan\n" .
+               "🚪 Total Unit: 4 unit\n" .
+               "✅ Tersedia: 4 unit\n\n" .
+               "📝 *FASILITAS:*\n" .
+               "✅ 3 Sekat\n" .
+               "✅ Dapur (Westafel)\n" .
+               "✅ Listrik Token (900 kWh)\n" .
+               "✅ Air Tanah Jetpump\n" .
+               "✅ Baru Direnovasi\n" .
+               "✅ Akses Mobil Depan Kontrakan\n" .
+               "✅ Bebas Banjir\n" .
+               "✅ 50 m dari Jalan Raya\n\n" .
+               "✨ Unit VIP dengan fasilitas premium!";
+    }
+    
+    if (preg_match('/(elora|vip village)/i', $message)) {
+        return "🏠 *STAYNEST ELORA (VIP)* ⭐\n\n" .
+               "📍 Lokasi: Kavling Bumi Mas 2, Kec. Bahagia, Babelan, Bekasi\n" .
+               "💰 Harga Lantai 1: Rp 1.200.000/bulan\n" .
+               "💰 Harga Lantai 2: Rp 1.000.000/bulan\n" .
+               "🚪 Total Unit: 12 unit\n" .
+               "✅ Tersedia: 10 unit\n\n" .
+               "📝 *FASILITAS:*\n" .
+               "✅ Ruang Tengah\n" .
+               "✅ 1 Kamar Mandi\n" .
+               "✅ Dapur Westafel\n" .
+               "✅ Ruang Jemur\n" .
+               "✅ Listrik Token (1.300 kWh)\n" .
+               "✅ Air Tanah Jetpump\n" .
+               "✅ Lantai 1: 2 Kamar Tidur\n" .
+               "✅ Lantai 2: 1 Kamar Tidur\n" .
+               "✅ Akses Mobil Depan Kontrakan\n" .
+               "✅ Tidak Banjir\n\n" .
+               "🏠 Rumah minimalis 2 lantai dengan desain modern!";
+    }
+    
+    // ============== RESPONSE UNTUK LANTAI ==============
+    if (preg_match('/(lantai 1|lt 1|lantai satu)/i', $message)) {
+        return "💰 *HARGA LANTAI 1 (StayNest Elora)*\n\n" .
+               "Harga sewa untuk unit Lantai 1 adalah:\n" .
+               "*Rp 1.200.000/bulan*\n\n" .
+               "✅ Termasuk:\n" .
+               "- Listrik token 1.300 kWh\n" .
+               "- Air tanah jetpump\n" .
+               "- 2 Kamar Tidur\n" .
+               "- Fasilitas lengkap\n\n" .
+               "🏠 Minimal sewa 3 bulan. Booking sekarang!";
+    }
+    
+    if (preg_match('/(lantai 2|lt 2|lantai dua)/i', $message)) {
+        return "💰 *HARGA LANTAI 2 (StayNest Elora)*\n\n" .
+               "Harga sewa untuk unit Lantai 2 adalah:\n" .
+               "*Rp 1.000.000/bulan*\n\n" .
+               "✅ Termasuk:\n" .
+               "- Listrik token 1.300 kWh\n" .
+               "- Air tanah jetpump\n" .
+               "- 1 Kamar Tidur\n" .
+               "- Fasilitas lengkap\n\n" .
+               "🏠 Minimal sewa 3 bulan. Booking sekarang!";
+    }
+    
+    // ============== RESPONSE UNTUK UNIT TERTENTU ==============
+    if (preg_match('/unit\s*(\d+)/i', $message, $matches)) {
+        $unit_num = $matches[1];
+        return "🔍 *INFO UNIT $unit_num*\n\n" .
+               "Untuk informasi ketersediaan unit $unit_num, silakan:\n\n" .
+               "1️⃣ Kunjungi halaman detail properti\n" .
+               "2️⃣ Atau hubungi admin kami\n\n" .
+               "📱 WhatsApp: 0858-1117-7617\n" .
+               "📧 Email: adinda.auliap24@gmail.com\n\n" .
+               getOperationalHoursInfo() . "\n\n" .
+               "Tim kami akan dengan senang hati membantu Anda! 😊";
+    }
+    
+    // ============== RESPONSE DEFAULT ==============
+    return "Maaf, saya kurang paham dengan pertanyaan Anda. 😅\n\n" .
+           "💬 *Coba tanyakan ini:*\n" .
+           "• *Harga* - Info harga kontrakan\n" .
+           "• *Lokasi* - Alamat properti\n" .
+           "• *Fasilitas* - Fasilitas tersedia\n" .
+           "• *Cara booking* - Proses booking\n" .
+           "• *Ketersediaan* - Unit available\n" .
+           "• *VIP* - Info unit VIP\n" .
+           "• *Kontak* - Hubungi kami\n" .
+           "• *Jam operasional* - Info jam kerja\n" .
+           "• *Bantuan* - Menu lengkap\n\n" .
+           "📞 Atau hubungi langsung:\n" .
+           "WA: 0858-1117-7617\n" .
+           "Email: adinda.auliap24@gmail.com";
+}
+
+// Handle POST request
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $message = isset($input['message']) ? trim($input['message']) : '';
+    
+    if (empty($message)) {
+        echo json_encode(['response' => 'Silakan ketik pesan Anda! 😊', 'success' => true]);
+        exit;
+    }
+    
+    // Cek jam operasional
+    $isOperational = isOperationalHours();
+    $response = '';
+    
+    if (!$isOperational) {
+        $response = getOfflineMessage();
+    } else {
+        $response = getBotResponse($message);
+    }
+    
+    // Simpan ke database jika koneksi ada
+    if (isset($pdo) && $pdo) {
+        saveMessage($pdo, $session_id, $message, $response);
+    }
+    
+    echo json_encode([
+        'response' => $response, 
+        'success' => true,
+        'is_operational' => $isOperational
+    ]);
+    exit;
+}
+
+// Handle GET request (testing)
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    echo json_encode([
+        'success' => true, 
+        'message' => 'Chatbot API is ready!',
+        'version' => '1.0',
+        'operational_hours' => [
+            'days' => 'Senin - Sabtu',
+            'start' => '08:00',
+            'end' => '17:00',
+            'closed_on' => 'Minggu (TUTUP)',
+            'current_status' => isOperationalHours() ? 'Online' : 'Offline'
+        ],
+        'contact' => [
+            'whatsapp' => '0858-1117-7617',
+            'email' => 'adinda.auliap24@gmail.com'
+        ]
+    ]);
+    exit;
+}
 ?>
-
-<style>
-    .chatbot-button {
-        position: fixed;
-        bottom: 90px;
-        right: 30px;
-        z-index: 9999;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    .chatbot-button .main-btn {
-        width: 60px;
-        height: 60px;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 10px 25px rgba(102,126,234,0.4);
-        transition: all 0.3s ease;
-        position: relative;
-    }
-    .chatbot-button .main-btn:hover { 
-        transform: scale(1.1); 
-        box-shadow: 0 15px 35px rgba(102,126,234,0.5);
-    }
-    .chatbot-button .main-btn i { 
-        font-size: 28px; 
-        color: white; 
-    }
-    
-    .chatbot-notification {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        background: #ef4444;
-        color: white;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        font-size: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        animation: pulse 1.5s infinite;
-    }
-    
-    .status-online {
-        position: absolute;
-        bottom: 2px;
-        right: 2px;
-        width: 14px;
-        height: 14px;
-        background: #22c55e;
-        border-radius: 50%;
-        border: 2px solid white;
-    }
-    
-    @keyframes pulse {
-        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
-        70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239,68,68,0); }
-        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239,68,68,0); }
-    }
-    
-    .chatbot-window {
-        position: fixed;
-        bottom: 110px;
-        right: 30px;
-        width: 400px;
-        height: 600px;
-        background: white;
-        border-radius: 25px;
-        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-        z-index: 9999;
-        display: none;
-        flex-direction: column;
-        overflow: hidden;
-        animation: slideUp 0.3s ease-out;
-        font-family: 'Inter', sans-serif;
-    }
-    .chatbot-window.active { display: flex; }
-    
-    @keyframes slideUp { 
-        from { opacity: 0; transform: translateY(20px); } 
-        to { opacity: 1; transform: translateY(0); } 
-    }
-    
-    .chatbot-header { 
-        background: linear-gradient(135deg, #667eea, #764ba2); 
-        padding: 20px; 
-        color: white; 
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-    }
-    
-    .chatbot-avatar { 
-        width: 45px; 
-        height: 45px; 
-        background: rgba(255,255,255,0.2); 
-        border-radius: 50%; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        font-size: 24px; 
-        position: relative;
-    }
-    
-    .chatbot-messages { 
-        flex: 1; 
-        overflow-y: auto; 
-        padding: 20px; 
-        background: #f8fafc; 
-        display: flex; 
-        flex-direction: column; 
-        gap: 12px; 
-    }
-    
-    /* Custom scrollbar */
-    .chatbot-messages::-webkit-scrollbar {
-        width: 5px;
-    }
-    .chatbot-messages::-webkit-scrollbar-track {
-        background: #e2e8f0;
-        border-radius: 10px;
-    }
-    .chatbot-messages::-webkit-scrollbar-thumb {
-        background: #667eea;
-        border-radius: 10px;
-    }
-    
-    .message-chat.bot .message-bubble-chat { 
-        background: white; 
-        color: #1e293b; 
-        border-bottom-left-radius: 4px; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-    }
-    
-    .message-chat.user .message-bubble-chat { 
-        background: linear-gradient(135deg, #667eea, #764ba2); 
-        color: white; 
-        border-bottom-right-radius: 4px; 
-    }
-    
-    .message-bubble-chat { 
-        max-width: 85%; 
-        padding: 12px 16px; 
-        border-radius: 20px; 
-        font-size: 13px; 
-        line-height: 1.5;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-    }
-    
-    .message-chat { 
-        display: flex; 
-        animation: fadeInMessage 0.3s ease-out;
-    }
-    
-    @keyframes fadeInMessage {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .message-chat.bot { justify-content: flex-start; }
-    .message-chat.user { justify-content: flex-end; }
-    
-    .chatbot-input-area { 
-        padding: 15px 20px; 
-        background: white; 
-        border-top: 1px solid #e2e8f0; 
-        display: flex; 
-        gap: 10px; 
-        align-items: center; 
-    }
-    
-    .chatbot-input-area input { 
-        flex: 1; 
-        border: 1px solid #e2e8f0; 
-        padding: 12px 16px; 
-        border-radius: 50px; 
-        outline: none; 
-        font-size: 14px; 
-        transition: all 0.3s ease;
-    }
-    
-    .chatbot-input-area input:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
-    }
-    
-    .chatbot-input-area button { 
-        width: 45px; 
-        height: 45px; 
-        background: linear-gradient(135deg, #667eea, #764ba2); 
-        border: none; 
-        border-radius: 50%; 
-        color: white; 
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .chatbot-input-area button:hover {
-        transform: scale(1.05);
-        box-shadow: 0 5px 15px rgba(102,126,234,0.4);
-    }
-    
-    .quick-reply-btn { 
-        background: #f1f5f9; 
-        border: 1px solid #e2e8f0; 
-        padding: 8px 16px; 
-        border-radius: 50px; 
-        font-size: 12px; 
-        cursor: pointer; 
-        display: inline-block; 
-        margin: 5px;
-        transition: all 0.3s ease;
-    }
-    
-    .quick-reply-btn:hover { 
-        background: linear-gradient(135deg, #667eea, #764ba2); 
-        color: white;
-        transform: translateY(-2px);
-        border-color: transparent;
-    }
-    
-    .offline-notice {
-        background: #fef2f2;
-        border-left: 3px solid #ef4444;
-        padding: 10px;
-        border-radius: 10px;
-        margin-bottom: 10px;
-        font-size: 11px;
-    }
-    
-    .typing-indicator-chat {
-        display: inline-flex;
-        gap: 4px;
-        padding: 12px 16px;
-        background: white;
-        border-radius: 20px;
-    }
-    
-    .typing-indicator-chat span {
-        width: 8px;
-        height: 8px;
-        background: #94a3b8;
-        border-radius: 50%;
-        animation: typingChat 1.4s infinite;
-    }
-    
-    .typing-indicator-chat span:nth-child(2) { animation-delay: 0.2s; }
-    .typing-indicator-chat span:nth-child(3) { animation-delay: 0.4s; }
-    
-    @keyframes typingChat {
-        0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-        30% { transform: translateY(-10px); opacity: 1; }
-    }
-    
-    .operational-info {
-        background: #e0e7ff;
-        padding: 8px 12px;
-        border-radius: 10px;
-        font-size: 11px;
-        color: #4338ca;
-        margin-top: 8px;
-        text-align: center;
-    }
-    
-    @media (max-width: 480px) { 
-        .chatbot-window { 
-            width: calc(100vw - 40px); 
-            right: 20px; 
-            bottom: 100px; 
-            height: 550px; 
-        } 
-        .chatbot-button { 
-            bottom: 20px; 
-            right: 20px; 
-        }
-        .chatbot-button .main-btn { 
-            width: 50px; 
-            height: 50px; 
-        }
-        .chatbot-button .main-btn i { 
-            font-size: 24px; 
-        }
-        .message-bubble-chat {
-            max-width: 90%;
-            font-size: 12px;
-        }
-        .quick-reply-btn {
-            font-size: 10px;
-            padding: 6px 12px;
-        }
-    }
-</style>
-
-<div class="chatbot-button" id="chatbotButtonStayNest">
-    <div class="main-btn">
-        <i class="fas fa-comment-dots"></i>
-        <div class="chatbot-notification" id="chatbotNotification" style="display: none;">1</div>
-        <span class="status-online" id="statusOnline"></span>
-    </div>
-</div>
-
-<div class="chatbot-window" id="chatbotWindowStayNest">
-    <div class="chatbot-header">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <div class="chatbot-avatar">
-                <i class="fas fa-robot"></i>
-            </div>
-            <div>
-                <h3 style="font-size:16px; font-weight:bold; margin:0">StayNest Support</h3>
-                <p style="font-size:11px; opacity:0.8; margin:0" id="statusText">🟢 Online - Siap membantu</p>
-            </div>
-        </div>
-        <button id="chatbotCloseStayNest" style="background:none;border:none;color:white;font-size:28px;cursor:pointer; line-height:1">&times;</button>
-    </div>
-    <div class="chatbot-messages" id="chatbotMessagesStayNest">
-        <div class="message-chat bot">
-            <div class="message-bubble-chat">
-                <strong>👋 Halo! Saya StayNest Assistant!</strong><br><br>
-                Ada yang bisa saya bantu tentang kontrakan? 😊<br><br>
-                💬 <strong>Saya bisa bantu:</strong><br>
-                • Info harga kontrakan<br>
-                • Lokasi properti<br>
-                • Fasilitas yang tersedia<br>
-                • Cara booking<br>
-                • Ketersediaan unit<br>
-                • Info unit VIP<br><br>
-                <strong>Pilih pertanyaan di bawah ini:</strong>
-                <div style="margin-top: 10px;">
-                    <div class="quick-reply-btn" data-message="Lihat properti">🏠 Lihat Properti</div>
-                    <div class="quick-reply-btn" data-message="Cara booking">📝 Cara Booking</div>
-                    <div class="quick-reply-btn" data-message="Harga">💰 Harga</div>
-                    <div class="quick-reply-btn" data-message="Lokasi">📍 Lokasi</div>
-                    <div class="quick-reply-btn" data-message="Fasilitas">🏠 Fasilitas</div>
-                    <div class="quick-reply-btn" data-message="Ketersediaan">✅ Ketersediaan</div>
-                    <div class="quick-reply-btn" data-message="VIP">👑 Unit VIP</div>
-                    <div class="quick-reply-btn" data-message="Kontak">📞 Kontak</div>
-                    <div class="quick-reply-btn" data-message="Jam operasional">⏰ Jam Operasional</div>
-                    <div class="quick-reply-btn" data-message="Bantuan">🆘 Bantuan</div>
-                </div>
-                <div class="operational-info">
-                    ⏰ Jam Operasional: Senin - Sabtu (08:00 - 17:00 WIB) | Minggu TUTUP
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="chatbot-input-area">
-        <input type="text" id="chatbotInputStayNest" placeholder="Ketik pesan Anda disini..." autocomplete="off">
-        <button id="chatbotSendStayNest">
-            <i class="fas fa-paper-plane"></i>
-        </button>
-    </div>
-</div>
-
-<script>
-(function() {
-    const chatButton = document.getElementById('chatbotButtonStayNest');
-    const chatWindow = document.getElementById('chatbotWindowStayNest');
-    const chatClose = document.getElementById('chatbotCloseStayNest');
-    const chatMessages = document.getElementById('chatbotMessagesStayNest');
-    const chatInput = document.getElementById('chatbotInputStayNest');
-    const chatSend = document.getElementById('chatbotSendStayNest');
-    const notification = document.getElementById('chatbotNotification');
-    const statusText = document.getElementById('statusText');
-    const statusOnline = document.getElementById('statusOnline');
-    
-    let isOpen = false;
-    let isOperational = true;
-    
-    // Tentukan base URL untuk API
-    const baseUrl = window.location.origin;
-    const apiUrl = baseUrl + '/api/chatbot.php';
-    
-    // Fungsi untuk mendapatkan hari dalam bahasa Indonesia
-    function getCurrentDayName() {
-        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-        const today = new Date();
-        return days[today.getDay()];
-    }
-    
-    // Cek status operasional
-    async function checkOperationalStatus() {
-        try {
-            const response = await fetch(apiUrl);
-            const data = await response.json();
-            if (data.operational_hours) {
-                isOperational = data.operational_hours.current_status === 'Online';
-                const currentDay = getCurrentDayName();
-                
-                if (isOperational) {
-                    if (statusText) statusText.innerHTML = '🟢 Online - Siap membantu (Senin-Sabtu 08:00-17:00)';
-                    if (statusOnline) statusOnline.style.background = '#22c55e';
-                } else {
-                    if (currentDay === 'Minggu') {
-                        if (statusText) statusText.innerHTML = '❌ Offline - Hari Minggu TUTUP';
-                    } else {
-                        if (statusText) statusText.innerHTML = '⏰ Offline - Diluar jam operasional (08:00-17:00)';
-                    }
-                    if (statusOnline) statusOnline.style.background = '#ef4444';
-                }
-            }
-        } catch (error) {
-            console.error('Error checking status:', error);
-            // Fallback: anggap online
-            if (statusText) statusText.innerHTML = '🟢 Online - Siap membantu';
-            if (statusOnline) statusOnline.style.background = '#22c55e';
-        }
-    }
-    
-    // Panggil cek status
-    checkOperationalStatus();
-    // Cek setiap 5 menit
-    setInterval(checkOperationalStatus, 300000);
-    
-    function scrollToBottom() {
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-    
-    function showTypingIndicator() {
-        const typingDiv = document.createElement('div');
-        typingDiv.className = 'message-chat bot';
-        typingDiv.id = 'typingIndicatorChat';
-        typingDiv.innerHTML = `
-            <div class="typing-indicator-chat">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        `;
-        chatMessages.appendChild(typingDiv);
-        scrollToBottom();
-    }
-    
-    function removeTypingIndicator() {
-        const indicator = document.getElementById('typingIndicatorChat');
-        if (indicator) indicator.remove();
-    }
-    
-    function addMessage(text, sender) {
-        const div = document.createElement('div');
-        div.className = `message-chat ${sender}`;
-        const bubble = document.createElement('div');
-        bubble.className = 'message-bubble-chat';
-        // Proses bold text dengan **
-        let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        formattedText = formattedText.replace(/\n/g, '<br>');
-        bubble.innerHTML = formattedText;
-        div.appendChild(bubble);
-        chatMessages.appendChild(div);
-        scrollToBottom();
-    }
-    
-    async function sendMessage(message) {
-        if (!message.trim()) return;
-        
-        // Tampilkan pesan user
-        addMessage(message, 'user');
-        const sentMessage = message;
-        chatInput.value = '';
-        
-        // Tampilkan typing indicator
-        showTypingIndicator();
-        
-        try {
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ message: sentMessage })
-            });
-            
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            
-            const data = await response.json();
-            removeTypingIndicator();
-            
-            if (data.response) {
-                addMessage(data.response, 'bot');
-                // Update status operasional dari response
-                if (data.is_operational !== undefined) {
-                    isOperational = data.is_operational;
-                    const currentDay = getCurrentDayName();
-                    if (!isOperational && statusText) {
-                        if (currentDay === 'Minggu') {
-                            statusText.innerHTML = '❌ Offline - Hari Minggu TUTUP';
-                        } else {
-                            statusText.innerHTML = '⏰ Offline - Diluar jam operasional (08:00-17:00)';
-                        }
-                        if (statusOnline) statusOnline.style.background = '#ef4444';
-                    }
-                }
-            } else {
-                addMessage('Maaf, terjadi kesalahan. Silakan coba lagi. 😅', 'bot');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            removeTypingIndicator();
-            addMessage('Maaf, terjadi kesalahan koneksi. Silakan coba lagi nanti. 😅\n\n📞 Atau hubungi kami di:\nWA: 0858-1117-7617\nEmail: adinda.auliap24@gmail.com', 'bot');
-        }
-    }
-    
-    // Event listeners
-    if (chatButton) {
-        chatButton.onclick = (e) => {
-            e.stopPropagation();
-            chatWindow.classList.toggle('active');
-            isOpen = !isOpen;
-            if (isOpen) {
-                if (notification) notification.style.display = 'none';
-                if (chatInput) {
-                    setTimeout(() => chatInput.focus(), 100);
-                }
-                // Refresh status saat membuka chat
-                checkOperationalStatus();
-                // Scroll ke bawah
-                setTimeout(scrollToBottom, 100);
-            }
-        };
-    }
-    
-    if (chatClose) {
-        chatClose.onclick = () => {
-            chatWindow.classList.remove('active');
-            isOpen = false;
-        };
-    }
-    
-    if (chatSend) {
-        chatSend.onclick = () => {
-            sendMessage(chatInput.value);
-        };
-    }
-    
-    if (chatInput) {
-        chatInput.onkeypress = (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                sendMessage(chatInput.value);
-            }
-        };
-    }
-    
-    // Quick reply buttons
-    function bindQuickReplies() {
-        const quickReplyBtns = document.querySelectorAll('.quick-reply-btn');
-        quickReplyBtns.forEach(btn => {
-            // Hapus event listener lama
-            const oldListener = btn._listener;
-            if (oldListener) btn.removeEventListener('click', oldListener);
-            
-            // Tambah event listener baru
-            const listener = (e) => {
-                e.stopPropagation();
-                const msg = btn.getAttribute('data-message');
-                sendMessage(msg);
-            };
-            btn.addEventListener('click', listener);
-            btn._listener = listener;
-        });
-    }
-    
-    bindQuickReplies();
-    
-    // Observer untuk quick reply yang baru ditambahkan
-    const observer = new MutationObserver(() => bindQuickReplies());
-    observer.observe(chatMessages, { childList: true, subtree: true });
-    
-    // Tutup window jika klik di luar
-    document.addEventListener('click', function(event) {
-        if (isOpen && chatWindow && !chatWindow.contains(event.target) && !chatButton.contains(event.target)) {
-            chatWindow.classList.remove('active');
-            isOpen = false;
-        }
-    });
-    
-    // Mencegah klik di dalam window menutup window
-    if (chatWindow) {
-        chatWindow.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-    }
-    
-    console.log('Chatbot widget loaded successfully!');
-})();
-</script>
