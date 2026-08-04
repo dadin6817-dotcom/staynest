@@ -20,7 +20,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     
     <!-- Gen Z Music Player (Stay Alive antar halaman - NO JEDA) -->
-    <script src="/staynest/assets/js/music-player.js"></script>
+    <script src="/assets/js/music-player.js"></script>
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -84,7 +84,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
 
 <nav class="navbar-modern fixed top-0 w-full z-50 py-4 px-6 md:px-12" id="mainNavbar">
     <div class="max-w-7xl mx-auto flex justify-between items-center">
-        <a href="/staynest/index.php" class="flex items-center gap-3 group">
+        <a href="/index.php" class="flex items-center gap-3 group">
             <div class="w-10 h-10 gradient-bg rounded-xl flex items-center justify-center group-hover:scale-110 transition">
                 <i class="fas fa-home text-white text-xl"></i>
             </div>
@@ -92,16 +92,16 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
         </a>
         
         <div class="hidden md:flex items-center gap-8">
-            <a href="/staynest/index.php" class="nav-link text-gray-700 hover:text-purple-600 transition font-medium" id="navHome">Home</a>
-            <a href="/staynest/properties.php" class="nav-link text-gray-700 hover:text-purple-600 transition font-medium" id="navProperties">Properties</a>
-            <a href="/staynest/bookings/my_bookings.php" class="nav-link text-gray-700 hover:text-purple-600 transition font-medium" id="navBookings">My Bookings</a>
-            <a href="/staynest/admin/login.php" class="admin-btn text-white px-5 py-2 rounded-full text-sm font-medium hover:shadow-lg transition flex items-center gap-2">
+            <a href="/index.php" class="nav-link text-gray-700 hover:text-purple-600 transition font-medium" id="navHome">Home</a>
+            <a href="/properties.php" class="nav-link text-gray-700 hover:text-purple-600 transition font-medium" id="navProperties">Properties</a>
+            <a href="/bookings/my_bookings.php" class="nav-link text-gray-700 hover:text-purple-600 transition font-medium" id="navBookings">My Bookings</a>
+            <a href="/admin/login.php" class="admin-btn text-white px-5 py-2 rounded-full text-sm font-medium hover:shadow-lg transition flex items-center gap-2">
                 <i class="fas fa-user-shield"></i> <span>Admin</span>
             </a>
         </div>
         
         <div class="flex items-center gap-3 md:hidden">
-            <a href="/staynest/admin/login.php" class="admin-btn text-white px-3 py-1.5 rounded-full text-xs font-medium">
+            <a href="/admin/login.php" class="admin-btn text-white px-3 py-1.5 rounded-full text-xs font-medium">
                 <i class="fas fa-user-shield"></i>
             </a>
             <button id="mobileMenuBtn" class="text-2xl text-gray-700">
@@ -112,10 +112,10 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
     
     <div id="mobileMenu" class="hidden md:hidden mt-4 py-4 border-t border-gray-100">
         <div class="flex flex-col gap-3">
-            <a href="/staynest/index.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg">Home</a>
-            <a href="/staynest/properties.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg">Properties</a>
-            <a href="/staynest/bookings/my_bookings.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg">My Bookings</a>
-            <a href="/staynest/admin/login.php" class="px-4 py-2 gradient-bg text-white rounded-lg text-center">Admin Panel</a>
+            <a href="/index.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg">Home</a>
+            <a href="/properties.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg">Properties</a>
+            <a href="/bookings/my_bookings.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg">My Bookings</a>
+            <a href="/admin/login.php" class="px-4 py-2 gradient-bg text-white rounded-lg text-center">Admin Panel</a>
         </div>
     </div>
 </nav>
@@ -147,7 +147,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
     var navProperties = document.getElementById('navProperties');
     var navBookings = document.getElementById('navBookings');
     
-    if (navHome && (currentPath.includes('index.php') || currentPath === '/staynest/' || currentPath === '/staynest/index.php')) navHome.classList.add('active');
+    if (navHome && (currentPath.includes('index.php') || currentPath === '/' || currentPath === '/index.php')) navHome.classList.add('active');
     if (navProperties && currentPath.includes('properties.php')) navProperties.classList.add('active');
     if (navBookings && currentPath.includes('my_bookings.php')) navBookings.classList.add('active');
 </script>
