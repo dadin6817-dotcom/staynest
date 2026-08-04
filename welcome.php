@@ -18,7 +18,7 @@ require_once dirname(__FILE__) . '/config/database.php';
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     
     <!-- Music Player -->
-    <script src="/staynest/assets/js/music-player.js"></script>
+    <script src="/assets/js/music-player.js"></script>
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
