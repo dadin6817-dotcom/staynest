@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta');
 // api/chatbot.php - API untuk chatbot
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
