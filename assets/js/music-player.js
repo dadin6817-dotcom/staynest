@@ -7,7 +7,7 @@
     // KONFIGURASI LAGU (Sesuai dengan file MP3 Anda)
     // ============================================
     const musicUrls = [
-        '/staynest/assets/music/nastelbom-elegant.mp3',  // File MP3 Anda
+        '/assets/music/nastelbom-elegant.mp3',  // File MP3 Anda
     ];
     
     const musicNames = [
