@@ -305,17 +305,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             color: #a78bfa;
         }
         
-        .demo-info {
-            text-align: center;
-            margin-top: 12px;
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.25);
-        }
-        
-        .demo-info i {
-            margin-right: 4px;
-        }
-        
         .back-home {
             display: block;
             text-align: center;
@@ -332,6 +321,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         .back-home i {
             margin-right: 6px;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
         }
     </style>
 </head>
@@ -384,10 +387,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         <div class="register-link">
             Don't have an account? <a href="register.php">Register here</a>
-        </div>
-        
-        <div class="demo-info">
-            <i class="fas fa-info-circle"></i> Demo: putri / putri123
         </div>
         
         <a href="index.php" class="back-home">
