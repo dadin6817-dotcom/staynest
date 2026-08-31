@@ -2,13 +2,11 @@
 // login.php - Halaman Login User
 $page_title = "Login - StayNest";
 
-// Load database FIRST
 require_once dirname(__FILE__) . '/config/database.php';
 
 $error = '';
 $username = '';
 
-// Jika sudah login, redirect ke home
 if (isset($_SESSION['user_id'])) {
     header('Location: index.php');
     exit;
@@ -50,10 +48,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// Include header AFTER processing login
 require_once dirname(__FILE__) . '/includes/header.php';
 ?>
 
+<!-- ========================================== -->
+<!-- LOGIN FORM -->
+<!-- ========================================== -->
 <div class="min-h-screen flex items-center justify-center p-4" style="background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);">
     <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
         <div class="text-center mb-8">
@@ -82,6 +82,14 @@ require_once dirname(__FILE__) . '/includes/header.php';
                 <input type="password" name="password" required placeholder="Enter your password" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 transition">
             </div>
             
+            <div class="flex items-center justify-between">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500">
+                    <span class="text-sm text-gray-600">Remember me</span>
+                </label>
+                <a href="#" class="text-sm text-purple-600 hover:underline">Forgot password?</a>
+            </div>
+            
             <button type="submit" class="w-full gradient-bg text-white py-3 rounded-xl font-semibold hover:shadow-lg transition transform hover:scale-105">
                 <i class="fas fa-sign-in-alt mr-2"></i> Login
             </button>
@@ -102,5 +110,4 @@ require_once dirname(__FILE__) . '/includes/header.php';
     input:focus { border-color: #667eea; outline: none; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
 </style>
 
-</body>
-</html>
+<?php require_once dirname(__FILE__) . '/includes/footer.php'; ?>

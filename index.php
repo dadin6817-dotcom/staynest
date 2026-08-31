@@ -6,21 +6,18 @@ require_once dirname(__FILE__) . '/config/database.php';
 require_once dirname(__FILE__) . '/includes/header.php';
 
 // ==============================================
-// FUNGSI UNTUK MENDAPATKAN GAMBAR PROPERTI (SAMA DENGAN properties.php)
+// FUNGSI UNTUK MENDAPATKAN GAMBAR PROPERTI
 // ==============================================
 function getPropertyImage($property_id, $property_name) {
-    // Mapping gambar properti dari folder assets/images
     $property_images = [
-        1 => '/staynest/assets/images/babelan-2.jpeg',    // StayNest Vela
-        2 => '/staynest/assets/images/alamanda-2.jpeg',   // StayNest Aera
-        3 => '/staynest/assets/images/Vip-1.jpeg',        // StayNest Elora
+        1 => '/staynest/assets/images/babelan-2.jpeg',
+        2 => '/staynest/assets/images/alamanda-2.jpeg',
+        3 => '/staynest/assets/images/Vip-1.jpeg',
     ];
     
     if (isset($property_images[$property_id])) {
         return $property_images[$property_id];
     }
-    
-    // Fallback ke gambar default
     return '/staynest/assets/images/default-property.jpg';
 }
 
@@ -33,10 +30,7 @@ try {
 }
 
 // ==============================================
-// DATA FALLBACK YANG SUDAH DIREVISI
-// StayNest Elora: 12 doors, 7 available (kosong), 5 occupied (terisi)
-// StayNest Aera: 4 doors, 2 available, 2 occupied
-// StayNest Vela: 2 doors, 1 available, 1 occupied
+// DATA FALLBACK
 // ==============================================
 if (empty($featured_properties)) {
     $featured_properties = [
@@ -45,8 +39,8 @@ if (empty($featured_properties)) {
             'name' => 'StayNest Vela', 
             'location' => 'Kavling Harapan Manunggal Utara, Kec. Bahagia, Babelan, Bekasi', 
             'total_doors' => 2, 
-            'available_rooms' => 1,      // 1 kosong
-            'occupied_rooms' => 1,       // 1 terisi
+            'available_rooms' => 1,
+            'occupied_rooms' => 1,
             'price_per_month' => 700000, 
             'is_vip' => false
         ],
@@ -55,8 +49,8 @@ if (empty($featured_properties)) {
             'name' => 'StayNest Aera', 
             'location' => 'Jl. Pandawa 15, Kp. Gebang, Karang Satria, Tambun Utara, Bekasi', 
             'total_doors' => 4, 
-            'available_rooms' => 2,      // 2 kosong
-            'occupied_rooms' => 2,       // 2 terisi
+            'available_rooms' => 2,
+            'occupied_rooms' => 2,
             'price_per_month' => 700000, 
             'is_vip' => true
         ],
@@ -65,8 +59,8 @@ if (empty($featured_properties)) {
             'name' => 'StayNest Elora', 
             'location' => 'Kavling Bumi Mas 2, Kec. Bahagia, Babelan, Bekasi', 
             'total_doors' => 12, 
-            'available_rooms' => 7,      // 4 (L1) + 3 (L2) = 7 kosong
-            'occupied_rooms' => 5,       // 2 (L1) + 3 (L2) = 5 terisi
+            'available_rooms' => 7,
+            'occupied_rooms' => 5,
             'price_per_month' => 800000, 
             'is_vip' => true
         ]
@@ -94,7 +88,6 @@ if (empty($featured_properties)) {
             overflow-x: hidden;
         }
         
-        /* Gradient Classes */
         .gradient-text {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             -webkit-background-clip: text;
@@ -119,7 +112,6 @@ if (empty($featured_properties)) {
             background-clip: text;
         }
         
-        /* Hero Section */
         .hero-section {
             position: relative;
             min-height: 85vh;
@@ -160,7 +152,6 @@ if (empty($featured_properties)) {
             66% { transform: translate(-30px, 30px) scale(0.8); }
         }
         
-        /* Button Styles */
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -180,7 +171,6 @@ if (empty($featured_properties)) {
             box-shadow: 0 10px 30px rgba(102,126,234,0.4);
         }
         
-        /* Search Container */
         .search-container {
             background: white;
             border-radius: 80px;
@@ -224,7 +214,6 @@ if (empty($featured_properties)) {
             box-shadow: 0 5px 20px rgba(102,126,234,0.4);
         }
         
-        /* Feature Card */
         .feature-card {
             background: white;
             border-radius: 1.5rem;
@@ -260,7 +249,6 @@ if (empty($featured_properties)) {
             color: white !important;
         }
         
-        /* Property Card */
         .property-card {
             background: white;
             border-radius: 1.5rem;
@@ -330,7 +318,6 @@ if (empty($featured_properties)) {
             border-radius: 20px;
         }
         
-        /* Stats Section */
         .stat-card {
             text-align: center;
             padding: 1.5rem;
@@ -357,7 +344,6 @@ if (empty($featured_properties)) {
             font-weight: 500;
         }
         
-        /* Testimonial Card */
         .testimonial-card {
             background: white;
             border-radius: 1.5rem;
@@ -371,7 +357,6 @@ if (empty($featured_properties)) {
             box-shadow: 0 20px 40px rgba(102,126,234,0.15);
         }
         
-        /* CTA Section */
         .cta-section {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             position: relative;
@@ -398,7 +383,6 @@ if (empty($featured_properties)) {
             transform: rotate(10deg);
         }
         
-        /* Animations */
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
@@ -424,16 +408,6 @@ if (empty($featured_properties)) {
             transform: translateY(0);
         }
         
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        
-        .animate-bounce {
-            animation: bounce 1s ease-in-out infinite;
-        }
-        
-        /* Responsive */
         @media (max-width: 768px) {
             .btn-primary {
                 padding: 10px 20px;
@@ -460,12 +434,19 @@ if (empty($featured_properties)) {
             .property-img {
                 height: 180px;
             }
+            
+            .hero-section {
+                min-height: 70vh;
+                padding-top: 80px !important;
+            }
         }
     </style>
 </head>
 <body>
 
-<!-- Hero Section -->
+<!-- ========================================== -->
+<!-- HERO SECTION -->
+<!-- ========================================== -->
 <section class="hero-section pt-32 pb-20 px-6 relative">
     <div class="hero-bg-element bg-elem-1"></div>
     <div class="hero-bg-element bg-elem-2"></div>
@@ -497,6 +478,9 @@ if (empty($featured_properties)) {
                 <a href="#properties" class="btn-primary">
                     <i class="fas fa-search"></i> Explore Now
                 </a>
+                <a href="register.php" class="bg-transparent border-2 border-purple-600 text-purple-600 px-8 py-3 rounded-full font-semibold hover:bg-purple-600 hover:text-white transition inline-flex items-center gap-2">
+                    <i class="fas fa-user-plus"></i> Get Started
+                </a>
             </div>
             
             <div class="max-w-2xl mx-auto animate-fade-up delay-400">
@@ -513,7 +497,6 @@ if (empty($featured_properties)) {
                 </div>
                 <div id="searchResults" class="mt-6 space-y-3"></div>
                 
-                <!-- POPULAR TAGS -->
                 <div class="flex flex-wrap gap-2 justify-center mt-6">
                     <span class="text-sm text-gray-500">Popular:</span>
                     <a href="properties.php?location=Babelan" class="text-sm px-3 py-1 bg-gray-100 rounded-full hover:bg-purple-100 hover:text-purple-600 transition">📍 Babelan</a>
@@ -525,7 +508,9 @@ if (empty($featured_properties)) {
     </div>
 </section>
 
-<!-- Stats Section -->
+<!-- ========================================== -->
+<!-- STATS SECTION -->
+<!-- ========================================== -->
 <section class="py-16 bg-white">
     <div class="max-w-7xl mx-auto px-6">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -549,7 +534,9 @@ if (empty($featured_properties)) {
     </div>
 </section>
 
-<!-- Features Section -->
+<!-- ========================================== -->
+<!-- FEATURES SECTION -->
+<!-- ========================================== -->
 <section class="py-20 bg-gradient-to-b from-gray-50 to-white">
     <div class="max-w-7xl mx-auto px-6">
         <div class="text-center mb-12 scroll-reveal">
@@ -592,7 +579,9 @@ if (empty($featured_properties)) {
     </div>
 </section>
 
-<!-- Featured Properties Section -->
+<!-- ========================================== -->
+<!-- FEATURED PROPERTIES SECTION -->
+<!-- ========================================== -->
 <section id="properties" class="py-20 bg-white">
     <div class="max-w-7xl mx-auto px-6">
         <div class="text-center mb-12 scroll-reveal">
@@ -609,10 +598,8 @@ if (empty($featured_properties)) {
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <?php foreach($featured_properties as $property): 
-                // Gunakan fungsi getPropertyImage untuk mendapatkan gambar
                 $property_image = getPropertyImage($property['id'], $property['name']);
                 
-                // Format harga untuk Elora (tampilan range)
                 if ($property['id'] == 3) {
                     $price_display = "Rp 1.000.000 - Rp 1.200.000";
                 } else {
@@ -673,7 +660,9 @@ if (empty($featured_properties)) {
     </div>
 </section>
 
-<!-- Testimonials Section -->
+<!-- ========================================== -->
+<!-- TESTIMONIALS SECTION -->
+<!-- ========================================== -->
 <section class="py-20 bg-gradient-to-r from-purple-50 to-pink-50">
     <div class="max-w-7xl mx-auto px-6">
         <div class="text-center mb-12 scroll-reveal">
@@ -723,7 +712,9 @@ if (empty($featured_properties)) {
     </div>
 </section>
 
-<!-- CTA Section -->
+<!-- ========================================== -->
+<!-- CTA SECTION -->
+<!-- ========================================== -->
 <section class="cta-section py-20 relative overflow-hidden">
     <div class="max-w-4xl mx-auto text-center px-6 relative z-10">
         <h2 class="text-4xl md:text-5xl font-bold text-white mb-4 scroll-reveal">
@@ -740,57 +731,26 @@ if (empty($featured_properties)) {
     </div>
 </section>
 
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<!-- ========================================== -->
+<!-- SCRIPTS -->
+<!-- ========================================== -->
 <script>
-    AOS.init({ duration: 800, once: true, offset: 100 });
-    
-    // Search functionality
+    // ==========================================
+    // SEARCH FUNCTIONALITY
+    // ==========================================
     var searchInput = document.getElementById('searchInput');
     var searchBtn = document.getElementById('searchBtn');
     var resultsDiv = document.getElementById('searchResults');
     
-    async function searchProperties() {
-        var query = searchInput ? searchInput.value : '';
-        if (query && query.length > 2) {
-            try {
-                var response = await fetch('api/search.php?q=' + encodeURIComponent(query));
-                var data = await response.json();
-                if (resultsDiv) {
-                    if (data.length > 0) {
-                        var html = '';
-                        for (var i = 0; i < data.length; i++) {
-                            var prop = data[i];
-                            html += '<div class="bg-white rounded-xl shadow-lg p-4 flex gap-4 hover:shadow-xl transition cursor-pointer" onclick="location.href=\'detail.php?id=' + prop.id + '\'">';
-                            html += '<img src="' + (prop.image_url || 'https://placehold.co/100x100/667eea/white?text=StayNest') + '" class="w-20 h-20 object-cover rounded-lg">';
-                            html += '<div class="flex-1">';
-                            html += '<h4 class="font-bold text-lg">' + prop.name + '</h4>';
-                            html += '<p class="text-gray-500 text-sm"><i class="fas fa-map-marker-alt mr-1"></i> ' + prop.location + '</p>';
-                            html += '<p class="text-purple-600 font-bold mt-1">Rp ' + Number(prop.price_per_month).toLocaleString('id-ID') + '/month</p>';
-                            html += '</div></div>';
-                        }
-                        resultsDiv.innerHTML = html;
-                    } else {
-                        resultsDiv.innerHTML = '<p class="text-center text-gray-500 py-4">😢 No properties found</p>';
-                    }
-                }
-            } catch(err) {
-                console.error('Search error:', err);
-            }
-        } else if (resultsDiv && query && query.length === 0) {
-            resultsDiv.innerHTML = '';
-        }
-    }
-    
     if (searchBtn) {
         searchBtn.addEventListener('click', function() {
             if (searchInput && searchInput.value && searchInput.value.length > 0) {
-                window.location.href = 'search.php?q=' + encodeURIComponent(searchInput.value);
+                window.location.href = 'properties.php?search=' + encodeURIComponent(searchInput.value);
             }
         });
     }
     
     if (searchInput) {
-        searchInput.addEventListener('input', searchProperties);
         searchInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter' && searchBtn) {
                 searchBtn.click();
@@ -798,7 +758,9 @@ if (empty($featured_properties)) {
         });
     }
     
-    // Scroll reveal observer
+    // ==========================================
+    // SCROLL REVEAL OBSERVER
+    // ==========================================
     var scrollElements = document.querySelectorAll('.scroll-reveal');
     var observer = new IntersectionObserver(function(entries) {
         for (var i = 0; i < entries.length; i++) {
@@ -812,7 +774,9 @@ if (empty($featured_properties)) {
         observer.observe(scrollElements[s]);
     }
     
-    // Wishlist functionality
+    // ==========================================
+    // WISHLIST FUNCTIONALITY
+    // ==========================================
     var wishlistBtns = document.querySelectorAll('.wishlist-btn');
     for (var w = 0; w < wishlistBtns.length; w++) {
         wishlistBtns[w].addEventListener('click', function(e) {

@@ -2,7 +2,7 @@
 // config/database.php
 
 $host = 'localhost';
-$dbname = 'staynest_db';   // ✅ SAMA DENGAN DI PHPMYADMIN!
+$dbname = 'staynest_db';
 $username = 'root';
 $password = '';
 
@@ -10,11 +10,12 @@ try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
 } catch(PDOException $e) {
     die("Database connection failed: " . $e->getMessage());
+}
+
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 ?>

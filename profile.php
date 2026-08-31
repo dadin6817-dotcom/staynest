@@ -108,22 +108,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile - StayNest</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        .gradient-bg { background: linear-gradient(135deg, #667eea, #764ba2); }
-        input:focus { border-color: #667eea; outline: none; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
-    </style>
-</head>
-<body class="bg-gray-50">
-
+<!-- ========================================== -->
+<!-- PROFILE PAGE -->
+<!-- ========================================== -->
 <div class="max-w-4xl mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold text-gray-800 mb-8">
         <i class="fas fa-user-circle text-purple-600 mr-2"></i> My Profile
@@ -218,5 +205,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
     </div>
 </div>
 
-</body>
-</html>
+<style>
+    .gradient-bg { background: linear-gradient(135deg, #667eea, #764ba2); }
+</style>
+
+<?php require_once dirname(__FILE__) . '/includes/footer.php'; ?>
