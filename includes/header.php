@@ -1,259 +1,105 @@
 <?php
-// includes/header.php - Navbar Global dengan User Login
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+// login.php - Halaman Login User
+$page_title = "Login - StayNest";
+
+require_once dirname(__FILE__) . '/config/database.php';
+
+$error = '';
+$username = '';
+
+// Jika sudah login, redirect ke home
+if (isset($_SESSION['user_id'])) {
+    header('Location: index.php');
+    exit;
 }
 
-// Check if user is logged in
-$is_logged_in = isset($_SESSION['user_id']) && isset($_SESSION['username']);
-$user_name = $_SESSION['full_name'] ?? 'User';
-$user_role = $_SESSION['role'] ?? 'user';
-
-$page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title><?php echo htmlspecialchars($page_title); ?></title>
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = trim($_POST['username'] ?? '');
+    $password = trim($_POST['password'] ?? '');
     
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; overflow-x: hidden; transition: opacity 0.3s ease; }
-        
-        .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        
-        .navbar-modern {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            box-shadow: 0 2px 20px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
-        }
-        
-        .navbar-scrolled {
-            box-shadow: 0 5px 25px rgba(0,0,0,0.1);
-            background: rgba(255,255,255,0.98);
-        }
-        
-        .nav-link {
-            transition: all 0.3s ease;
-            position: relative;
-            font-weight: 500;
-            text-decoration: none;
-        }
-        
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            transition: width 0.3s ease;
-            border-radius: 2px;
-        }
-        
-        .nav-link:hover::after,
-        .nav-link.active::after { width: 100%; }
-        
-        .nav-link:hover { color: #667eea; transform: translateY(-2px); }
-        
-        .admin-btn {
-            background: linear-gradient(135deg, #f093fb, #f5576c);
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-        
-        .admin-btn:hover { transform: scale(1.05); box-shadow: 0 5px 20px rgba(240,147,251,0.4); }
-        
-        .user-btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-        
-        .user-btn:hover { transform: scale(1.05); box-shadow: 0 5px 20px rgba(102,126,234,0.4); }
-        
-        .fade-out { opacity: 0; }
-        
-        .user-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            margin-top: 8px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-            min-width: 220px;
-            padding: 8px;
-            display: none;
-            z-index: 100;
-        }
-        
-        .user-dropdown.show {
-            display: block;
-            animation: slideDown 0.2s ease-out;
-        }
-        
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .user-dropdown-item {
-            padding: 10px 16px;
-            border-radius: 10px;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #374151;
-            text-decoration: none;
-        }
-        
-        .user-dropdown-item:hover {
-            background: #f3f4f6;
-        }
-        
-        .user-dropdown-item i {
-            width: 20px;
-            color: #667eea;
-        }
-        
-        .user-dropdown-divider {
-            height: 1px;
-            background: #e5e7eb;
-            margin: 8px 0;
-        }
-        
-        @media (max-width: 768px) {
-            .navbar-modern { padding: 12px 16px; }
-        }
-    </style>
-</head>
-<body>
-
-<nav class="navbar-modern fixed top-0 w-full z-50 py-4 px-6 md:px-12" id="mainNavbar">
-    <div class="max-w-7xl mx-auto flex justify-between items-center">
-        <!-- Logo -->
-        <a href="/staynest/index.php" class="flex items-center gap-3 group">
-            <div class="w-10 h-10 gradient-bg rounded-xl flex items-center justify-center group-hover:scale-110 transition">
-                <i class="fas fa-home text-white text-xl"></i>
-            </div>
-            <span class="text-2xl font-extrabold gradient-text">StayNest</span>
-        </a>
-        
-        <!-- Desktop Menu -->
-        <div class="hidden md:flex items-center gap-8">
-            <a href="/staynest/index.php" class="nav-link text-gray-700 hover:text-purple-600 transition font-medium" id="navHome">Home</a>
-            <a href="/staynest/properties.php" class="nav-link text-gray-700 hover:text-purple-600 transition font-medium" id="navProperties">Properties</a>
-            <a href="/staynest/bookings/my_bookings.php" class="nav-link text-gray-700 hover:text-purple-600 transition font-medium" id="navBookings">My Bookings</a>
-        </div>
-        
-        <!-- Right Menu -->
-        <div class="flex items-center gap-3">
-            <a href="/staynest/admin/login.php" class="hidden md:block admin-btn text-white px-5 py-2 rounded-full text-sm font-medium hover:shadow-lg transition flex items-center gap-2">
-                <i class="fas fa-user-shield"></i> <span>Admin</span>
-            </a>
+    if (empty($username)) {
+        $error = "Username is required!";
+    } elseif (empty($password)) {
+        $error = "Password is required!";
+    } else {
+        try {
+            $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ? OR email = ?");
+            $stmt->execute([$username, $username]);
+            $user = $stmt->fetch();
             
-            <?php if($is_logged_in): ?>
-                <div class="relative" id="userMenuContainer">
-                    <button id="userMenuBtn" class="user-btn text-white px-4 py-2 rounded-full text-sm font-medium hover:shadow-lg transition flex items-center gap-2">
-                        <i class="fas fa-user-circle"></i>
-                        <span><?php echo htmlspecialchars($user_name); ?></span>
-                        <i class="fas fa-chevron-down text-xs ml-1"></i>
-                    </button>
-                    
-                    <div class="user-dropdown" id="userDropdown">
-                        <a href="/staynest/profile.php" class="user-dropdown-item"><i class="fas fa-user"></i> My Profile</a>
-                        <a href="/staynest/bookings/my_bookings.php" class="user-dropdown-item"><i class="fas fa-calendar-check"></i> My Bookings</a>
-                        <?php if($user_role == 'admin'): ?>
-                            <a href="/staynest/admin/index.php" class="user-dropdown-item"><i class="fas fa-tachometer-alt"></i> Dashboard Admin</a>
-                        <?php endif; ?>
-                        <div class="user-dropdown-divider"></div>
-                        <a href="/staynest/logout.php" class="user-dropdown-item text-red-600"><i class="fas fa-sign-out-alt"></i> Logout</a>
-                    </div>
-                </div>
-            <?php else: ?>
-                <a href="/staynest/login.php" class="user-btn text-white px-5 py-2 rounded-full text-sm font-medium hover:shadow-lg transition flex items-center gap-2">
-                    <i class="fas fa-sign-in-alt"></i> <span>Login</span>
-                </a>
-                <a href="/staynest/register.php" class="bg-transparent border-2 border-purple-600 text-purple-600 px-5 py-2 rounded-full text-sm font-medium hover:bg-purple-600 hover:text-white transition flex items-center gap-2">
-                    <i class="fas fa-user-plus"></i> <span>Register</span>
-                </a>
-            <?php endif; ?>
-            
-            <button id="mobileMenuBtn" class="md:hidden text-2xl text-gray-700">
-                <i class="fas fa-bars"></i>
-            </button>
-        </div>
-    </div>
-    
-    <!-- Mobile Menu -->
-    <div id="mobileMenu" class="hidden md:hidden mt-4 py-4 border-t border-gray-100">
-        <div class="flex flex-col gap-3">
-            <a href="/staynest/index.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">Home</a>
-            <a href="/staynest/properties.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">Properties</a>
-            <a href="/staynest/bookings/my_bookings.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">My Bookings</a>
-            <?php if($is_logged_in): ?>
-                <a href="/staynest/profile.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">My Profile</a>
-                <a href="/staynest/logout.php" class="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition">Logout</a>
-            <?php else: ?>
-                <a href="/staynest/login.php" class="px-4 py-2 gradient-bg text-white rounded-lg text-center transition">Login</a>
-                <a href="/staynest/register.php" class="px-4 py-2 border-2 border-purple-600 text-purple-600 rounded-lg text-center transition">Register</a>
-            <?php endif; ?>
-            <a href="/staynest/admin/login.php" class="px-4 py-2 admin-btn text-white rounded-lg text-center transition">Admin Panel</a>
-        </div>
-    </div>
-</nav>
-
-<div style="height: 80px;"></div>
-
-<script>
-    window.addEventListener('scroll', function() {
-        var navbar = document.getElementById('mainNavbar');
-        if (navbar) {
-            if (window.scrollY > 50) navbar.classList.add('navbar-scrolled');
-            else navbar.classList.remove('navbar-scrolled');
-        }
-    });
-    
-    var mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    var mobileMenu = document.getElementById('mobileMenu');
-    if (mobileMenuBtn && mobileMenu) {
-        mobileMenuBtn.addEventListener('click', function() {
-            mobileMenu.classList.toggle('hidden');
-        });
-    }
-    
-    var userMenuBtn = document.getElementById('userMenuBtn');
-    var userDropdown = document.getElementById('userDropdown');
-    
-    if (userMenuBtn && userDropdown) {
-        userMenuBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            userDropdown.classList.toggle('show');
-        });
-        
-        document.addEventListener('click', function(e) {
-            if (!userMenuBtn.contains(e.target) && !userDropdown.contains(e.target)) {
-                userDropdown.classList.remove('show');
+            if ($user && $user['password'] == md5($password) && $user['is_active'] == 1) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['full_name'] = $user['full_name'];
+                $_SESSION['email'] = $user['email'];
+                $_SESSION['role'] = $user['role'];
+                
+                $update = $pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
+                $update->execute([$user['id']]);
+                
+                $redirect = $_GET['redirect'] ?? 'index.php';
+                header('Location: ' . $redirect);
+                exit;
+            } else {
+                $error = "Invalid username/email or password!";
             }
-        });
+        } catch(Exception $e) {
+            $error = "Login error: " . $e->getMessage();
+        }
     }
-</script>
+}
+
+// Include header AFTER processing login
+require_once dirname(__FILE__) . '/includes/header.php';
+?>
+
+<div class="min-h-screen flex items-center justify-center p-4" style="background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 gradient-bg rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-home text-white text-2xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800">Welcome Back!</h1>
+            <p class="text-gray-500 mt-1">Login to your StayNest account</p>
+        </div>
+        
+        <?php if($error): ?>
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 flex items-center gap-2">
+                <i class="fas fa-exclamation-circle"></i>
+                <span><?php echo htmlspecialchars($error); ?></span>
+            </div>
+        <?php endif; ?>
+        
+        <form method="POST" class="space-y-5">
+            <div>
+                <label class="block text-gray-700 font-medium mb-2"><i class="fas fa-user mr-2"></i> Username or Email</label>
+                <input type="text" name="username" required value="<?php echo htmlspecialchars($username); ?>" placeholder="Enter your username or email" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 transition">
+            </div>
+            
+            <div>
+                <label class="block text-gray-700 font-medium mb-2"><i class="fas fa-lock mr-2"></i> Password</label>
+                <input type="password" name="password" required placeholder="Enter your password" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 transition">
+            </div>
+            
+            <button type="submit" class="w-full gradient-bg text-white py-3 rounded-xl font-semibold hover:shadow-lg transition transform hover:scale-105">
+                <i class="fas fa-sign-in-alt mr-2"></i> Login
+            </button>
+        </form>
+        
+        <div class="mt-6 text-center">
+            <p class="text-sm text-gray-500">Don't have an account? <a href="register.php" class="text-purple-600 font-semibold hover:underline">Register here</a></p>
+        </div>
+        
+        <div class="mt-4 text-center">
+            <a href="index.php" class="text-gray-500 hover:text-purple-600 text-sm inline-block"><i class="fas fa-arrow-left mr-1"></i> Back to Homepage</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .gradient-bg { background: linear-gradient(135deg, #667eea, #764ba2); }
+    input:focus { border-color: #667eea; outline: none; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+</style>
+
+</body>
+</html>
