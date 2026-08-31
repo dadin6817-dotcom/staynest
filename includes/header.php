@@ -1,5 +1,5 @@
 <?php
-// includes/header.php - Navbar Global dengan User Login
+// includes/header.php - Navbar Global dengan User Login + Music Player di SEMUA HALAMAN
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -21,6 +21,11 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- ========================================== -->
+    <!-- MUSIC PLAYER JS - LOAD DI SEMUA HALAMAN -->
+    <!-- ========================================== -->
+    <script src="/staynest/assets/js/music-player.js"></script>
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -132,8 +137,307 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             margin: 8px 0;
         }
         
+        /* ========================================== */
+        /* MUSIC BUTTON DI NAVBAR */
+        /* ========================================== */
+        #musicToggleBtn {
+            transition: all 0.3s ease;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+        #musicToggleBtn:hover {
+            background: rgba(102, 126, 234, 0.1);
+            transform: scale(1.05);
+        }
+        
+        /* ========================================== */
+        /* MUSIC PLAYER STYLES - SEPERTI SCREENSHOT */
+        /* ========================================== */
+        #musicPlayerContainer {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 9998;
+        }
+        
+        #musicToggle {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            box-shadow: 0 8px 25px rgba(102,126,234,0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        #musicToggle:hover {
+            transform: scale(1.08);
+            box-shadow: 0 8px 35px rgba(102,126,234,0.6);
+        }
+        
+        #musicToggle .pulse-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(102,126,234,0.3);
+            animation: pulseRing 1.5s ease-in-out infinite;
+            display: none;
+        }
+        
+        #musicToggle .pulse-ring.active {
+            display: block;
+        }
+        
+        @keyframes pulseRing {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.3); opacity: 0.1; }
+        }
+        
+        #musicToggle i {
+            color: white;
+            font-size: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Music Controls Panel - SEPERTI SCREENSHOT */
+        #musicControls {
+            position: absolute;
+            bottom: 70px;
+            left: 0;
+            width: 300px;
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 20px 22px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            display: none;
+            border: 1px solid rgba(102,126,234,0.08);
+            transition: all 0.3s ease;
+        }
+        
+        #musicControls.show {
+            display: block;
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        /* Music Header */
+        .music-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+        
+        .music-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .music-header-left .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulseDot 1.5s infinite;
+        }
+        
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.8); }
+        }
+        
+        .music-header-left h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .music-header-left h3 i {
+            margin-right: 6px;
+        }
+        
+        .music-close-btn {
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0 5px;
+            transition: color 0.3s ease;
+        }
+        
+        .music-close-btn:hover {
+            color: #333;
+        }
+        
+        /* Music Info - SEPERTI SCREENSHOT */
+        .music-info {
+            background: linear-gradient(135deg, #f5f0ff, #fdf2f8);
+            border-radius: 14px;
+            padding: 12px;
+            text-align: center;
+            margin-bottom: 14px;
+        }
+        
+        .music-info .note-icon {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 4px;
+        }
+        
+        .music-info .song-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+        
+        /* Progress Bar - SEPERTI SCREENSHOT */
+        .music-progress-container {
+            margin-bottom: 14px;
+        }
+        
+        .music-progress-container .time-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #999;
+            margin-bottom: 4px;
+        }
+        
+        .music-progress-track {
+            width: 100%;
+            height: 4px;
+            background: #e8e8e8;
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .music-progress-track .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+        
+        /* Controls - SEPERTI SCREENSHOT */
+        .music-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 14px;
+        }
+        
+        .music-controls button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #555;
+        }
+        
+        .music-controls button:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+        
+        .music-controls .play-btn {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-size: 18px;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.3);
+        }
+        
+        .music-controls .play-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 25px rgba(102,126,234,0.5);
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+        
+        /* Volume Control - SEPERTI SCREENSHOT */
+        .music-volume {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .music-volume i {
+            color: #667eea;
+            font-size: 12px;
+        }
+        
+        .music-volume input[type="range"] {
+            flex: 1;
+            height: 3px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #e8e8e8;
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        .music-volume input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.3);
+        }
+        
+        .music-volume input[type="range"]::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            cursor: pointer;
+            border: none;
+        }
+        
+        .music-volume .vol-percent {
+            font-size: 10px;
+            color: #999;
+            min-width: 32px;
+            text-align: right;
+        }
+        
+        /* ========================================== */
+        /* RESPONSIVE */
+        /* ========================================== */
         @media (max-width: 768px) {
             .navbar-modern { padding: 12px 16px; }
+            #musicControls {
+                width: 280px !important;
+                left: 0 !important;
+            }
         }
     </style>
 </head>
@@ -168,6 +472,12 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
                 <i class="fas fa-user-shield"></i>
                 <span>Admin</span>
             </a>
+            
+            <!-- MUSIC BUTTON DI NAVBAR -->
+            <button id="musicToggleBtn" class="hidden md:flex items-center gap-2 text-gray-700 hover:text-purple-600 transition text-sm font-medium px-3 py-2 rounded-full hover:bg-purple-50">
+                <i class="fas fa-music"></i>
+                <span id="musicStatus">Off</span>
+            </button>
             
             <!-- User Login / Profile -->
             <?php if($is_logged_in): ?>
@@ -224,6 +534,13 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             <a href="/staynest/index.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">Home</a>
             <a href="/staynest/properties.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">Properties</a>
             <a href="/staynest/bookings/my_bookings.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">My Bookings</a>
+            
+            <!-- Music Button di Mobile -->
+            <button id="musicToggleMobile" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition text-left flex items-center gap-2">
+                <i class="fas fa-music text-purple-600"></i>
+                <span id="musicStatusMobile">Music: Off</span>
+            </button>
+            
             <?php if($is_logged_in): ?>
                 <a href="/staynest/profile.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">My Profile</a>
                 <a href="/staynest/logout.php" class="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition">Logout</a>
@@ -239,8 +556,65 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
 <!-- Spacer -->
 <div style="height: 80px;"></div>
 
+<!-- ========================================== -->
+<!-- MUSIC PLAYER - TAMPILAN SEPERTI SCREENSHOT -->
+<!-- ========================================== -->
+<div id="musicPlayerContainer">
+    
+    <!-- Tombol Utama -->
+    <button id="musicToggle">
+        <span class="pulse-ring" id="pulseRing"></span>
+        <i class="fas fa-music" id="musicToggleIcon"></i>
+    </button>
+    
+    <!-- Kontrol Musik -->
+    <div id="musicControls">
+        <!-- Header -->
+        <div class="music-header">
+            <div class="music-header-left">
+                <span class="live-dot"></span>
+                <h3><i class="fas fa-music"></i> StayNest Radio</h3>
+            </div>
+            <button class="music-close-btn" id="closeMusicBtn">&times;</button>
+        </div>
+        
+        <!-- Music Info -->
+        <div class="music-info">
+            <span class="note-icon" id="musicNoteAnim">🎧</span>
+            <p class="song-name" id="songName">Nastelbom Elegant</p>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="music-progress-container">
+            <div class="time-row">
+                <span id="currentTime">0:00</span>
+                <span id="totalTime">3:45</span>
+            </div>
+            <div class="music-progress-track" id="progressTrack">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+        
+        <!-- Controls -->
+        <div class="music-controls">
+            <button id="prevBtn"><i class="fas fa-step-backward"></i></button>
+            <button class="play-btn" id="playBtn"><i class="fas fa-play"></i></button>
+            <button id="nextBtn"><i class="fas fa-step-forward"></i></button>
+        </div>
+        
+        <!-- Volume -->
+        <div class="music-volume">
+            <i class="fas fa-volume-down"></i>
+            <input type="range" id="volumeSlider" min="0" max="100" value="40">
+            <span class="vol-percent" id="volumePercent">40%</span>
+        </div>
+    </div>
+</div>
+
 <script>
-    // Navbar scroll effect
+    // ==========================================
+    // NAVBAR SCROLL EFFECT
+    // ==========================================
     window.addEventListener('scroll', function() {
         var navbar = document.getElementById('mainNavbar');
         if (navbar) {
@@ -249,7 +623,9 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
         }
     });
     
-    // Mobile menu toggle
+    // ==========================================
+    // MOBILE MENU TOGGLE
+    // ==========================================
     var mobileMenuBtn = document.getElementById('mobileMenuBtn');
     var mobileMenu = document.getElementById('mobileMenu');
     if (mobileMenuBtn && mobileMenu) {
@@ -258,7 +634,9 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
         });
     }
     
-    // User dropdown toggle
+    // ==========================================
+    // USER DROPDOWN TOGGLE
+    // ==========================================
     var userMenuBtn = document.getElementById('userMenuBtn');
     var userDropdown = document.getElementById('userDropdown');
     if (userMenuBtn && userDropdown) {
@@ -272,4 +650,240 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             }
         });
     }
-</script>
+    
+    // ==========================================
+    // MUSIC PLAYER - FULL SCRIPT
+    // ==========================================
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🎵 StayNest Music Player Loaded!');
+        
+        // Elements
+        const musicToggle = document.getElementById('musicToggle');
+        const musicToggleBtn = document.getElementById('musicToggleBtn');
+        const musicToggleMobile = document.getElementById('musicToggleMobile');
+        const musicControls = document.getElementById('musicControls');
+        const closeMusicBtn = document.getElementById('closeMusicBtn');
+        const playBtn = document.getElementById('playBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const progressTrack = document.getElementById('progressTrack');
+        const progressFill = document.getElementById('progressFill');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumePercent = document.getElementById('volumePercent');
+        const currentTime = document.getElementById('currentTime');
+        const totalTime = document.getElementById('totalTime');
+        const pulseRing = document.getElementById('pulseRing');
+        const musicToggleIcon = document.getElementById('musicToggleIcon');
+        const musicStatus = document.getElementById('musicStatus');
+        const musicStatusMobile = document.getElementById('musicStatusMobile');
+        const songName = document.getElementById('songName');
+        const musicNoteAnim = document.getElementById('musicNoteAnim');
+        
+        // State
+        let isPlaying = false;
+        let progress = 0;
+        let progressInterval = null;
+        let volume = 40;
+        const totalDuration = 225;
+        let isMuted = false;
+        
+        // ==========================================
+        // TOGGLE CONTROLS
+        // ==========================================
+        function toggleControls(e) {
+            if (e) e.stopPropagation();
+            musicControls.classList.toggle('show');
+        }
+        
+        if (musicToggle) musicToggle.addEventListener('click', toggleControls);
+        if (musicToggleBtn) musicToggleBtn.addEventListener('click', toggleControls);
+        if (musicToggleMobile) musicToggleMobile.addEventListener('click', toggleControls);
+        
+        if (closeMusicBtn) {
+            closeMusicBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                musicControls.classList.remove('show');
+            });
+        }
+        
+        document.addEventListener('click', function(e) {
+            if (musicControls && musicControls.classList.contains('show')) {
+                if (!musicControls.contains(e.target) && 
+                    !musicToggle.contains(e.target) && 
+                    !musicToggleBtn?.contains(e.target) &&
+                    !musicToggleMobile?.contains(e.target)) {
+                    musicControls.classList.remove('show');
+                }
+            }
+        });
+        
+        // ==========================================
+        // PLAY/PAUSE
+        // ==========================================
+        if (playBtn) {
+            playBtn.addEventListener('click', function() {
+                isPlaying = !isPlaying;
+                const icon = this.querySelector('i');
+                
+                if (isPlaying) {
+                    icon.className = 'fas fa-pause';
+                    this.style.background = 'linear-gradient(135deg, #f093fb, #f5576c)';
+                    if (pulseRing) pulseRing.classList.add('active');
+                    if (musicToggleIcon) musicToggleIcon.className = 'fas fa-stop';
+                    if (musicStatus) { musicStatus.textContent = 'On'; musicStatus.style.color = '#667eea'; }
+                    if (musicStatusMobile) musicStatusMobile.textContent = 'Music: On';
+                    simulateProgress();
+                    animateNotes();
+                    console.log('🎵 Music playing');
+                } else {
+                    icon.className = 'fas fa-play';
+                    this.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+                    if (pulseRing) pulseRing.classList.remove('active');
+                    if (musicToggleIcon) musicToggleIcon.className = 'fas fa-music';
+                    if (musicStatus) { musicStatus.textContent = 'Off'; musicStatus.style.color = 'gray'; }
+                    if (musicStatusMobile) musicStatusMobile.textContent = 'Music: Off';
+                    if (progressInterval) { clearTimeout(progressInterval); progressInterval = null; }
+                    console.log('⏸️ Music paused');
+                }
+            });
+        }
+        
+        // ==========================================
+        // ANIMATE NOTES
+        // ==========================================
+        let noteInterval = null;
+        function animateNotes() {
+            if (noteInterval) clearInterval(noteInterval);
+            if (!isPlaying) return;
+            const notes = ['🎵', '🎶', '🎧', '🎸', '🎹', '🎤', '🎼'];
+            let i = 0;
+            noteInterval = setInterval(function() {
+                if (!isPlaying) { clearInterval(noteInterval); return; }
+                if (musicNoteAnim) {
+                    musicNoteAnim.textContent = notes[i % notes.length];
+                    i++;
+                }
+            }, 800);
+        }
+        
+        // ==========================================
+        // PROGRESS SIMULATION
+        // ==========================================
+        function simulateProgress() {
+            if (!isPlaying) return;
+            
+            if (progress >= 100) {
+                progress = 0;
+                if (playBtn) {
+                    const icon = playBtn.querySelector('i');
+                    icon.className = 'fas fa-play';
+                    playBtn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+                    isPlaying = false;
+                    if (pulseRing) pulseRing.classList.remove('active');
+                    if (musicToggleIcon) musicToggleIcon.className = 'fas fa-music';
+                    if (musicStatus) { musicStatus.textContent = 'Off'; musicStatus.style.color = 'gray'; }
+                    if (musicStatusMobile) musicStatusMobile.textContent = 'Music: Off';
+                    if (noteInterval) clearInterval(noteInterval);
+                }
+                return;
+            }
+            
+            progress += 0.5;
+            if (progressFill) progressFill.style.width = progress + '%';
+            updateTimeDisplay();
+            progressInterval = setTimeout(simulateProgress, 100);
+        }
+        
+        // ==========================================
+        // UPDATE TIME DISPLAY
+        // ==========================================
+        function updateTimeDisplay() {
+            if (currentTime) {
+                const currentSeconds = Math.floor((progress / 100) * totalDuration);
+                const mins = Math.floor(currentSeconds / 60);
+                const secs = currentSeconds % 60;
+                currentTime.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+            }
+        }
+        
+        // ==========================================
+        // PROGRESS TRACK CLICK
+        // ==========================================
+        if (progressTrack) {
+            progressTrack.addEventListener('click', function(e) {
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const percent = (x / rect.width) * 100;
+                progress = Math.min(100, Math.max(0, percent));
+                if (progressFill) progressFill.style.width = progress + '%';
+                updateTimeDisplay();
+            });
+        }
+        
+        // ==========================================
+        // PREVIOUS / NEXT
+        // ==========================================
+        if (prevBtn) {
+            prevBtn.addEventListener('click', function() {
+                progress = Math.max(0, progress - 10);
+                if (progressFill) progressFill.style.width = progress + '%';
+                updateTimeDisplay();
+            });
+        }
+        
+        if (nextBtn) {
+            nextBtn.addEventListener('click', function() {
+                progress = Math.min(100, progress + 10);
+                if (progressFill) progressFill.style.width = progress + '%';
+                updateTimeDisplay();
+            });
+        }
+        
+        // ==========================================
+        // VOLUME CONTROL
+        // ==========================================
+        if (volumeSlider) {
+            volumeSlider.addEventListener('input', function() {
+                volume = parseFloat(this.value);
+                if (volumePercent) volumePercent.textContent = volume + '%';
+                if (volume === 0) {
+                    isMuted = true;
+                    document.querySelector('.music-volume i').className = 'fas fa-volume-mute';
+                } else {
+                    isMuted = false;
+                    document.querySelector('.music-volume i').className = 'fas fa-volume-down';
+                }
+                localStorage.setItem('staynest_musicVolume', volume);
+            });
+        }
+        
+        // Restore volume
+        const savedVolume = localStorage.getItem('staynest_musicVolume');
+        if (savedVolume !== null && volumeSlider) {
+            volume = parseFloat(savedVolume);
+            volumeSlider.value = volume;
+            if (volumePercent) volumePercent.textContent = volume + '%';
+        }
+        
+        // ==========================================
+        // SET TOTAL TIME
+        // ==========================================
+        if (totalTime) {
+            const mins = Math.floor(totalDuration / 60);
+            const secs = totalDuration % 60;
+            totalTime.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+        }
+        
+        // ==========================================
+        // KEYBOARD SHORTCUTS
+        // ==========================================
+        document.addEventListener('keydown', function(e) {
+            if (e.target.tagName !== 'INPUT' && e.key === ' ') {
+                e.preventDefault();
+                if (playBtn) playBtn.click();
+            }
+        });
+        
+        console.log('🎵 StayNest Music Player ready!');
+    });
+</script>s 
