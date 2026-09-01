@@ -45,14 +45,16 @@ document.addEventListener('DOMContentLoaded', function() {
     var progressInterval = null;
     var noteInterval = null;
     var volume = 40;
-    var totalDuration = 225; // 3:45 menit
+    var totalDuration = 225;
 
     // ==========================================
     // FUNGSI TOGGLE CONTROLS
     // ==========================================
     function toggleControls(e) {
         if (e) e.stopPropagation();
-        musicControls.classList.toggle('show');
+        if (musicControls) {
+            musicControls.classList.toggle('show');
+        }
     }
 
     // ==========================================
@@ -74,7 +76,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (closeMusicBtn) {
         closeMusicBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            musicControls.classList.remove('show');
+            if (musicControls) {
+                musicControls.classList.remove('show');
+            }
         });
     }
 
@@ -110,7 +114,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // ANIMASI NOT MUSIK
     // ==========================================
     function animateNotes() {
-        if (noteInterval) clearInterval(noteInterval);
+        if (noteInterval) {
+            clearInterval(noteInterval);
+            noteInterval = null;
+        }
         if (!isPlaying) return;
         
         var notes = ['🎵', '🎶', '🎧', '🎸', '🎹', '🎤', '🎼'];
@@ -119,6 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
         noteInterval = setInterval(function() {
             if (!isPlaying) {
                 clearInterval(noteInterval);
+                noteInterval = null;
                 return;
             }
             if (musicNoteAnim) {
@@ -139,14 +147,20 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (playBtn) {
                 var icon = playBtn.querySelector('i');
-                icon.className = 'fas fa-play';
+                if (icon) {
+                    icon.className = 'fas fa-play';
+                }
                 playBtn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
             }
             
             isPlaying = false;
             
-            if (pulseRing) pulseRing.classList.remove('active');
-            if (musicToggleIcon) musicToggleIcon.className = 'fas fa-music';
+            if (pulseRing) {
+                pulseRing.classList.remove('active');
+            }
+            if (musicToggleIcon) {
+                musicToggleIcon.className = 'fas fa-music';
+            }
             if (musicStatus) {
                 musicStatus.textContent = 'Off';
                 musicStatus.style.color = 'gray';
@@ -154,13 +168,18 @@ document.addEventListener('DOMContentLoaded', function() {
             if (musicStatusMobile) {
                 musicStatusMobile.textContent = 'Music: Off';
             }
-            if (noteInterval) clearInterval(noteInterval);
+            if (noteInterval) {
+                clearInterval(noteInterval);
+                noteInterval = null;
+            }
             
             return;
         }
 
         progress += 0.5;
-        if (progressFill) progressFill.style.width = progress + '%';
+        if (progressFill) {
+            progressFill.style.width = progress + '%';
+        }
         updateTimeDisplay();
         
         progressInterval = setTimeout(simulateProgress, 100);
@@ -176,11 +195,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (isPlaying) {
                 // PLAY
-                icon.className = 'fas fa-pause';
+                if (icon) {
+                    icon.className = 'fas fa-pause';
+                }
                 this.style.background = 'linear-gradient(135deg, #f093fb, #f5576c)';
                 
-                if (pulseRing) pulseRing.classList.add('active');
-                if (musicToggleIcon) musicToggleIcon.className = 'fas fa-stop';
+                if (pulseRing) {
+                    pulseRing.classList.add('active');
+                }
+                if (musicToggleIcon) {
+                    musicToggleIcon.className = 'fas fa-stop';
+                }
                 
                 if (musicStatus) {
                     musicStatus.textContent = 'On';
@@ -196,11 +221,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             } else {
                 // PAUSE
-                icon.className = 'fas fa-play';
+                if (icon) {
+                    icon.className = 'fas fa-play';
+                }
                 this.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
                 
-                if (pulseRing) pulseRing.classList.remove('active');
-                if (musicToggleIcon) musicToggleIcon.className = 'fas fa-music';
+                if (pulseRing) {
+                    pulseRing.classList.remove('active');
+                }
+                if (musicToggleIcon) {
+                    musicToggleIcon.className = 'fas fa-music';
+                }
                 
                 if (musicStatus) {
                     musicStatus.textContent = 'Off';
@@ -216,6 +247,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 if (noteInterval) {
                     clearInterval(noteInterval);
+                    noteInterval = null;
                 }
                 
                 console.log('⏸️ Music Paused');
@@ -233,7 +265,9 @@ document.addEventListener('DOMContentLoaded', function() {
             var percent = (x / rect.width) * 100;
             progress = Math.min(100, Math.max(0, percent));
             
-            if (progressFill) progressFill.style.width = progress + '%';
+            if (progressFill) {
+                progressFill.style.width = progress + '%';
+            }
             updateTimeDisplay();
         });
     }
@@ -244,7 +278,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (prevBtn) {
         prevBtn.addEventListener('click', function() {
             progress = Math.max(0, progress - 10);
-            if (progressFill) progressFill.style.width = progress + '%';
+            if (progressFill) {
+                progressFill.style.width = progress + '%';
+            }
             updateTimeDisplay();
         });
     }
@@ -255,7 +291,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (nextBtn) {
         nextBtn.addEventListener('click', function() {
             progress = Math.min(100, progress + 10);
-            if (progressFill) progressFill.style.width = progress + '%';
+            if (progressFill) {
+                progressFill.style.width = progress + '%';
+            }
             updateTimeDisplay();
         });
     }
@@ -266,7 +304,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (volumeSlider) {
         volumeSlider.addEventListener('input', function() {
             volume = parseFloat(this.value);
-            if (volumePercent) volumePercent.textContent = volume + '%';
+            if (volumePercent) {
+                volumePercent.textContent = volume + '%';
+            }
             
             var volumeIcon = document.querySelector('.music-volume i');
             if (volumeIcon) {
@@ -277,18 +317,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            localStorage.setItem('staynest_musicVolume', volume);
+            try {
+                localStorage.setItem('staynest_musicVolume', volume);
+            } catch(e) {
+                // LocalStorage tidak tersedia
+            }
         });
     }
 
     // ==========================================
     // RESTORE VOLUME DARI LOCALSTORAGE
     // ==========================================
-    var savedVolume = localStorage.getItem('staynest_musicVolume');
-    if (savedVolume !== null && volumeSlider) {
-        volume = parseFloat(savedVolume);
-        volumeSlider.value = volume;
-        if (volumePercent) volumePercent.textContent = volume + '%';
+    try {
+        var savedVolume = localStorage.getItem('staynest_musicVolume');
+        if (savedVolume !== null && volumeSlider) {
+            volume = parseFloat(savedVolume);
+            volumeSlider.value = volume;
+            if (volumePercent) {
+                volumePercent.textContent = volume + '%';
+            }
+        }
+    } catch(e) {
+        // LocalStorage tidak tersedia
     }
 
     // ==========================================
@@ -313,7 +363,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('keydown', function(e) {
         if (e.target.tagName !== 'INPUT' && e.key === ' ') {
             e.preventDefault();
-            if (playBtn) playBtn.click();
+            if (playBtn) {
+                playBtn.click();
+            }
         }
     });
 
