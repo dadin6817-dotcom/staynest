@@ -23,51 +23,72 @@ $error = '';
 $success = '';
 
 // ==============================================
-// CEK APAKAH TABEL bookings ADA
+// CEK & TAMBAHKAN KOLOM created_at JIKA BELUM ADA
 // ==============================================
 try {
-    $stmt = $pdo->query("SHOW TABLES LIKE 'bookings'");
-    $tableExists = $stmt->rowCount() > 0;
+    $stmt = $pdo->query("SHOW COLUMNS FROM bookings LIKE 'created_at'");
+    $hasCreatedAt = $stmt->rowCount() > 0;
     
-    if (!$tableExists) {
-        $error = "Bookings table does not exist. Please run the SQL script to create it.";
+    if (!$hasCreatedAt) {
+        // Tambahkan kolom created_at
+        $pdo->exec("ALTER TABLE bookings ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+        $pdo->exec("ALTER TABLE bookings ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
     }
 } catch (Exception $e) {
-    $error = "Database error: " . $e->getMessage();
+    // Abaikan error jika kolom sudah ada
 }
 
 // ==============================================
 // AMBIL BOOKING DARI DATABASE
 // ==============================================
-if (empty($error)) {
+try {
+    // Gunakan COALESCE agar aman jika kolom created_at belum ada
+    $orderBy = "COALESCE(b.created_at, b.id) DESC";
+    
+    $stmt = $pdo->prepare("
+        SELECT 
+            b.*, 
+            p.name as property_name, 
+            p.location as property_location 
+        FROM bookings b 
+        JOIN properties p ON b.property_id = p.id 
+        WHERE b.user_id = ? 
+        ORDER BY " . $orderBy . "
+    ");
+    $stmt->execute([$user_id]);
+    $bookings = $stmt->fetchAll();
+    
+    foreach ($bookings as $booking) {
+        if ($booking['status'] == 'active' || $booking['status'] == 'pending') {
+            $active_bookings[] = $booking;
+        } elseif ($booking['status'] == 'completed' || $booking['status'] == 'extended' || $booking['status'] == 'cancelled') {
+            $completed_bookings[] = $booking;
+        }
+    }
+} catch (Exception $e) {
+    // Jika error, coba tanpa ORDER BY
     try {
-        // Cek apakah kolom user_id ada
-        $stmt = $pdo->query("SHOW COLUMNS FROM bookings LIKE 'user_id'");
-        $hasUserId = $stmt->rowCount() > 0;
+        $stmt = $pdo->prepare("
+            SELECT 
+                b.*, 
+                p.name as property_name, 
+                p.location as property_location 
+            FROM bookings b 
+            JOIN properties p ON b.property_id = p.id 
+            WHERE b.user_id = ?
+        ");
+        $stmt->execute([$user_id]);
+        $bookings = $stmt->fetchAll();
         
-        if (!$hasUserId) {
-            $error = "Column 'user_id' not found in bookings table. Please run the SQL script to update the table.";
-        } else {
-            $stmt = $pdo->prepare("
-                SELECT b.*, p.name as property_name, p.location as property_location 
-                FROM bookings b 
-                JOIN properties p ON b.property_id = p.id 
-                WHERE b.user_id = ? 
-                ORDER BY b.created_at DESC
-            ");
-            $stmt->execute([$user_id]);
-            $bookings = $stmt->fetchAll();
-            
-            foreach ($bookings as $booking) {
-                if ($booking['status'] == 'active' || $booking['status'] == 'pending') {
-                    $active_bookings[] = $booking;
-                } elseif ($booking['status'] == 'completed' || $booking['status'] == 'extended' || $booking['status'] == 'cancelled') {
-                    $completed_bookings[] = $booking;
-                }
+        foreach ($bookings as $booking) {
+            if ($booking['status'] == 'active' || $booking['status'] == 'pending') {
+                $active_bookings[] = $booking;
+            } elseif ($booking['status'] == 'completed' || $booking['status'] == 'extended' || $booking['status'] == 'cancelled') {
+                $completed_bookings[] = $booking;
             }
         }
-    } catch (Exception $e) {
-        $error = "Error loading bookings: " . $e->getMessage();
+    } catch (Exception $e2) {
+        $error = "Error loading bookings: " . $e2->getMessage();
     }
 }
 
@@ -98,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
             ");
             $stmt->execute([$new_check_out, $extend_months, $new_total, $booking_id, $user_id]);
             
-            // Insert history
+            // Insert history (jika tabel ada)
             try {
                 $stmt = $pdo->prepare("
                     INSERT INTO booking_histories (booking_id, action, extended_months, new_check_out)
@@ -142,12 +163,12 @@ require_once dirname(__FILE__) . '/../includes/header.php';
         <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
             <i class="fas fa-exclamation-circle mr-2"></i> 
             <?php echo htmlspecialchars($error); ?>
-            <?php if (strpos($error, 'user_id') !== false): ?>
+            <?php if (strpos($error, 'created_at') !== false): ?>
                 <br><br>
                 <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-lg text-sm">
                     <strong>🔧 Solution:</strong> Run this SQL in phpMyAdmin:
-                    <pre class="bg-gray-100 p-2 rounded mt-2 text-xs overflow-x-auto">ALTER TABLE bookings ADD COLUMN user_id INT NOT NULL AFTER id;
-ALTER TABLE bookings ADD FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;</pre>
+                    <pre class="bg-gray-100 p-2 rounded mt-2 text-xs overflow-x-auto">ALTER TABLE bookings ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE bookings ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;</pre>
                 </div>
             <?php endif; ?>
         </div>
@@ -184,12 +205,6 @@ ALTER TABLE bookings ADD FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CA
                                 <i class="fas fa-user mr-1"></i> 
                                 <?php echo htmlspecialchars($booking['full_name']); ?>
                             </p>
-                            <?php if (!empty($booking['notes'])): ?>
-                                <p class="text-sm text-gray-400 mt-1">
-                                    <i class="fas fa-sticky-note mr-1"></i>
-                                    <?php echo htmlspecialchars($booking['notes']); ?>
-                                </p>
-                            <?php endif; ?>
                         </div>
                         <div class="text-right">
                             <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold <?php echo $booking['status'] == 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'; ?>">
@@ -197,9 +212,6 @@ ALTER TABLE bookings ADD FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CA
                             </span>
                             <p class="font-bold text-purple-600 mt-2">
                                 Rp <?php echo number_format($booking['total_price'], 0, ',', '.'); ?>
-                            </p>
-                            <p class="text-xs text-gray-400">
-                                <?php echo $booking['payment_status'] == 'paid' ? '💳 Paid' : '🔄 Unpaid'; ?>
                             </p>
                             
                             <?php if ($booking['status'] == 'active'): ?>
