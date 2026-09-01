@@ -22,6 +22,11 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
+    <!-- ========================================== -->
+    <!-- MUSIC PLAYER JS - LOAD DI SEMUA HALAMAN -->
+    <!-- ========================================== -->
+    <script src="/staynest/assets/js/music-player.js"></script>
+    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: #f8fafc; }
@@ -132,6 +137,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             margin: 8px 0;
         }
         
+        /* Music Button di Navbar */
         #musicToggleBtn {
             transition: all 0.3s ease;
             background: transparent;
@@ -143,6 +149,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             transform: scale(1.05);
         }
         
+        /* Music Player Styles */
         #musicPlayerContainer {
             position: fixed;
             bottom: 20px;
@@ -252,10 +259,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             font-weight: 600;
             color: #667eea;
         }
-        
-        .music-header-left h3 i {
-            margin-right: 6px;
-        }
+        .music-header-left h3 i { margin-right: 6px; }
         
         .music-close-btn {
             background: none;
@@ -266,10 +270,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             padding: 0 5px;
             transition: color 0.3s ease;
         }
-        
-        .music-close-btn:hover {
-            color: #333;
-        }
+        .music-close-btn:hover { color: #333; }
         
         .music-info {
             background: linear-gradient(135deg, #f5f0ff, #fdf2f8);
@@ -361,7 +362,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
         .music-controls .play-btn:hover {
             transform: scale(1.05);
             box-shadow: 0 6px 25px rgba(102,126,234,0.5);
-            background: linear-gradient(135deg, #667eea, #764ba2);
         }
         
         .music-volume {
@@ -370,10 +370,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             gap: 10px;
         }
         
-        .music-volume i {
-            color: #667eea;
-            font-size: 12px;
-        }
+        .music-volume i { color: #667eea; font-size: 12px; }
         
         .music-volume input[type="range"] {
             flex: 1;
@@ -589,6 +586,8 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
     
     // Music Player
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('🎵 StayNest Music Player Loaded!');
+        
         const musicToggle = document.getElementById('musicToggle');
         const musicToggleBtn = document.getElementById('musicToggleBtn');
         const musicToggleMobile = document.getElementById('musicToggleMobile');
@@ -774,5 +773,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
                 if (playBtn) playBtn.click();
             }
         });
+        
+        console.log('🎵 StayNest Music Player ready!');
     });
 </script>

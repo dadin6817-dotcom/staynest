@@ -5,9 +5,7 @@ $page_title = "My Bookings - StayNest";
 require_once dirname(__FILE__) . '/../config/database.php';
 require_once dirname(__FILE__) . '/../includes/header.php';
 
-// ==========================================
-// 🔒 CEK LOGIN - AMAN!
-// ==========================================
+// 🔒 CEK LOGIN
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../login.php?redirect=my_bookings.php');
     exit;
@@ -19,9 +17,6 @@ $active_bookings = [];
 $completed_bookings = [];
 $error = '';
 
-// ==========================================
-// 🔒 AMBIL BOOKING HANYA MILIK USER INI
-// ==========================================
 try {
     $stmt = $pdo->prepare("
         SELECT b.*, p.name as property_name, p.location as property_location 
@@ -30,7 +25,7 @@ try {
         WHERE b.user_id = ? 
         ORDER BY b.created_at DESC
     ");
-    $stmt->execute([$user_id]);  // 🔒 HANYA user_id dari session
+    $stmt->execute([$user_id]);
     $bookings = $stmt->fetchAll();
     
     foreach($bookings as $booking) {
@@ -44,15 +39,12 @@ try {
     $error = "Error loading bookings: " . $e->getMessage();
 }
 
-// ==========================================
-// PROSES EXTEND BOOKING
-// ==========================================
+// Proses Extend Booking
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
     $booking_id = (int)$_POST['booking_id'];
     $extend_months = (int)$_POST['extend_months'];
     
     try {
-        // 🔒 CEK booking milik user ini
         $stmt = $pdo->prepare("SELECT * FROM bookings WHERE id = ? AND user_id = ?");
         $stmt->execute([$booking_id, $user_id]);
         $booking = $stmt->fetch();
@@ -71,13 +63,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
             ");
             $stmt->execute([$new_check_out, $extend_months, $new_total, $booking_id, $user_id]);
             
-            // Insert riwayat extend
-            $stmt = $pdo->prepare("
-                INSERT INTO booking_histories (booking_id, action, extended_months, new_check_out, created_at)
-                VALUES (?, 'extended', ?, ?, NOW())
-            ");
-            $stmt->execute([$booking_id, $extend_months, $new_check_out]);
-            
             $_SESSION['success'] = "Booking extended successfully!";
             header('Location: my_bookings.php');
             exit;
@@ -90,6 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
 }
 ?>
 
+<!-- ========================================== -->
+<!-- KONTEN MY BOOKINGS -->
+<!-- ========================================== -->
 <div class="max-w-7xl mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold text-gray-800 mb-4">📅 My Bookings</h1>
     
@@ -105,7 +93,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
         </div>
     <?php endif; ?>
     
-    <!-- Active Bookings -->
     <?php if($active_bookings): ?>
     <h2 class="text-xl font-semibold text-green-600 mb-4">🟢 Active Bookings</h2>
     <div class="space-y-4 mb-8">
@@ -128,7 +115,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
                     </span>
                     <p class="font-bold text-purple-600 mt-2">Rp <?php echo number_format($booking['total_price'], 0, ',', '.'); ?></p>
                     
-                    <!-- Extend Booking -->
                     <?php if($booking['status'] == 'active'): ?>
                     <div class="mt-2">
                         <form method="POST" class="inline-flex items-center gap-2">
@@ -152,7 +138,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
     </div>
     <?php endif; ?>
     
-    <!-- Completed/Extended Bookings -->
     <?php if($completed_bookings): ?>
     <h2 class="text-xl font-semibold text-gray-600 mb-4">📂 Completed / Extended</h2>
     <div class="space-y-4">
@@ -180,7 +165,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
     </div>
     <?php endif; ?>
     
-    <!-- Empty State -->
     <?php if(empty($bookings)): ?>
     <div class="bg-white rounded-xl shadow-lg p-12 text-center text-gray-500">
         <i class="fas fa-calendar-plus text-6xl text-purple-300 mb-4 block"></i>
