@@ -1,33 +1,21 @@
 <?php
 // bookings/my_bookings.php - Halaman My Bookings
 $page_title = "My Bookings - StayNest";
-
 require_once dirname(__FILE__) . '/../config/database.php';
 require_once dirname(__FILE__) . '/../includes/header.php';
-
-// 🔒 CEK LOGIN
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../login.php?redirect=my_bookings.php');
     exit;
 }
-
 $user_id = $_SESSION['user_id'];
 $bookings = [];
 $active_bookings = [];
 $completed_bookings = [];
 $error = '';
-
 try {
-    $stmt = $pdo->prepare("
-        SELECT b.*, p.name as property_name, p.location as property_location 
-        FROM bookings b 
-        JOIN properties p ON b.property_id = p.id 
-        WHERE b.user_id = ? 
-        ORDER BY b.created_at DESC
-    ");
+    $stmt = $pdo->prepare("SELECT b.*, p.name as property_name, p.location as property_location FROM bookings b JOIN properties p ON b.property_id = p.id WHERE b.user_id = ? ORDER BY b.created_at DESC");
     $stmt->execute([$user_id]);
     $bookings = $stmt->fetchAll();
-    
     foreach($bookings as $booking) {
         if ($booking['status'] == 'active' || $booking['status'] == 'pending') {
             $active_bookings[] = $booking;
@@ -38,31 +26,18 @@ try {
 } catch(Exception $e) {
     $error = "Error loading bookings: " . $e->getMessage();
 }
-
-// Proses Extend Booking
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
     $booking_id = (int)$_POST['booking_id'];
     $extend_months = (int)$_POST['extend_months'];
-    
     try {
         $stmt = $pdo->prepare("SELECT * FROM bookings WHERE id = ? AND user_id = ?");
         $stmt->execute([$booking_id, $user_id]);
         $booking = $stmt->fetch();
-        
         if ($booking && ($booking['status'] == 'active' || $booking['status'] == 'pending')) {
             $new_check_out = date('Y-m-d', strtotime($booking['check_out'] . " +$extend_months months"));
             $new_total = $booking['total_price'] + ($booking['total_price'] / $booking['duration_months'] * $extend_months);
-            
-            $stmt = $pdo->prepare("
-                UPDATE bookings SET 
-                    check_out = ?,
-                    duration_months = duration_months + ?,
-                    total_price = ?,
-                    status = 'extended'
-                WHERE id = ? AND user_id = ?
-            ");
+            $stmt = $pdo->prepare("UPDATE bookings SET check_out = ?, duration_months = duration_months + ?, total_price = ?, status = 'extended' WHERE id = ? AND user_id = ?");
             $stmt->execute([$new_check_out, $extend_months, $new_total, $booking_id, $user_id]);
-            
             $_SESSION['success'] = "Booking extended successfully!";
             header('Location: my_bookings.php');
             exit;
@@ -74,25 +49,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
     }
 }
 ?>
-
-<!-- ========================================== -->
-<!-- KONTEN MY BOOKINGS -->
-<!-- ========================================== -->
 <div class="max-w-7xl mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold text-gray-800 mb-4">📅 My Bookings</h1>
-    
     <?php if(isset($_SESSION['success'])): ?>
-        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-6">
-            <i class="fas fa-check-circle mr-2"></i> <?php echo $_SESSION['success']; unset($_SESSION['success']); ?>
-        </div>
+        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-6"><i class="fas fa-check-circle mr-2"></i> <?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
     <?php endif; ?>
-    
     <?php if($error): ?>
-        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
-            <i class="fas fa-exclamation-circle mr-2"></i> <?php echo $error; ?>
-        </div>
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6"><i class="fas fa-exclamation-circle mr-2"></i> <?php echo $error; ?></div>
     <?php endif; ?>
-    
     <?php if($active_bookings): ?>
     <h2 class="text-xl font-semibold text-green-600 mb-4">🟢 Active Bookings</h2>
     <div class="space-y-4 mb-8">
@@ -114,7 +78,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
                         <?php echo $booking['status'] == 'active' ? '✅ Active' : '⏳ Pending'; ?>
                     </span>
                     <p class="font-bold text-purple-600 mt-2">Rp <?php echo number_format($booking['total_price'], 0, ',', '.'); ?></p>
-                    
                     <?php if($booking['status'] == 'active'): ?>
                     <div class="mt-2">
                         <form method="POST" class="inline-flex items-center gap-2">
@@ -125,9 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
                                 <option value="3">+3 months</option>
                                 <option value="6">+6 months</option>
                             </select>
-                            <button type="submit" name="extend_booking" class="bg-purple-600 text-white text-sm px-4 py-1 rounded-lg hover:bg-purple-700 transition">
-                                <i class="fas fa-plus mr-1"></i> Extend
-                            </button>
+                            <button type="submit" name="extend_booking" class="bg-purple-600 text-white text-sm px-4 py-1 rounded-lg hover:bg-purple-700 transition"><i class="fas fa-plus mr-1"></i> Extend</button>
                         </form>
                     </div>
                     <?php endif; ?>
@@ -137,7 +98,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
         <?php endforeach; ?>
     </div>
     <?php endif; ?>
-    
     <?php if($completed_bookings): ?>
     <h2 class="text-xl font-semibold text-gray-600 mb-4">📂 Completed / Extended</h2>
     <div class="space-y-4">
@@ -164,7 +124,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
         <?php endforeach; ?>
     </div>
     <?php endif; ?>
-    
     <?php if(empty($bookings)): ?>
     <div class="bg-white rounded-xl shadow-lg p-12 text-center text-gray-500">
         <i class="fas fa-calendar-plus text-6xl text-purple-300 mb-4 block"></i>
@@ -174,9 +133,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
     </div>
     <?php endif; ?>
 </div>
-
-<style>
-    .gradient-bg { background: linear-gradient(135deg, #667eea, #764ba2); }
-</style>
-
+<style>.gradient-bg { background: linear-gradient(135deg, #667eea, #764ba2); }</style>
 <?php require_once dirname(__FILE__) . '/../includes/footer.php'; ?>
