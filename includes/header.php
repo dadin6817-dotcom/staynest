@@ -1,5 +1,5 @@
 <?php
-// includes/header.php - Navbar Global dengan User Login + Music Player di SEMUA HALAMAN
+// includes/header.php - Navbar Global dengan User Login + Music Player
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -21,11 +21,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    
-    <!-- ========================================== -->
-    <!-- MUSIC PLAYER JS - LOAD DI SEMUA HALAMAN -->
-    <!-- ========================================== -->
-    <script src="/staynest/assets/js/music-player.js"></script>
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -137,9 +132,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             margin: 8px 0;
         }
         
-        /* ========================================== */
-        /* MUSIC BUTTON DI NAVBAR */
-        /* ========================================== */
         #musicToggleBtn {
             transition: all 0.3s ease;
             background: transparent;
@@ -151,9 +143,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             transform: scale(1.05);
         }
         
-        /* ========================================== */
-        /* MUSIC PLAYER STYLES - SEPERTI SCREENSHOT */
-        /* ========================================== */
         #musicPlayerContainer {
             position: fixed;
             bottom: 20px;
@@ -207,7 +196,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             z-index: 1;
         }
         
-        /* Music Controls Panel - SEPERTI SCREENSHOT */
         #musicControls {
             position: absolute;
             bottom: 70px;
@@ -233,7 +221,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
         
-        /* Music Header */
         .music-header {
             display: flex;
             justify-content: space-between;
@@ -284,7 +271,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             color: #333;
         }
         
-        /* Music Info - SEPERTI SCREENSHOT */
         .music-info {
             background: linear-gradient(135deg, #f5f0ff, #fdf2f8);
             border-radius: 14px;
@@ -305,7 +291,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             color: #1a1a2e;
         }
         
-        /* Progress Bar - SEPERTI SCREENSHOT */
         .music-progress-container {
             margin-bottom: 14px;
         }
@@ -336,7 +321,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             transition: width 0.1s ease;
         }
         
-        /* Controls - SEPERTI SCREENSHOT */
         .music-controls {
             display: flex;
             justify-content: center;
@@ -380,7 +364,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             background: linear-gradient(135deg, #667eea, #764ba2);
         }
         
-        /* Volume Control - SEPERTI SCREENSHOT */
         .music-volume {
             display: flex;
             align-items: center;
@@ -429,15 +412,9 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             text-align: right;
         }
         
-        /* ========================================== */
-        /* RESPONSIVE */
-        /* ========================================== */
         @media (max-width: 768px) {
             .navbar-modern { padding: 12px 16px; }
-            #musicControls {
-                width: 280px !important;
-                left: 0 !important;
-            }
+            #musicControls { width: 280px !important; left: 0 !important; }
         }
     </style>
 </head>
@@ -449,7 +426,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
 <nav class="navbar-modern fixed top-0 w-full z-50 py-4 px-6 md:px-12" id="mainNavbar">
     <div class="max-w-7xl mx-auto flex justify-between items-center">
         
-        <!-- Logo -->
         <a href="/staynest/index.php" class="flex items-center gap-3 group">
             <div class="w-10 h-10 gradient-bg rounded-xl flex items-center justify-center group-hover:scale-110 transition">
                 <i class="fas fa-home text-white text-xl"></i>
@@ -457,29 +433,23 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             <span class="text-2xl font-extrabold gradient-text">StayNest</span>
         </a>
         
-        <!-- Desktop Menu -->
         <div class="hidden md:flex items-center gap-8">
             <a href="/staynest/index.php" class="nav-link hover:text-purple-600 transition font-medium" id="navHome">Home</a>
             <a href="/staynest/properties.php" class="nav-link hover:text-purple-600 transition font-medium" id="navProperties">Properties</a>
             <a href="/staynest/bookings/my_bookings.php" class="nav-link hover:text-purple-600 transition font-medium" id="navBookings">My Bookings</a>
         </div>
         
-        <!-- Right Menu -->
         <div class="flex items-center gap-3">
             
-            <!-- Admin Button -->
             <a href="/staynest/admin/login.php" class="hidden md:block admin-btn text-white px-5 py-2 rounded-full text-sm font-medium hover:shadow-lg transition flex items-center gap-2">
-                <i class="fas fa-user-shield"></i>
-                <span>Admin</span>
+                <i class="fas fa-user-shield"></i> <span>Admin</span>
             </a>
             
-            <!-- MUSIC BUTTON DI NAVBAR -->
             <button id="musicToggleBtn" class="hidden md:flex items-center gap-2 text-gray-700 hover:text-purple-600 transition text-sm font-medium px-3 py-2 rounded-full hover:bg-purple-50">
                 <i class="fas fa-music"></i>
                 <span id="musicStatus">Off</span>
             </button>
             
-            <!-- User Login / Profile -->
             <?php if($is_logged_in): ?>
                 <div class="relative" id="userMenuContainer">
                     <button id="userMenuBtn" class="user-btn text-white px-4 py-2 rounded-full text-sm font-medium hover:shadow-lg transition flex items-center gap-2">
@@ -489,58 +459,39 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
                     </button>
                     
                     <div class="user-dropdown" id="userDropdown">
-                        <a href="/staynest/profile.php" class="user-dropdown-item">
-                            <i class="fas fa-user"></i>
-                            <span>My Profile</span>
-                        </a>
-                        <a href="/staynest/bookings/my_bookings.php" class="user-dropdown-item">
-                            <i class="fas fa-calendar-check"></i>
-                            <span>My Bookings</span>
-                        </a>
+                        <a href="/staynest/profile.php" class="user-dropdown-item"><i class="fas fa-user"></i> My Profile</a>
+                        <a href="/staynest/bookings/my_bookings.php" class="user-dropdown-item"><i class="fas fa-calendar-check"></i> My Bookings</a>
                         <?php if($user_role == 'admin'): ?>
-                            <a href="/staynest/admin/index.php" class="user-dropdown-item">
-                                <i class="fas fa-tachometer-alt"></i>
-                                <span>Dashboard Admin</span>
-                            </a>
+                            <a href="/staynest/admin/index.php" class="user-dropdown-item"><i class="fas fa-tachometer-alt"></i> Dashboard Admin</a>
                         <?php endif; ?>
                         <div class="user-dropdown-divider"></div>
-                        <a href="/staynest/logout.php" class="user-dropdown-item text-red-600">
-                            <i class="fas fa-sign-out-alt"></i>
-                            <span>Logout</span>
-                        </a>
+                        <a href="/staynest/logout.php" class="user-dropdown-item text-red-600"><i class="fas fa-sign-out-alt"></i> Logout</a>
                     </div>
                 </div>
             <?php else: ?>
                 <a href="/staynest/login.php" class="user-btn text-white px-5 py-2 rounded-full text-sm font-medium hover:shadow-lg transition flex items-center gap-2">
-                    <i class="fas fa-sign-in-alt"></i>
-                    <span>Login</span>
+                    <i class="fas fa-sign-in-alt"></i> <span>Login</span>
                 </a>
                 <a href="/staynest/register.php" class="bg-transparent border-2 border-purple-600 text-purple-600 px-5 py-2 rounded-full text-sm font-medium hover:bg-purple-600 hover:text-white transition flex items-center gap-2">
-                    <i class="fas fa-user-plus"></i>
-                    <span>Register</span>
+                    <i class="fas fa-user-plus"></i> <span>Register</span>
                 </a>
             <?php endif; ?>
             
-            <!-- Mobile Menu Button -->
             <button id="mobileMenuBtn" class="md:hidden text-2xl text-gray-700">
                 <i class="fas fa-bars"></i>
             </button>
         </div>
     </div>
     
-    <!-- Mobile Menu -->
     <div id="mobileMenu" class="hidden md:hidden mt-4 py-4 border-t border-gray-100">
         <div class="flex flex-col gap-3">
             <a href="/staynest/index.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">Home</a>
             <a href="/staynest/properties.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">Properties</a>
             <a href="/staynest/bookings/my_bookings.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">My Bookings</a>
-            
-            <!-- Music Button di Mobile -->
             <button id="musicToggleMobile" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition text-left flex items-center gap-2">
                 <i class="fas fa-music text-purple-600"></i>
                 <span id="musicStatusMobile">Music: Off</span>
             </button>
-            
             <?php if($is_logged_in): ?>
                 <a href="/staynest/profile.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">My Profile</a>
                 <a href="/staynest/logout.php" class="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition">Logout</a>
@@ -553,23 +504,18 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
     </div>
 </nav>
 
-<!-- Spacer -->
 <div style="height: 80px;"></div>
 
 <!-- ========================================== -->
-<!-- MUSIC PLAYER - TAMPILAN SEPERTI SCREENSHOT -->
+<!-- MUSIC PLAYER -->
 <!-- ========================================== -->
 <div id="musicPlayerContainer">
-    
-    <!-- Tombol Utama -->
     <button id="musicToggle">
         <span class="pulse-ring" id="pulseRing"></span>
         <i class="fas fa-music" id="musicToggleIcon"></i>
     </button>
     
-    <!-- Kontrol Musik -->
     <div id="musicControls">
-        <!-- Header -->
         <div class="music-header">
             <div class="music-header-left">
                 <span class="live-dot"></span>
@@ -578,13 +524,11 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             <button class="music-close-btn" id="closeMusicBtn">&times;</button>
         </div>
         
-        <!-- Music Info -->
         <div class="music-info">
             <span class="note-icon" id="musicNoteAnim">🎧</span>
             <p class="song-name" id="songName">Nastelbom Elegant</p>
         </div>
         
-        <!-- Progress Bar -->
         <div class="music-progress-container">
             <div class="time-row">
                 <span id="currentTime">0:00</span>
@@ -595,14 +539,12 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             </div>
         </div>
         
-        <!-- Controls -->
         <div class="music-controls">
             <button id="prevBtn"><i class="fas fa-step-backward"></i></button>
             <button class="play-btn" id="playBtn"><i class="fas fa-play"></i></button>
             <button id="nextBtn"><i class="fas fa-step-forward"></i></button>
         </div>
         
-        <!-- Volume -->
         <div class="music-volume">
             <i class="fas fa-volume-down"></i>
             <input type="range" id="volumeSlider" min="0" max="100" value="40">
@@ -612,9 +554,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
 </div>
 
 <script>
-    // ==========================================
-    // NAVBAR SCROLL EFFECT
-    // ==========================================
+    // Navbar scroll effect
     window.addEventListener('scroll', function() {
         var navbar = document.getElementById('mainNavbar');
         if (navbar) {
@@ -623,9 +563,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
         }
     });
     
-    // ==========================================
-    // MOBILE MENU TOGGLE
-    // ==========================================
+    // Mobile menu toggle
     var mobileMenuBtn = document.getElementById('mobileMenuBtn');
     var mobileMenu = document.getElementById('mobileMenu');
     if (mobileMenuBtn && mobileMenu) {
@@ -634,9 +572,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
         });
     }
     
-    // ==========================================
-    // USER DROPDOWN TOGGLE
-    // ==========================================
+    // User dropdown toggle
     var userMenuBtn = document.getElementById('userMenuBtn');
     var userDropdown = document.getElementById('userDropdown');
     if (userMenuBtn && userDropdown) {
@@ -651,13 +587,8 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
         });
     }
     
-    // ==========================================
-    // MUSIC PLAYER - FULL SCRIPT
-    // ==========================================
+    // Music Player
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('🎵 StayNest Music Player Loaded!');
-        
-        // Elements
         const musicToggle = document.getElementById('musicToggle');
         const musicToggleBtn = document.getElementById('musicToggleBtn');
         const musicToggleMobile = document.getElementById('musicToggleMobile');
@@ -676,20 +607,14 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
         const musicToggleIcon = document.getElementById('musicToggleIcon');
         const musicStatus = document.getElementById('musicStatus');
         const musicStatusMobile = document.getElementById('musicStatusMobile');
-        const songName = document.getElementById('songName');
         const musicNoteAnim = document.getElementById('musicNoteAnim');
         
-        // State
         let isPlaying = false;
         let progress = 0;
         let progressInterval = null;
         let volume = 40;
         const totalDuration = 225;
-        let isMuted = false;
         
-        // ==========================================
-        // TOGGLE CONTROLS
-        // ==========================================
         function toggleControls(e) {
             if (e) e.stopPropagation();
             musicControls.classList.toggle('show');
@@ -717,9 +642,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             }
         });
         
-        // ==========================================
-        // PLAY/PAUSE
-        // ==========================================
         if (playBtn) {
             playBtn.addEventListener('click', function() {
                 isPlaying = !isPlaying;
@@ -734,7 +656,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
                     if (musicStatusMobile) musicStatusMobile.textContent = 'Music: On';
                     simulateProgress();
                     animateNotes();
-                    console.log('🎵 Music playing');
                 } else {
                     icon.className = 'fas fa-play';
                     this.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
@@ -743,14 +664,10 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
                     if (musicStatus) { musicStatus.textContent = 'Off'; musicStatus.style.color = 'gray'; }
                     if (musicStatusMobile) musicStatusMobile.textContent = 'Music: Off';
                     if (progressInterval) { clearTimeout(progressInterval); progressInterval = null; }
-                    console.log('⏸️ Music paused');
                 }
             });
         }
         
-        // ==========================================
-        // ANIMATE NOTES
-        // ==========================================
         let noteInterval = null;
         function animateNotes() {
             if (noteInterval) clearInterval(noteInterval);
@@ -766,12 +683,8 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             }, 800);
         }
         
-        // ==========================================
-        // PROGRESS SIMULATION
-        // ==========================================
         function simulateProgress() {
             if (!isPlaying) return;
-            
             if (progress >= 100) {
                 progress = 0;
                 if (playBtn) {
@@ -787,16 +700,12 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
                 }
                 return;
             }
-            
             progress += 0.5;
             if (progressFill) progressFill.style.width = progress + '%';
             updateTimeDisplay();
             progressInterval = setTimeout(simulateProgress, 100);
         }
         
-        // ==========================================
-        // UPDATE TIME DISPLAY
-        // ==========================================
         function updateTimeDisplay() {
             if (currentTime) {
                 const currentSeconds = Math.floor((progress / 100) * totalDuration);
@@ -806,9 +715,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             }
         }
         
-        // ==========================================
-        // PROGRESS TRACK CLICK
-        // ==========================================
         if (progressTrack) {
             progressTrack.addEventListener('click', function(e) {
                 const rect = this.getBoundingClientRect();
@@ -820,9 +726,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             });
         }
         
-        // ==========================================
-        // PREVIOUS / NEXT
-        // ==========================================
         if (prevBtn) {
             prevBtn.addEventListener('click', function() {
                 progress = Math.max(0, progress - 10);
@@ -839,25 +742,19 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             });
         }
         
-        // ==========================================
-        // VOLUME CONTROL
-        // ==========================================
         if (volumeSlider) {
             volumeSlider.addEventListener('input', function() {
                 volume = parseFloat(this.value);
                 if (volumePercent) volumePercent.textContent = volume + '%';
                 if (volume === 0) {
-                    isMuted = true;
                     document.querySelector('.music-volume i').className = 'fas fa-volume-mute';
                 } else {
-                    isMuted = false;
                     document.querySelector('.music-volume i').className = 'fas fa-volume-down';
                 }
                 localStorage.setItem('staynest_musicVolume', volume);
             });
         }
         
-        // Restore volume
         const savedVolume = localStorage.getItem('staynest_musicVolume');
         if (savedVolume !== null && volumeSlider) {
             volume = parseFloat(savedVolume);
@@ -865,25 +762,17 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             if (volumePercent) volumePercent.textContent = volume + '%';
         }
         
-        // ==========================================
-        // SET TOTAL TIME
-        // ==========================================
         if (totalTime) {
             const mins = Math.floor(totalDuration / 60);
             const secs = totalDuration % 60;
             totalTime.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
         }
         
-        // ==========================================
-        // KEYBOARD SHORTCUTS
-        // ==========================================
         document.addEventListener('keydown', function(e) {
             if (e.target.tagName !== 'INPUT' && e.key === ' ') {
                 e.preventDefault();
                 if (playBtn) playBtn.click();
             }
         });
-        
-        console.log('🎵 StayNest Music Player ready!');
     });
-</script>s 
+</script>
