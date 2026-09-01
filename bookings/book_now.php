@@ -3,11 +3,8 @@
 $page_title = "Book Now - StayNest";
 
 require_once dirname(__FILE__) . '/../config/database.php';
-require_once dirname(__FILE__) . '/../includes/header.php';
 
-// ==========================================
-// 🔒 CEK LOGIN - AMAN!
-// ==========================================
+// Cek login
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../login.php?redirect=book_now.php');
     exit;
@@ -32,7 +29,7 @@ if (!$property) {
     exit;
 }
 
-// Ambil data user (untuk default form)
+// Ambil data user
 $user = null;
 try {
     $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
@@ -40,9 +37,7 @@ try {
     $user = $stmt->fetch();
 } catch(Exception $e) {}
 
-// ==========================================
-// PROSES BOOKING
-// ==========================================
+// Proses Booking
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $duration = (int)($_POST['duration'] ?? 0);
     $guests = (int)($_POST['guests'] ?? 1);
@@ -52,20 +47,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $notes = trim($_POST['notes'] ?? '');
     $use_account_data = isset($_POST['use_account_data']) ? true : false;
     
-    // Jika menggunakan data akun, ambil dari session
     if ($use_account_data && $user) {
         $full_name = $user['full_name'];
         $email = $user['email'];
         $phone = $user['phone'];
     }
     
-    // Validasi durasi
     $allowed_durations = [1, 2, 3, 6, 12];
     if (!in_array($duration, $allowed_durations)) {
         $error = "Please select a valid duration!";
     }
     
-    // Validasi data
     if (empty($full_name)) $error = "Full name is required!";
     if (empty($email)) $error = "Email is required!";
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $error = "Valid email is required!";
@@ -110,6 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 }
+
+require_once dirname(__FILE__) . '/../includes/header.php';
 ?>
 
 <div class="max-w-4xl mx-auto px-4 py-8">
@@ -117,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     <?php if($error): ?>
         <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
-            <i class="fas fa-exclamation-circle mr-2"></i> <?php echo $error; ?>
+            <i class="fas fa-exclamation-circle mr-2"></i> <?php echo htmlspecialchars($error); ?>
         </div>
     <?php endif; ?>
     
@@ -237,53 +231,53 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </div>
 
 <script>
-    // Toggle form fields based on checkbox
-    document.getElementById('useAccountData')?.addEventListener('change', function() {
-        const fullName = document.getElementById('fullName');
-        const email = document.getElementById('email');
-        const phone = document.getElementById('phone');
+// Toggle form fields based on checkbox
+document.getElementById('useAccountData')?.addEventListener('change', function() {
+    const fullName = document.getElementById('fullName');
+    const email = document.getElementById('email');
+    const phone = document.getElementById('phone');
+    
+    if (this.checked) {
+        fullName.value = '<?php echo addslashes($user['full_name'] ?? ''); ?>';
+        email.value = '<?php echo addslashes($user['email'] ?? ''); ?>';
+        phone.value = '<?php echo addslashes($user['phone'] ?? ''); ?>';
+        fullName.readOnly = true;
+        email.readOnly = true;
+        phone.readOnly = true;
+        fullName.classList.add('bg-gray-100');
+        email.classList.add('bg-gray-100');
+        phone.classList.add('bg-gray-100');
+    } else {
+        fullName.readOnly = false;
+        email.readOnly = false;
+        phone.readOnly = false;
+        fullName.classList.remove('bg-gray-100');
+        email.classList.remove('bg-gray-100');
+        phone.classList.remove('bg-gray-100');
+        fullName.value = '';
+        email.value = '';
+        phone.value = '';
+    }
+});
+
+document.getElementById('useAccountData')?.dispatchEvent(new Event('change'));
+
+// Update summary when duration changes
+document.querySelectorAll('input[name="duration"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        var duration = parseInt(this.value);
+        var pricePerMonth = <?php echo $property['price_per_month'] ?? 700000; ?>;
+        var total = pricePerMonth * duration;
         
-        if (this.checked) {
-            fullName.value = '<?php echo addslashes($user['full_name'] ?? ''); ?>';
-            email.value = '<?php echo addslashes($user['email'] ?? ''); ?>';
-            phone.value = '<?php echo addslashes($user['phone'] ?? ''); ?>';
-            fullName.readOnly = true;
-            email.readOnly = true;
-            phone.readOnly = true;
-            fullName.classList.add('bg-gray-100');
-            email.classList.add('bg-gray-100');
-            phone.classList.add('bg-gray-100');
-        } else {
-            fullName.readOnly = false;
-            email.readOnly = false;
-            phone.readOnly = false;
-            fullName.classList.remove('bg-gray-100');
-            email.classList.remove('bg-gray-100');
-            phone.classList.remove('bg-gray-100');
-            fullName.value = '';
-            email.value = '';
-            phone.value = '';
-        }
+        document.getElementById('durationDisplay').textContent = duration + ' month' + (duration > 1 ? 's' : '');
+        document.getElementById('totalDisplay').textContent = 'Rp ' + total.toLocaleString('id-ID');
     });
-    
-    document.getElementById('useAccountData')?.dispatchEvent(new Event('change'));
-    
-    // Update summary when duration changes
-    document.querySelectorAll('input[name="duration"]').forEach(function(radio) {
-        radio.addEventListener('change', function() {
-            var duration = parseInt(this.value);
-            var pricePerMonth = <?php echo $property['price_per_month'] ?? 700000; ?>;
-            var total = pricePerMonth * duration;
-            
-            document.getElementById('durationDisplay').textContent = duration + ' month' + (duration > 1 ? 's' : '');
-            document.getElementById('totalDisplay').textContent = 'Rp ' + total.toLocaleString('id-ID');
-        });
-    });
+});
 </script>
 
 <style>
-    .gradient-bg { background: linear-gradient(135deg, #667eea, #764ba2); }
-    input:focus, textarea:focus { border-color: #667eea; outline: none; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+.gradient-bg { background: linear-gradient(135deg, #667eea, #764ba2); }
+input:focus, textarea:focus { border-color: #667eea; outline: none; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
 </style>
 
 <?php require_once dirname(__FILE__) . '/../includes/footer.php'; ?>
