@@ -2,6 +2,7 @@
 // bookings/book_now.php - Halaman Booking Properti
 $page_title = "Book Now - StayNest";
 
+// Load database dulu
 require_once dirname(__FILE__) . '/../config/database.php';
 
 // Cek login
@@ -15,18 +16,24 @@ $property = null;
 $error = '';
 $success = '';
 
-// Ambil data properti
-try {
-    $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ?");
-    $stmt->execute([$property_id]);
-    $property = $stmt->fetch();
-} catch(Exception $e) {
-    $error = "Property not found!";
+// Debug: cek apakah ada ID
+if ($property_id == 0) {
+    $error = "No property selected!";
 }
 
-if (!$property) {
-    header('Location: ../properties.php');
-    exit;
+// Ambil data properti
+if (empty($error)) {
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ?");
+        $stmt->execute([$property_id]);
+        $property = $stmt->fetch();
+        
+        if (!$property) {
+            $error = "Property not found!";
+        }
+    } catch(Exception $e) {
+        $error = "Error loading property: " . $e->getMessage();
+    }
 }
 
 // Ambil data user
@@ -38,7 +45,7 @@ try {
 } catch(Exception $e) {}
 
 // Proses Booking
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
     $duration = (int)($_POST['duration'] ?? 0);
     $guests = (int)($_POST['guests'] ?? 1);
     $full_name = trim($_POST['full_name'] ?? '');
@@ -65,6 +72,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     if (empty($error)) {
         try {
+            // Cek apakah kolom created_at ada
+            try {
+                $stmt = $pdo->query("SHOW COLUMNS FROM bookings LIKE 'created_at'");
+                $hasCreatedAt = $stmt->rowCount() > 0;
+                if (!$hasCreatedAt) {
+                    $pdo->exec("ALTER TABLE bookings ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+                    $pdo->exec("ALTER TABLE bookings ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+                }
+            } catch(Exception $e) {
+                // Abaikan jika kolom sudah ada
+            }
+            
             $booking_code = 'BKG-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
             $price_per_month = $property['price_per_month'] ?? 700000;
             $total_price = $price_per_month * $duration;
@@ -94,8 +113,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             ]);
             
             $booking_id = $pdo->lastInsertId();
-            header('Location: booking_detail.php?id=' . $booking_id);
-            exit;
+            
+            if ($booking_id > 0) {
+                $success = "Booking successful!";
+                header('Location: booking_detail.php?id=' . $booking_id);
+                exit;
+            } else {
+                $error = "Booking failed: Could not create booking.";
+            }
             
         } catch(Exception $e) {
             $error = "Booking failed: " . $e->getMessage();
@@ -112,9 +137,24 @@ require_once dirname(__FILE__) . '/../includes/header.php';
     <?php if($error): ?>
         <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
             <i class="fas fa-exclamation-circle mr-2"></i> <?php echo htmlspecialchars($error); ?>
+            <br>
+            <span class="text-xs">Property ID: <?php echo $property_id; ?></span>
         </div>
     <?php endif; ?>
     
+    <?php if($success): ?>
+        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-6">
+            <i class="fas fa-check-circle mr-2"></i> <?php echo htmlspecialchars($success); ?>
+        </div>
+    <?php endif; ?>
+    
+    <?php if(!$property && empty($error)): ?>
+        <div class="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-xl mb-6">
+            <i class="fas fa-exclamation-triangle mr-2"></i> Property not found. Please go back and select a property.
+        </div>
+    <?php endif; ?>
+    
+    <?php if($property): ?>
     <div class="grid md:grid-cols-3 gap-6">
         <!-- Property Info -->
         <div class="md:col-span-1">
@@ -228,14 +268,15 @@ require_once dirname(__FILE__) . '/../includes/header.php';
             </div>
         </div>
     </div>
+    <?php endif; ?>
 </div>
 
 <script>
 // Toggle form fields based on checkbox
 document.getElementById('useAccountData')?.addEventListener('change', function() {
-    const fullName = document.getElementById('fullName');
-    const email = document.getElementById('email');
-    const phone = document.getElementById('phone');
+    var fullName = document.getElementById('fullName');
+    var email = document.getElementById('email');
+    var phone = document.getElementById('phone');
     
     if (this.checked) {
         fullName.value = '<?php echo addslashes($user['full_name'] ?? ''); ?>';
