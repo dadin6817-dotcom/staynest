@@ -16,17 +16,6 @@ $completed_bookings = [];
 $error = '';
 $success = '';
 
-// Cek dan tambahkan kolom created_at jika belum ada
-try {
-    $stmt = $pdo->query("SHOW COLUMNS FROM bookings LIKE 'created_at'");
-    $hasCreatedAt = $stmt->rowCount() > 0;
-    if (!$hasCreatedAt) {
-        $pdo->exec("ALTER TABLE bookings ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
-        $pdo->exec("ALTER TABLE bookings ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
-    }
-} catch(Exception $e) {}
-
-// Ambil booking dari database
 try {
     $stmt = $pdo->prepare("
         SELECT b.*, p.name as property_name, p.location as property_location 
@@ -49,7 +38,6 @@ try {
     $error = "Error loading bookings: " . $e->getMessage();
 }
 
-// Proses Extend Booking
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
     $booking_id = (int)$_POST['booking_id'];
     $extend_months = (int)$_POST['extend_months'];
@@ -103,7 +91,8 @@ require_once dirname(__FILE__) . '/../includes/header.php';
         </div>
     <?php endif; ?>
     
-    <?php if (!empty($active_bookings)): ?>
+    <?php if (!empty($bookings)): ?>
+        <?php if (!empty($active_bookings)): ?>
         <h2 class="text-xl font-semibold text-green-600 mb-4">🟢 Active Bookings</h2>
         <div class="space-y-4 mb-8">
             <?php foreach ($active_bookings as $booking): ?>
@@ -111,41 +100,25 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                     <div class="flex flex-wrap gap-4 items-start justify-between">
                         <div>
                             <h3 class="text-lg font-semibold"><?php echo htmlspecialchars($booking['property_name']); ?></h3>
-                            <p class="text-gray-500 text-sm">
-                                <i class="fas fa-map-marker-alt mr-1"></i> 
-                                <?php echo htmlspecialchars($booking['property_location']); ?>
-                            </p>
+                            <p class="text-gray-500 text-sm"><i class="fas fa-map-marker-alt mr-1"></i> <?php echo htmlspecialchars($booking['property_location']); ?></p>
                             <div class="flex flex-wrap gap-4 text-sm text-gray-500 mt-2">
-                                <span>
-                                    <i class="fas fa-calendar-alt mr-1"></i> 
-                                    <?php echo date('d M Y', strtotime($booking['check_in'])); ?>
-                                </span>
-                                <span>
-                                    <i class="fas fa-calendar-check mr-1"></i> 
-                                    <?php echo date('d M Y', strtotime($booking['check_out'])); ?>
-                                </span>
-                                <span>
-                                    <i class="fas fa-clock mr-1"></i> 
-                                    <?php echo $booking['duration_months']; ?> months
-                                </span>
+                                <span><i class="fas fa-calendar-alt mr-1"></i> <?php echo date('d M Y', strtotime($booking['check_in'])); ?></span>
+                                <span><i class="fas fa-calendar-check mr-1"></i> <?php echo date('d M Y', strtotime($booking['check_out'])); ?></span>
+                                <span><i class="fas fa-clock mr-1"></i> <?php echo $booking['duration_months']; ?> months</span>
                             </div>
-                            <p class="text-sm text-gray-500 mt-1">
-                                <i class="fas fa-user mr-1"></i> 
-                                <?php echo htmlspecialchars($booking['full_name']); ?>
-                            </p>
+                            <p class="text-sm text-gray-500 mt-1"><i class="fas fa-user mr-1"></i> <?php echo htmlspecialchars($booking['full_name']); ?></p>
+                            <p class="text-xs text-gray-400 mt-1"><i class="fas fa-code mr-1"></i> <?php echo htmlspecialchars($booking['booking_code']); ?></p>
                         </div>
                         <div class="text-right">
                             <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold <?php echo $booking['status'] == 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'; ?>">
                                 <?php echo $booking['status'] == 'active' ? '✅ Active' : '⏳ Pending'; ?>
                             </span>
-                            <p class="font-bold text-purple-600 mt-2">
-                                Rp <?php echo number_format($booking['total_price'], 0, ',', '.'); ?>
-                            </p>
+                            <p class="font-bold text-purple-600 mt-2">Rp <?php echo number_format($booking['total_price'], 0, ',', '.'); ?></p>
                             <?php if ($booking['status'] == 'active'): ?>
                                 <div class="mt-2">
                                     <form method="POST" class="inline-flex items-center gap-2">
                                         <input type="hidden" name="booking_id" value="<?php echo $booking['id']; ?>">
-                                        <select name="extend_months" class="text-sm border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:border-purple-500">
+                                        <select name="extend_months" class="text-sm border border-gray-200 rounded-lg px-2 py-1">
                                             <option value="1">+1 month</option>
                                             <option value="2">+2 months</option>
                                             <option value="3">+3 months</option>
@@ -162,9 +135,9 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                 </div>
             <?php endforeach; ?>
         </div>
-    <?php endif; ?>
-    
-    <?php if (!empty($completed_bookings)): ?>
+        <?php endif; ?>
+        
+        <?php if (!empty($completed_bookings)): ?>
         <h2 class="text-xl font-semibold text-gray-600 mb-4">📂 Completed / Extended</h2>
         <div class="space-y-4">
             <?php foreach ($completed_bookings as $booking): ?>
@@ -172,53 +145,31 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                     <div class="flex flex-wrap gap-4 items-start justify-between">
                         <div>
                             <h3 class="text-lg font-semibold"><?php echo htmlspecialchars($booking['property_name']); ?></h3>
-                            <p class="text-gray-500 text-sm">
-                                <i class="fas fa-map-marker-alt mr-1"></i> 
-                                <?php echo htmlspecialchars($booking['property_location']); ?>
-                            </p>
+                            <p class="text-gray-500 text-sm"><i class="fas fa-map-marker-alt mr-1"></i> <?php echo htmlspecialchars($booking['property_location']); ?></p>
                             <div class="flex flex-wrap gap-4 text-sm text-gray-500 mt-2">
-                                <span>
-                                    <i class="fas fa-calendar-alt mr-1"></i> 
-                                    <?php echo date('d M Y', strtotime($booking['check_in'])); ?>
-                                </span>
-                                <span>
-                                    <i class="fas fa-calendar-check mr-1"></i> 
-                                    <?php echo date('d M Y', strtotime($booking['check_out'])); ?>
-                                </span>
-                                <span>
-                                    <i class="fas fa-clock mr-1"></i> 
-                                    <?php echo $booking['duration_months']; ?> months
-                                </span>
+                                <span><i class="fas fa-calendar-alt mr-1"></i> <?php echo date('d M Y', strtotime($booking['check_in'])); ?></span>
+                                <span><i class="fas fa-calendar-check mr-1"></i> <?php echo date('d M Y', strtotime($booking['check_out'])); ?></span>
+                                <span><i class="fas fa-clock mr-1"></i> <?php echo $booking['duration_months']; ?> months</span>
                             </div>
                         </div>
                         <div class="text-right">
                             <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold <?php echo $booking['status'] == 'extended' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'; ?>">
-                                <?php if ($booking['status'] == 'extended'): ?>
-                                    🔄 Extended
-                                <?php elseif ($booking['status'] == 'cancelled'): ?>
-                                    ❌ Cancelled
-                                <?php else: ?>
-                                    ✅ Completed
-                                <?php endif; ?>
+                                <?php if ($booking['status'] == 'extended'): ?>🔄 Extended<?php elseif ($booking['status'] == 'cancelled'): ?>❌ Cancelled<?php else: ?>✅ Completed<?php endif; ?>
                             </span>
-                            <p class="font-bold text-gray-500 mt-2">
-                                Rp <?php echo number_format($booking['total_price'], 0, ',', '.'); ?>
-                            </p>
+                            <p class="font-bold text-gray-500 mt-2">Rp <?php echo number_format($booking['total_price'], 0, ',', '.'); ?></p>
                         </div>
                     </div>
                 </div>
             <?php endforeach; ?>
         </div>
-    <?php endif; ?>
-    
-    <?php if (empty($bookings)): ?>
+        <?php endif; ?>
+        
+    <?php else: ?>
         <div class="bg-white rounded-xl shadow-lg p-12 text-center text-gray-500">
             <i class="fas fa-calendar-plus text-6xl text-purple-300 mb-4 block"></i>
             <p class="text-lg font-medium">No bookings yet</p>
             <p class="text-sm">Start exploring properties and book your stay!</p>
-            <a href="/staynest/properties.php" class="inline-block mt-4 gradient-bg text-white px-6 py-2 rounded-full hover:shadow-lg transition">
-                Browse Properties →
-            </a>
+            <a href="/staynest/properties.php" class="inline-block mt-4 gradient-bg text-white px-6 py-2 rounded-full hover:shadow-lg transition">Browse Properties →</a>
         </div>
     <?php endif; ?>
 </div>

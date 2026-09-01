@@ -86,9 +86,6 @@ require_once dirname(__FILE__) . '/../includes/header.php';
             <a href="my_bookings.php" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">
                 <i class="fas fa-arrow-left mr-1"></i> Back
             </a>
-            <a href="#" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition">
-                <i class="fas fa-print mr-1"></i> Print Invoice
-            </a>
         </div>
     </div>
 </div>
