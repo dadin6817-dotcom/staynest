@@ -22,36 +22,63 @@ $completed_bookings = [];
 $error = '';
 $success = '';
 
-// Ambil booking dari database
+// ==============================================
+// CEK APAKAH TABEL bookings ADA
+// ==============================================
 try {
-    $stmt = $pdo->prepare("
-        SELECT b.*, p.name as property_name, p.location as property_location 
-        FROM bookings b 
-        JOIN properties p ON b.property_id = p.id 
-        WHERE b.user_id = ? 
-        ORDER BY b.created_at DESC
-    ");
-    $stmt->execute([$user_id]);
-    $bookings = $stmt->fetchAll();
+    $stmt = $pdo->query("SHOW TABLES LIKE 'bookings'");
+    $tableExists = $stmt->rowCount() > 0;
     
-    foreach ($bookings as $booking) {
-        if ($booking['status'] == 'active' || $booking['status'] == 'pending') {
-            $active_bookings[] = $booking;
-        } elseif ($booking['status'] == 'completed' || $booking['status'] == 'extended' || $booking['status'] == 'cancelled') {
-            $completed_bookings[] = $booking;
-        }
+    if (!$tableExists) {
+        $error = "Bookings table does not exist. Please run the SQL script to create it.";
     }
 } catch (Exception $e) {
-    $error = "Error loading bookings: " . $e->getMessage();
+    $error = "Database error: " . $e->getMessage();
 }
 
-// Proses Extend Booking
+// ==============================================
+// AMBIL BOOKING DARI DATABASE
+// ==============================================
+if (empty($error)) {
+    try {
+        // Cek apakah kolom user_id ada
+        $stmt = $pdo->query("SHOW COLUMNS FROM bookings LIKE 'user_id'");
+        $hasUserId = $stmt->rowCount() > 0;
+        
+        if (!$hasUserId) {
+            $error = "Column 'user_id' not found in bookings table. Please run the SQL script to update the table.";
+        } else {
+            $stmt = $pdo->prepare("
+                SELECT b.*, p.name as property_name, p.location as property_location 
+                FROM bookings b 
+                JOIN properties p ON b.property_id = p.id 
+                WHERE b.user_id = ? 
+                ORDER BY b.created_at DESC
+            ");
+            $stmt->execute([$user_id]);
+            $bookings = $stmt->fetchAll();
+            
+            foreach ($bookings as $booking) {
+                if ($booking['status'] == 'active' || $booking['status'] == 'pending') {
+                    $active_bookings[] = $booking;
+                } elseif ($booking['status'] == 'completed' || $booking['status'] == 'extended' || $booking['status'] == 'cancelled') {
+                    $completed_bookings[] = $booking;
+                }
+            }
+        }
+    } catch (Exception $e) {
+        $error = "Error loading bookings: " . $e->getMessage();
+    }
+}
+
+// ==============================================
+// PROSES EXTEND BOOKING
+// ==============================================
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
     $booking_id = (int)$_POST['booking_id'];
     $extend_months = (int)$_POST['extend_months'];
     
     try {
-        // Cek booking milik user ini
         $stmt = $pdo->prepare("SELECT * FROM bookings WHERE id = ? AND user_id = ?");
         $stmt->execute([$booking_id, $user_id]);
         $booking = $stmt->fetch();
@@ -72,15 +99,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
             $stmt->execute([$new_check_out, $extend_months, $new_total, $booking_id, $user_id]);
             
             // Insert history
-            $stmt = $pdo->prepare("
-                INSERT INTO booking_histories (booking_id, action, extended_months, new_check_out)
-                VALUES (?, 'extended', ?, ?)
-            ");
-            $stmt->execute([$booking_id, $extend_months, $new_check_out]);
+            try {
+                $stmt = $pdo->prepare("
+                    INSERT INTO booking_histories (booking_id, action, extended_months, new_check_out)
+                    VALUES (?, 'extended', ?, ?)
+                ");
+                $stmt->execute([$booking_id, $extend_months, $new_check_out]);
+            } catch (Exception $e) {
+                // History table mungkin belum ada, abaikan
+            }
             
             $success = "Booking extended successfully!";
-            
-            // Refresh data
             header('Location: my_bookings.php');
             exit;
         } else {
@@ -92,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
 }
 
 // ==============================================
-// INCLUDE HEADER SETELAH SEMUA LOGIKA SELESAI
+// INCLUDE HEADER
 // ==============================================
 require_once dirname(__FILE__) . '/../includes/header.php';
 ?>
@@ -111,7 +140,16 @@ require_once dirname(__FILE__) . '/../includes/header.php';
     
     <?php if ($error): ?>
         <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
-            <i class="fas fa-exclamation-circle mr-2"></i> <?php echo htmlspecialchars($error); ?>
+            <i class="fas fa-exclamation-circle mr-2"></i> 
+            <?php echo htmlspecialchars($error); ?>
+            <?php if (strpos($error, 'user_id') !== false): ?>
+                <br><br>
+                <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-lg text-sm">
+                    <strong>🔧 Solution:</strong> Run this SQL in phpMyAdmin:
+                    <pre class="bg-gray-100 p-2 rounded mt-2 text-xs overflow-x-auto">ALTER TABLE bookings ADD COLUMN user_id INT NOT NULL AFTER id;
+ALTER TABLE bookings ADD FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;</pre>
+                </div>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
     
@@ -146,6 +184,12 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                                 <i class="fas fa-user mr-1"></i> 
                                 <?php echo htmlspecialchars($booking['full_name']); ?>
                             </p>
+                            <?php if (!empty($booking['notes'])): ?>
+                                <p class="text-sm text-gray-400 mt-1">
+                                    <i class="fas fa-sticky-note mr-1"></i>
+                                    <?php echo htmlspecialchars($booking['notes']); ?>
+                                </p>
+                            <?php endif; ?>
                         </div>
                         <div class="text-right">
                             <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold <?php echo $booking['status'] == 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'; ?>">
@@ -153,6 +197,9 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                             </span>
                             <p class="font-bold text-purple-600 mt-2">
                                 Rp <?php echo number_format($booking['total_price'], 0, ',', '.'); ?>
+                            </p>
+                            <p class="text-xs text-gray-400">
+                                <?php echo $booking['payment_status'] == 'paid' ? '💳 Paid' : '🔄 Unpaid'; ?>
                             </p>
                             
                             <?php if ($booking['status'] == 'active'): ?>
@@ -227,7 +274,7 @@ require_once dirname(__FILE__) . '/../includes/header.php';
     <?php endif; ?>
     
     <!-- Empty State -->
-    <?php if (empty($bookings)): ?>
+    <?php if (empty($bookings) && empty($error)): ?>
         <div class="bg-white rounded-xl shadow-lg p-12 text-center text-gray-500">
             <i class="fas fa-calendar-plus text-6xl text-purple-300 mb-4 block"></i>
             <p class="text-lg font-medium">No bookings yet</p>
