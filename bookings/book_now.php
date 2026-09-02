@@ -2,9 +2,44 @@
 // bookings/book_now.php - Halaman Booking Properti
 $page_title = "Book Now - StayNest";
 
+// ==============================================
+// 1. LOAD DATABASE DULU
+// ==============================================
 require_once dirname(__FILE__) . '/../config/database.php';
 
-// Cek login
+// ==============================================
+// 2. CEK KONEKSI DATABASE
+// ==============================================
+if (!isset($pdo)) {
+    die("Database connection not established!");
+}
+
+// ==============================================
+// 3. CEK TABEL BOOKING_HISTORIES
+// ==============================================
+try {
+    $stmt = $pdo->query("SHOW TABLES LIKE 'booking_histories'");
+    $tableExists = $stmt->rowCount() > 0;
+    if (!$tableExists) {
+        $pdo->exec("
+            CREATE TABLE booking_histories (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                booking_id INT NOT NULL,
+                action VARCHAR(50) NOT NULL,
+                extended_months INT DEFAULT 0,
+                new_check_out DATE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
+            )
+        ");
+    }
+} catch(Exception $e) {
+    // Abaikan
+}
+
+// ==============================================
+// 4. CEK LOGIN
+// ==============================================
 if (!isset($_SESSION['user_id'])) {
     header('Location: ../login.php?redirect=book_now.php');
     exit;
@@ -17,16 +52,20 @@ $success = '';
 $is_extend = false;
 $existing_booking = null;
 
-// Cek apakah ini perpanjangan (extend)
+// ==============================================
+// 5. CEK EXTEND BOOKING
+// ==============================================
 if (isset($_GET['extend']) && $_GET['extend'] == 1 && isset($_GET['booking_id'])) {
     $is_extend = true;
     $booking_id = (int)$_GET['booking_id'];
     
     try {
-        $stmt = $pdo->prepare("SELECT b.*, p.name as property_name, p.location as property_location, p.price_per_month 
-                               FROM bookings b 
-                               JOIN properties p ON b.property_id = p.id 
-                               WHERE b.id = ? AND b.user_id = ? AND b.status = 'active'");
+        $stmt = $pdo->prepare("
+            SELECT b.*, p.name as property_name, p.location as property_location, p.price_per_month 
+            FROM bookings b 
+            JOIN properties p ON b.property_id = p.id 
+            WHERE b.id = ? AND b.user_id = ? AND b.status = 'active'
+        ");
         $stmt->execute([$booking_id, $_SESSION['user_id']]);
         $existing_booking = $stmt->fetch();
         
@@ -46,7 +85,9 @@ if (isset($_GET['extend']) && $_GET['extend'] == 1 && isset($_GET['booking_id'])
     }
 }
 
-// Jika bukan extend, ambil data properti dari database
+// ==============================================
+// 6. AMBIL DATA PROPERTI
+// ==============================================
 if (!$is_extend && $property_id > 0) {
     try {
         $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ?");
@@ -62,7 +103,9 @@ if (!$is_extend && $property_id > 0) {
     $error = "No property selected!";
 }
 
-// Ambil data user
+// ==============================================
+// 7. AMBIL DATA USER
+// ==============================================
 $user = null;
 try {
     $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
@@ -70,7 +113,9 @@ try {
     $user = $stmt->fetch();
 } catch(Exception $e) {}
 
-// Proses Booking
+// ==============================================
+// 8. PROSES BOOKING
+// ==============================================
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
     $duration = (int)($_POST['duration'] ?? 0);
     $guests = (int)($_POST['guests'] ?? 1);
@@ -101,22 +146,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
     if (empty($error)) {
         try {
             // ==========================================
-            // KALAU EXTEND BOOKING
+            // 8a. EXTEND BOOKING
             // ==========================================
             if ($is_extend_booking && $booking_id > 0) {
-                // Ambil booking lama
                 $stmt = $pdo->prepare("SELECT * FROM bookings WHERE id = ? AND user_id = ? AND status = 'active'");
                 $stmt->execute([$booking_id, $_SESSION['user_id']]);
                 $old_booking = $stmt->fetch();
                 
                 if ($old_booking) {
-                    // Hitung total baru
                     $price_per_month = $old_booking['total_price'] / $old_booking['duration_months'];
                     $new_total = $old_booking['total_price'] + ($price_per_month * $duration);
                     $new_check_out = date('Y-m-d', strtotime($old_booking['check_out'] . " +$duration months"));
                     $new_duration = $old_booking['duration_months'] + $duration;
                     
-                    // Update booking
                     $stmt = $pdo->prepare("
                         UPDATE bookings SET 
                             check_out = ?,
@@ -148,7 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
             }
             
             // ==========================================
-            // KALAU BOOKING BARU
+            // 8b. BOOKING BARU
             // ==========================================
             else {
                 $booking_code = 'BKG-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
@@ -206,6 +248,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
     }
 }
 
+// ==============================================
+// 9. INCLUDE HEADER
+// ==============================================
 require_once dirname(__FILE__) . '/../includes/header.php';
 ?>
 
@@ -286,11 +331,12 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                     <!-- Guests -->
                     <div>
                         <label class="block text-gray-700 font-medium mb-2">Number of Guests</label>
-                        <input type="number" name="guests" min="1" max="10" value="<?php echo $_POST['guests'] ?? ($existing_booking['guests'] ?? 1); ?>" 
+                        <input type="number" name="guests" min="1" max="10" 
+                               value="<?php echo isset($_POST['guests']) ? $_POST['guests'] : ($existing_booking['guests'] ?? 1); ?>" 
                                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 transition">
                     </div>
                     
-                    <!-- Personal Info -->
+                    <!-- Tenant Information -->
                     <div class="border-t border-gray-100 pt-4">
                         <h3 class="text-lg font-semibold text-gray-800 mb-3">👤 Tenant Information</h3>
                         
@@ -367,7 +413,6 @@ require_once dirname(__FILE__) . '/../includes/header.php';
 </div>
 
 <script>
-// Toggle form fields based on checkbox
 document.getElementById('useAccountData')?.addEventListener('change', function() {
     var fullName = document.getElementById('fullName');
     var email = document.getElementById('email');
@@ -405,7 +450,6 @@ document.getElementById('useAccountData')?.addEventListener('change', function()
 
 document.getElementById('useAccountData')?.dispatchEvent(new Event('change'));
 
-// Update summary when duration changes
 document.querySelectorAll('input[name="duration"]').forEach(function(radio) {
     radio.addEventListener('change', function() {
         var duration = parseInt(this.value);
@@ -426,4 +470,4 @@ document.querySelectorAll('input[name="duration"]').forEach(function(radio) {
 input:focus, textarea:focus { border-color: #667eea; outline: none; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
 </style>
 
-<?php require_once dirname(__FILE__) . '/../includes/footer.php; ?>
+<?php require_once dirname(__FILE__) . '/../includes/footer.php'; ?>
