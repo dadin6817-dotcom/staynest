@@ -14,60 +14,27 @@ $bookings = [];
 $active_bookings = [];
 $completed_bookings = [];
 $error = '';
-$success = '';
 
 try {
     $stmt = $pdo->prepare("
-        SELECT b.*, p.name as property_name, p.location as property_location 
-        FROM bookings b 
-        JOIN properties p ON b.property_id = p.id 
-        WHERE b.user_id = ? 
+        SELECT b.*, p.name as property_name, p.location as property_location
+        FROM bookings b
+        JOIN properties p ON b.property_id = p.id
+        WHERE b.user_id = ?
         ORDER BY b.id DESC
     ");
     $stmt->execute([$user_id]);
     $bookings = $stmt->fetchAll();
-    
+
     foreach ($bookings as $booking) {
-        // Cek apakah booking sudah melewati check_out
-        $today = date('Y-m-d');
-        if ($booking['status'] == 'active' && $booking['check_out'] < $today) {
-            // Update status menjadi completed
-            $stmt2 = $pdo->prepare("UPDATE bookings SET status = 'completed' WHERE id = ?");
-            $stmt2->execute([$booking['id']]);
-            $booking['status'] = 'completed';
-        }
-        
         if ($booking['status'] == 'active' || $booking['status'] == 'pending') {
             $active_bookings[] = $booking;
-        } elseif ($booking['status'] == 'completed' || $booking['status'] == 'extended' || $booking['status'] == 'cancelled') {
+        } else {
             $completed_bookings[] = $booking;
         }
     }
-} catch(Exception $e) {
+} catch (Exception $e) {
     $error = "Error loading bookings: " . $e->getMessage();
-}
-
-// Proses Extend Booking (redirect ke book_now.php dengan mode extend)
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
-    $booking_id = (int)$_POST['booking_id'];
-    $extend_months = (int)$_POST['extend_months'];
-    
-    // Cek booking milik user
-    try {
-        $stmt = $pdo->prepare("SELECT * FROM bookings WHERE id = ? AND user_id = ? AND status = 'active'");
-        $stmt->execute([$booking_id, $user_id]);
-        $booking = $stmt->fetch();
-        
-        if ($booking) {
-            // Redirect ke book_now.php dengan mode extend
-            header('Location: book_now.php?extend=1&booking_id=' . $booking_id);
-            exit;
-        } else {
-            $error = "Booking not found or not active!";
-        }
-    } catch(Exception $e) {
-        $error = "Error: " . $e->getMessage();
-    }
 }
 
 require_once dirname(__FILE__) . '/../includes/header.php';
@@ -75,120 +42,84 @@ require_once dirname(__FILE__) . '/../includes/header.php';
 
 <div class="max-w-7xl mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold text-gray-800 mb-4">📅 My Bookings</h1>
-    
+
     <?php if (isset($_SESSION['success'])): ?>
         <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-6">
             <i class="fas fa-check-circle mr-2"></i> <?php echo $_SESSION['success']; unset($_SESSION['success']); ?>
         </div>
     <?php endif; ?>
-    
-    <?php if ($success): ?>
-        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-6">
-            <i class="fas fa-check-circle mr-2"></i> <?php echo htmlspecialchars($success); ?>
-        </div>
-    <?php endif; ?>
-    
+
     <?php if ($error): ?>
         <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
             <i class="fas fa-exclamation-circle mr-2"></i> <?php echo htmlspecialchars($error); ?>
         </div>
     <?php endif; ?>
-    
-    <?php if (!empty($bookings)): ?>
-        <!-- Active Bookings -->
-        <?php if (!empty($active_bookings)): ?>
+
+    <?php if (!empty($active_bookings)): ?>
         <h2 class="text-xl font-semibold text-green-600 mb-4">🟢 Active Bookings</h2>
-        <div class="space-y-4 mb-8">
-            <?php foreach ($active_bookings as $booking): ?>
-                <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition">
-                    <div class="flex flex-wrap gap-4 items-start justify-between">
-                        <div>
-                            <h3 class="text-lg font-semibold"><?php echo htmlspecialchars($booking['property_name']); ?></h3>
-                            <p class="text-gray-500 text-sm"><i class="fas fa-map-marker-alt mr-1"></i> <?php echo htmlspecialchars($booking['property_location']); ?></p>
-                            <div class="flex flex-wrap gap-4 text-sm text-gray-500 mt-2">
-                                <span><i class="fas fa-calendar-alt mr-1"></i> <?php echo date('d M Y', strtotime($booking['check_in'])); ?></span>
-                                <span><i class="fas fa-calendar-check mr-1"></i> <?php echo date('d M Y', strtotime($booking['check_out'])); ?></span>
-                                <span><i class="fas fa-clock mr-1"></i> <?php echo $booking['duration_months']; ?> months</span>
+        <?php foreach ($active_bookings as $b): ?>
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition mb-4">
+                <div class="flex flex-wrap gap-4 items-start justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold"><?php echo htmlspecialchars($b['property_name']); ?></h3>
+                        <p class="text-gray-500 text-sm"><i class="fas fa-map-marker-alt mr-1"></i> <?php echo htmlspecialchars($b['property_location']); ?></p>
+                        <div class="flex flex-wrap gap-4 text-sm text-gray-500 mt-2">
+                            <span><i class="fas fa-calendar-alt mr-1"></i> <?php echo date('d M Y', strtotime($b['check_in'])); ?></span>
+                            <span><i class="fas fa-calendar-check mr-1"></i> <?php echo date('d M Y', strtotime($b['check_out'])); ?></span>
+                            <span><i class="fas fa-clock mr-1"></i> <?php echo $b['duration_months']; ?> months</span>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-1"><i class="fas fa-user mr-1"></i> <?php echo htmlspecialchars($b['full_name']); ?></p>
+                        <?php if (!empty($b['notes'])): ?>
+                            <p class="text-sm text-gray-400 mt-1"><i class="fas fa-sticky-note mr-1"></i> <?php echo htmlspecialchars($b['notes']); ?></p>
+                        <?php endif; ?>
+                    </div>
+                    <div class="text-right">
+                        <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold <?php echo $b['status'] == 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'; ?>">
+                            <?php echo $b['status'] == 'active' ? '✅ Active' : '⏳ Pending'; ?>
+                        </span>
+                        <p class="font-bold text-purple-600 mt-2">Rp <?php echo number_format($b['total_price'], 0, ',', '.'); ?></p>
+                        <?php if ($b['status'] == 'active'): ?>
+                            <div class="mt-2">
+                                <a href="book_now.php?extend=1&booking_id=<?php echo $b['id']; ?>" class="bg-purple-600 text-white text-sm px-4 py-1 rounded-lg hover:bg-purple-700 transition inline-block">
+                                    <i class="fas fa-plus mr-1"></i> Extend
+                                </a>
                             </div>
-                            <p class="text-sm text-gray-500 mt-1"><i class="fas fa-user mr-1"></i> <?php echo htmlspecialchars($booking['full_name']); ?></p>
-                            <p class="text-xs text-gray-400 mt-1"><i class="fas fa-code mr-1"></i> <?php echo htmlspecialchars($booking['booking_code']); ?></p>
-                            
-                            <?php if ($booking['status'] == 'extended'): ?>
-                                <span class="inline-block mt-1 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">🔄 Extended</span>
-                            <?php endif; ?>
-                            
-                            <?php 
-                            $days_left = (strtotime($booking['check_out']) - time()) / (60 * 60 * 24);
-                            if ($days_left <= 7 && $days_left > 0 && $booking['status'] == 'active'): 
-                            ?>
-                                <span class="inline-block mt-1 text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">
-                                    ⚠️ <?php echo floor($days_left); ?> days left
-                                </span>
-                            <?php endif; ?>
-                        </div>
-                        <div class="text-right">
-                            <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold <?php echo $booking['status'] == 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'; ?>">
-                                <?php echo $booking['status'] == 'active' ? '✅ Active' : '⏳ Pending'; ?>
-                            </span>
-                            <p class="font-bold text-purple-600 mt-2">Rp <?php echo number_format($booking['total_price'], 0, ',', '.'); ?></p>
-                            
-                            <?php if ($booking['status'] == 'active'): ?>
-                                <div class="mt-2">
-                                    <form method="POST" class="inline-flex items-center gap-2">
-                                        <input type="hidden" name="booking_id" value="<?php echo $booking['id']; ?>">
-                                        <select name="extend_months" class="text-sm border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:border-purple-500">
-                                            <option value="1">+1 month</option>
-                                            <option value="2">+2 months</option>
-                                            <option value="3">+3 months</option>
-                                            <option value="6">+6 months</option>
-                                        </select>
-                                        <button type="submit" name="extend_booking" class="bg-purple-600 text-white text-sm px-4 py-1 rounded-lg hover:bg-purple-700 transition">
-                                            <i class="fas fa-plus mr-1"></i> Extend
-                                        </button>
-                                    </form>
-                                </div>
-                            <?php endif; ?>
-                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
-            <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
-        
-        <!-- Completed / Extended Bookings -->
-        <?php if (!empty($completed_bookings)): ?>
+            </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
+
+    <?php if (!empty($completed_bookings)): ?>
         <h2 class="text-xl font-semibold text-gray-600 mb-4">📂 Completed / Extended</h2>
-        <div class="space-y-4">
-            <?php foreach ($completed_bookings as $booking): ?>
-                <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition opacity-70">
-                    <div class="flex flex-wrap gap-4 items-start justify-between">
-                        <div>
-                            <h3 class="text-lg font-semibold"><?php echo htmlspecialchars($booking['property_name']); ?></h3>
-                            <p class="text-gray-500 text-sm"><i class="fas fa-map-marker-alt mr-1"></i> <?php echo htmlspecialchars($booking['property_location']); ?></p>
-                            <div class="flex flex-wrap gap-4 text-sm text-gray-500 mt-2">
-                                <span><i class="fas fa-calendar-alt mr-1"></i> <?php echo date('d M Y', strtotime($booking['check_in'])); ?></span>
-                                <span><i class="fas fa-calendar-check mr-1"></i> <?php echo date('d M Y', strtotime($booking['check_out'])); ?></span>
-                                <span><i class="fas fa-clock mr-1"></i> <?php echo $booking['duration_months']; ?> months</span>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold <?php echo $booking['status'] == 'extended' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'; ?>">
-                                <?php if ($booking['status'] == 'extended'): ?>🔄 Extended<?php elseif ($booking['status'] == 'cancelled'): ?>❌ Cancelled<?php else: ?>✅ Completed<?php endif; ?>
-                            </span>
-                            <p class="font-bold text-gray-500 mt-2">Rp <?php echo number_format($booking['total_price'], 0, ',', '.'); ?></p>
+        <?php foreach ($completed_bookings as $b): ?>
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition mb-4 opacity-70">
+                <div class="flex flex-wrap gap-4 items-start justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold"><?php echo htmlspecialchars($b['property_name']); ?></h3>
+                        <p class="text-gray-500 text-sm"><i class="fas fa-map-marker-alt mr-1"></i> <?php echo htmlspecialchars($b['property_location']); ?></p>
+                        <div class="flex flex-wrap gap-4 text-sm text-gray-500 mt-2">
+                            <span><i class="fas fa-calendar-alt mr-1"></i> <?php echo date('d M Y', strtotime($b['check_in'])); ?></span>
+                            <span><i class="fas fa-calendar-check mr-1"></i> <?php echo date('d M Y', strtotime($b['check_out'])); ?></span>
+                            <span><i class="fas fa-clock mr-1"></i> <?php echo $b['duration_months']; ?> months</span>
                         </div>
                     </div>
+                    <div class="text-right">
+                        <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700">
+                            <?php echo $b['status'] == 'extended' ? '🔄 Extended' : '✅ Completed'; ?>
+                        </span>
+                        <p class="font-bold text-gray-500 mt-2">Rp <?php echo number_format($b['total_price'], 0, ',', '.'); ?></p>
+                    </div>
                 </div>
-            <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
-        
-    <?php else: ?>
-        <!-- Empty State -->
+            </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
+
+    <?php if (empty($bookings)): ?>
         <div class="bg-white rounded-xl shadow-lg p-12 text-center text-gray-500">
             <i class="fas fa-calendar-plus text-6xl text-purple-300 mb-4 block"></i>
             <p class="text-lg font-medium">No bookings yet</p>
-            <p class="text-sm">Start exploring properties and book your stay!</p>
             <a href="/staynest/properties.php" class="inline-block mt-4 gradient-bg text-white px-6 py-2 rounded-full hover:shadow-lg transition">Browse Properties →</a>
         </div>
     <?php endif; ?>
@@ -198,4 +129,4 @@ require_once dirname(__FILE__) . '/../includes/header.php';
 .gradient-bg { background: linear-gradient(135deg, #667eea, #764ba2); }
 </style>
 
-<?php require_once dirname(__FILE__) . '/../includes/footer.php'; ?>
+<?php require_once dirname(__FILE__) . '/../includes/footer.php'; 
