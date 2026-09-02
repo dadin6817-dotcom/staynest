@@ -40,7 +40,7 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                 <h2 class="text-2xl font-bold text-gray-800"><?php echo htmlspecialchars($booking['property_name']); ?></h2>
                 <p class="text-gray-500"><i class="fas fa-map-marker-alt mr-1"></i> <?php echo htmlspecialchars($booking['property_location']); ?></p>
             </div>
-            <span class="px-4 py-2 rounded-full text-sm font-semibold <?php echo $booking['status'] == 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'; ?>">
+            <span class="px-4 py-2 rounded-full text-sm font-semibold <?php echo $booking['status'] == 'active' ? 'bg-green-100 text-green-700' : ($booking['status'] == 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'); ?>">
                 <?php echo ucfirst($booking['status']); ?>
             </span>
         </div>
@@ -70,6 +70,21 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                 <p class="text-sm text-gray-500">Guests</p>
                 <p class="font-semibold"><?php echo $booking['guests']; ?> person(s)</p>
             </div>
+            <div class="p-4 bg-gray-50 rounded-lg">
+                <p class="text-sm text-gray-500">Status</p>
+                <p class="font-semibold <?php echo $booking['status'] == 'active' ? 'text-green-600' : ($booking['status'] == 'pending' ? 'text-yellow-600' : 'text-gray-500'); ?>">
+                    <?php echo ucfirst($booking['status']); ?>
+                    <?php if($booking['status'] == 'extended'): ?>
+                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full ml-2">Extended</span>
+                    <?php endif; ?>
+                </p>
+            </div>
+            <div class="p-4 bg-gray-50 rounded-lg">
+                <p class="text-sm text-gray-500">Payment Status</p>
+                <p class="font-semibold <?php echo $booking['payment_status'] == 'paid' ? 'text-green-600' : 'text-yellow-600'; ?>">
+                    <?php echo ucfirst($booking['payment_status']); ?>
+                </p>
+            </div>
         </div>
         
         <div class="border-t border-gray-100 pt-4">
@@ -86,6 +101,17 @@ require_once dirname(__FILE__) . '/../includes/header.php';
             <a href="my_bookings.php" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">
                 <i class="fas fa-arrow-left mr-1"></i> Back
             </a>
+            <?php if($booking['status'] == 'active' || $booking['status'] == 'pending'): ?>
+                <a href="#" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition">
+                    <i class="fas fa-print mr-1"></i> Print Invoice
+                </a>
+                <?php if($booking['status'] == 'active'): ?>
+                    <a href="book_now.php?extend=1&booking_id=<?php echo $booking['id']; ?>" 
+                       class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+                        <i class="fas fa-plus mr-1"></i> Extend
+                    </a>
+                <?php endif; ?>
+            <?php endif; ?>
         </div>
     </div>
 </div>

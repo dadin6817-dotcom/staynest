@@ -28,6 +28,15 @@ try {
     $bookings = $stmt->fetchAll();
     
     foreach ($bookings as $booking) {
+        // Cek apakah booking sudah melewati check_out
+        $today = date('Y-m-d');
+        if ($booking['status'] == 'active' && $booking['check_out'] < $today) {
+            // Update status menjadi completed
+            $stmt2 = $pdo->prepare("UPDATE bookings SET status = 'completed' WHERE id = ?");
+            $stmt2->execute([$booking['id']]);
+            $booking['status'] = 'completed';
+        }
+        
         if ($booking['status'] == 'active' || $booking['status'] == 'pending') {
             $active_bookings[] = $booking;
         } elseif ($booking['status'] == 'completed' || $booking['status'] == 'extended' || $booking['status'] == 'cancelled') {
@@ -38,38 +47,26 @@ try {
     $error = "Error loading bookings: " . $e->getMessage();
 }
 
+// Proses Extend Booking (redirect ke book_now.php dengan mode extend)
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['extend_booking'])) {
     $booking_id = (int)$_POST['booking_id'];
     $extend_months = (int)$_POST['extend_months'];
     
+    // Cek booking milik user
     try {
-        $stmt = $pdo->prepare("SELECT * FROM bookings WHERE id = ? AND user_id = ?");
+        $stmt = $pdo->prepare("SELECT * FROM bookings WHERE id = ? AND user_id = ? AND status = 'active'");
         $stmt->execute([$booking_id, $user_id]);
         $booking = $stmt->fetch();
         
-        if ($booking && ($booking['status'] == 'active' || $booking['status'] == 'pending')) {
-            $new_check_out = date('Y-m-d', strtotime($booking['check_out'] . " +$extend_months months"));
-            $price_per_month = $booking['total_price'] / $booking['duration_months'];
-            $new_total = $booking['total_price'] + ($price_per_month * $extend_months);
-            
-            $stmt = $pdo->prepare("
-                UPDATE bookings SET 
-                    check_out = ?,
-                    duration_months = duration_months + ?,
-                    total_price = ?,
-                    status = 'extended'
-                WHERE id = ? AND user_id = ?
-            ");
-            $stmt->execute([$new_check_out, $extend_months, $new_total, $booking_id, $user_id]);
-            
-            $success = "Booking extended successfully!";
-            header('Location: my_bookings.php');
+        if ($booking) {
+            // Redirect ke book_now.php dengan mode extend
+            header('Location: book_now.php?extend=1&booking_id=' . $booking_id);
             exit;
         } else {
             $error = "Booking not found or not active!";
         }
     } catch(Exception $e) {
-        $error = "Extend failed: " . $e->getMessage();
+        $error = "Error: " . $e->getMessage();
     }
 }
 
@@ -78,6 +75,12 @@ require_once dirname(__FILE__) . '/../includes/header.php';
 
 <div class="max-w-7xl mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold text-gray-800 mb-4">📅 My Bookings</h1>
+    
+    <?php if (isset($_SESSION['success'])): ?>
+        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-6">
+            <i class="fas fa-check-circle mr-2"></i> <?php echo $_SESSION['success']; unset($_SESSION['success']); ?>
+        </div>
+    <?php endif; ?>
     
     <?php if ($success): ?>
         <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-6">
@@ -92,6 +95,7 @@ require_once dirname(__FILE__) . '/../includes/header.php';
     <?php endif; ?>
     
     <?php if (!empty($bookings)): ?>
+        <!-- Active Bookings -->
         <?php if (!empty($active_bookings)): ?>
         <h2 class="text-xl font-semibold text-green-600 mb-4">🟢 Active Bookings</h2>
         <div class="space-y-4 mb-8">
@@ -108,17 +112,31 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                             </div>
                             <p class="text-sm text-gray-500 mt-1"><i class="fas fa-user mr-1"></i> <?php echo htmlspecialchars($booking['full_name']); ?></p>
                             <p class="text-xs text-gray-400 mt-1"><i class="fas fa-code mr-1"></i> <?php echo htmlspecialchars($booking['booking_code']); ?></p>
+                            
+                            <?php if ($booking['status'] == 'extended'): ?>
+                                <span class="inline-block mt-1 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">🔄 Extended</span>
+                            <?php endif; ?>
+                            
+                            <?php 
+                            $days_left = (strtotime($booking['check_out']) - time()) / (60 * 60 * 24);
+                            if ($days_left <= 7 && $days_left > 0 && $booking['status'] == 'active'): 
+                            ?>
+                                <span class="inline-block mt-1 text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">
+                                    ⚠️ <?php echo floor($days_left); ?> days left
+                                </span>
+                            <?php endif; ?>
                         </div>
                         <div class="text-right">
                             <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold <?php echo $booking['status'] == 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'; ?>">
                                 <?php echo $booking['status'] == 'active' ? '✅ Active' : '⏳ Pending'; ?>
                             </span>
                             <p class="font-bold text-purple-600 mt-2">Rp <?php echo number_format($booking['total_price'], 0, ',', '.'); ?></p>
+                            
                             <?php if ($booking['status'] == 'active'): ?>
                                 <div class="mt-2">
                                     <form method="POST" class="inline-flex items-center gap-2">
                                         <input type="hidden" name="booking_id" value="<?php echo $booking['id']; ?>">
-                                        <select name="extend_months" class="text-sm border border-gray-200 rounded-lg px-2 py-1">
+                                        <select name="extend_months" class="text-sm border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:border-purple-500">
                                             <option value="1">+1 month</option>
                                             <option value="2">+2 months</option>
                                             <option value="3">+3 months</option>
@@ -137,6 +155,7 @@ require_once dirname(__FILE__) . '/../includes/header.php';
         </div>
         <?php endif; ?>
         
+        <!-- Completed / Extended Bookings -->
         <?php if (!empty($completed_bookings)): ?>
         <h2 class="text-xl font-semibold text-gray-600 mb-4">📂 Completed / Extended</h2>
         <div class="space-y-4">
@@ -165,6 +184,7 @@ require_once dirname(__FILE__) . '/../includes/header.php';
         <?php endif; ?>
         
     <?php else: ?>
+        <!-- Empty State -->
         <div class="bg-white rounded-xl shadow-lg p-12 text-center text-gray-500">
             <i class="fas fa-calendar-plus text-6xl text-purple-300 mb-4 block"></i>
             <p class="text-lg font-medium">No bookings yet</p>
