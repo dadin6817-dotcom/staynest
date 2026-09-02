@@ -1,5 +1,5 @@
 <?php
-// bookings/book_now.php - Halaman Booking Properti
+// bookings/book_now.php - Halaman Booking Properti dengan Sistem Extend
 $page_title = "Book Now - StayNest";
 
 require_once dirname(__FILE__) . '/../config/database.php';
@@ -14,6 +14,7 @@ $property = null;
 $error = '';
 $is_extend = false;
 $existing_booking = null;
+$booking_history = [];
 
 // Cek extend
 if (isset($_GET['extend']) && $_GET['extend'] == 1 && isset($_GET['booking_id'])) {
@@ -37,6 +38,15 @@ if (isset($_GET['extend']) && $_GET['extend'] == 1 && isset($_GET['booking_id'])
                 'price_per_month' => $existing_booking['price_per_month'],
                 'image_url' => $existing_booking['image_url'] ?? '/staynest/assets/images/default-property.jpg'
             ];
+            
+            // Ambil riwayat booking
+            $stmt = $pdo->prepare("
+                SELECT * FROM bookings 
+                WHERE user_id = ? AND property_id = ? 
+                ORDER BY created_at DESC
+            ");
+            $stmt->execute([$_SESSION['user_id'], $property_id]);
+            $booking_history = $stmt->fetchAll();
         } else {
             $error = "Active booking not found!";
         }
@@ -52,6 +62,15 @@ if (!$is_extend && $property_id > 0) {
         $stmt->execute([$property_id]);
         $property = $stmt->fetch();
         if (!$property) $error = "Property not found!";
+        
+        // Ambil riwayat booking untuk properti ini
+        $stmt = $pdo->prepare("
+            SELECT * FROM bookings 
+            WHERE user_id = ? AND property_id = ? 
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute([$_SESSION['user_id'], $property_id]);
+        $booking_history = $stmt->fetchAll();
     } catch (Exception $e) {
         $error = "Error loading property: " . $e->getMessage();
     }
@@ -119,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
                     ");
                     $stmt->execute([$new_check_out, $new_duration, $new_total, $full_name, $email, $phone, $guests, $notes, $booking_id, $_SESSION['user_id']]);
 
-                    $_SESSION['success'] = "✅ Booking extended successfully!";
+                    $_SESSION['success'] = "✅ Booking extended successfully! New check-out: " . date('d M Y', strtotime($new_check_out));
                     header('Location: my_bookings.php');
                     exit;
                 } else {
@@ -184,6 +203,31 @@ require_once dirname(__FILE__) . '/../includes/header.php';
         </div>
     <?php endif; ?>
 
+    <!-- Riwayat Booking -->
+    <?php if (!empty($booking_history)): ?>
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <h4 class="font-semibold text-blue-800 mb-2">📜 Your Booking History</h4>
+            <div class="space-y-2 text-sm">
+                <?php foreach ($booking_history as $index => $h): ?>
+                    <?php if ($index < 3): ?>
+                        <div class="flex justify-between items-center border-b border-blue-100 pb-2">
+                            <span>
+                                <span class="font-medium"><?php echo htmlspecialchars($h['property_name'] ?? $property['name']); ?></span>
+                                <span class="text-gray-500"><?php echo date('d M Y', strtotime($h['created_at'])); ?></span>
+                            </span>
+                            <span class="text-sm <?php echo $h['status'] == 'active' ? 'text-green-600' : 'text-gray-500'; ?>">
+                                <?php echo $h['duration_months']; ?> months
+                            </span>
+                        </div>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+                <?php if (count($booking_history) > 3): ?>
+                    <p class="text-xs text-blue-500">+ <?php echo count($booking_history) - 3; ?> more bookings</p>
+                <?php endif; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <?php if (!$property): ?>
         <div class="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-xl mb-6">
             <i class="fas fa-exclamation-triangle mr-2"></i> Property not found.
@@ -211,6 +255,13 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                         <div class="mt-4 p-3 bg-blue-50 rounded-lg">
                             <p class="text-sm text-blue-700"><i class="fas fa-info-circle mr-1"></i> Current booking ends: <strong><?php echo date('d M Y', strtotime($existing_booking['check_out'])); ?></strong></p>
                             <p class="text-sm text-blue-700 mt-1">👤 <?php echo htmlspecialchars($existing_booking['full_name']); ?></p>
+                            <p class="text-sm text-blue-700 mt-1">📅 Duration: <?php echo $existing_booking['duration_months']; ?> months</p>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if (count($booking_history) > 1): ?>
+                        <div class="mt-4 p-3 bg-purple-50 rounded-lg">
+                            <p class="text-sm text-purple-700"><i class="fas fa-history mr-1"></i> You have booked this property <strong><?php echo count($booking_history); ?> times</strong></p>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -242,6 +293,9 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                                     </label>
                                 <?php endforeach; ?>
                             </div>
+                            <?php if ($duration > 3): ?>
+                                <p class="text-xs text-green-600 mt-2"><i class="fas fa-check-circle mr-1"></i> Extended stay (more than 3 months)</p>
+                            <?php endif; ?>
                         </div>
 
                         <!-- Guests -->
@@ -254,28 +308,38 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                         <div class="border-t border-gray-100 pt-4">
                             <h3 class="text-lg font-semibold text-gray-800 mb-3">👤 Tenant Information</h3>
 
+                            <!-- Pilihan Data untuk Extend -->
                             <?php if ($is_extend && $existing_booking): ?>
                                 <div class="mb-4 p-4 bg-yellow-50 rounded-xl border border-yellow-200">
                                     <p class="text-sm font-semibold text-yellow-800 mb-2"><i class="fas fa-info-circle mr-1"></i> Data Extension Options</p>
                                     <div class="flex flex-col gap-2">
                                         <label class="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-yellow-100 transition">
                                             <input type="radio" name="use_old_data" value="1" checked class="w-4 h-4 text-purple-600">
-                                            <span><span class="font-medium">Use Existing Data</span> <span class="text-xs text-gray-500 block">👤 <?php echo htmlspecialchars($existing_booking['full_name']); ?></span></span>
+                                            <span>
+                                                <span class="font-medium">Use Existing Data</span> 
+                                                <span class="text-xs text-gray-500 block">👤 <?php echo htmlspecialchars($existing_booking['full_name']); ?> | 📧 <?php echo htmlspecialchars($existing_booking['email']); ?></span>
+                                            </span>
                                         </label>
                                         <label class="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-yellow-100 transition">
                                             <input type="radio" name="use_old_data" value="0" class="w-4 h-4 text-purple-600">
-                                            <span><span class="font-medium">Use New Data</span> <span class="text-xs text-gray-500 block">Fill in new tenant information below</span></span>
+                                            <span>
+                                                <span class="font-medium">Use New Data</span> 
+                                                <span class="text-xs text-gray-500 block">Fill in new tenant information below</span>
+                                            </span>
                                         </label>
                                     </div>
+                                    <p class="text-xs text-gray-400 mt-2"><i class="fas fa-sticky-note mr-1"></i> Note: You can keep the same data or update it for this extension</p>
                                 </div>
                             <?php endif; ?>
 
+                            <!-- Use Account Data -->
                             <?php if (!$is_extend): ?>
                                 <div class="mb-4">
                                     <label class="flex items-center gap-2 cursor-pointer">
                                         <input type="checkbox" name="use_account_data" id="useAccountData" checked class="w-4 h-4 text-purple-600 rounded">
                                         <span class="text-sm text-gray-600">Use my account data</span>
                                     </label>
+                                    <p class="text-xs text-gray-400 mt-1">Uncheck to fill in different tenant data</p>
                                 </div>
                             <?php endif; ?>
 
@@ -304,7 +368,8 @@ require_once dirname(__FILE__) . '/../includes/header.php';
 
                             <div class="mt-4">
                                 <label class="block text-gray-700 font-medium mb-2">📝 Notes / Catatan</label>
-                                <textarea name="notes" rows="2" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-500" placeholder="Tambahkan catatan untuk properti ini..."><?php echo htmlspecialchars($_POST['notes'] ?? ($existing_booking['notes'] ?? '')); ?></textarea>
+                                <textarea name="notes" rows="3" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 transition" placeholder="Tambahkan catatan untuk properti ini..."><?php echo htmlspecialchars($_POST['notes'] ?? ($existing_booking['notes'] ?? '')); ?></textarea>
+                                <p class="text-xs text-gray-400 mt-1">* Catatan ini bisa diupdate kapan saja di halaman detail booking</p>
                             </div>
                         </div>
 
@@ -318,6 +383,12 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                                 <div class="flex justify-between text-sm text-purple-600 mt-1 font-semibold"><span>New Total</span><span id="totalDisplay">Rp <?php echo number_format(($property['price_per_month'] ?? 700000) * 3 + $existing_booking['total_price'], 0, ',', '.'); ?></span></div>
                             <?php else: ?>
                                 <div class="border-t border-gray-200 mt-2 pt-2 flex justify-between font-bold text-gray-800"><span>Total</span><span id="totalDisplay">Rp <?php echo number_format(($property['price_per_month'] ?? 700000) * 3, 0, ',', '.'); ?></span></div>
+                            <?php endif; ?>
+                            
+                            <?php if ($duration > 3): ?>
+                                <div class="mt-2 p-2 bg-green-50 rounded-lg border border-green-200">
+                                    <p class="text-xs text-green-700"><i class="fas fa-info-circle mr-1"></i> Long-term booking (<?php echo $duration; ?> months)</p>
+                                </div>
                             <?php endif; ?>
                         </div>
 

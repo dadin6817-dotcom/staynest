@@ -52,7 +52,7 @@ require_once dirname(__FILE__) . '/../includes/header.php';
         </div>
     <?php endif; ?>
 
-    <div class="bg-white rounded-xl shadow-lg p-6">
+    <div class="bg-white rounded-2xl shadow-xl p-8">
         <div class="flex justify-between items-start mb-6">
             <div>
                 <h2 class="text-2xl font-bold"><?php echo htmlspecialchars($booking['property_name']); ?></h2>
@@ -100,21 +100,22 @@ require_once dirname(__FILE__) . '/../includes/header.php';
         <!-- Update Note -->
         <div class="border-t border-gray-100 pt-4 mt-4">
             <h3 class="font-semibold text-gray-700 mb-2">📝 Notes / Catatan</h3>
-            <form method="POST" class="flex gap-4 items-start">
-                <textarea name="notes" rows="2" class="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-500"><?php echo htmlspecialchars($booking['notes'] ?? ''); ?></textarea>
-                <button type="submit" name="update_note" class="bg-purple-600 text-white px-6 py-3 rounded-xl hover:bg-purple-700 transition flex-shrink-0">
-                    <i class="fas fa-save mr-1"></i> Update
+            <form method="POST" class="flex flex-col md:flex-row gap-4 items-start">
+                <textarea name="notes" rows="2" class="flex-1 w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 transition"><?php echo htmlspecialchars($booking['notes'] ?? ''); ?></textarea>
+                <button type="submit" name="update_note" class="bg-purple-600 text-white px-6 py-3 rounded-xl hover:bg-purple-700 transition flex-shrink-0 w-full md:w-auto">
+                    <i class="fas fa-save mr-1"></i> Update Note
                 </button>
             </form>
+            <p class="text-xs text-gray-400 mt-2">* Update catatan kapan saja sesuai kebutuhan</p>
         </div>
 
-        <div class="mt-6 flex gap-4">
+        <div class="mt-6 flex flex-wrap gap-4">
             <a href="my_bookings.php" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition">
                 <i class="fas fa-arrow-left mr-1"></i> Back
             </a>
             <?php if ($booking['status'] == 'active'): ?>
-                <a href="book_now.php?extend=1&booking_id=<?php echo $booking['id']; ?>" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
-                    <i class="fas fa-plus mr-1"></i> Extend
+                <a href="book_now.php?extend=1&booking_id=<?php echo $booking['id']; ?>" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-2 rounded-lg hover:shadow-lg transition">
+                    <i class="fas fa-plus mr-1"></i> Extend Booking
                 </a>
             <?php endif; ?>
         </div>
