@@ -39,7 +39,6 @@ if (isset($_GET['extend']) && $_GET['extend'] == 1 && isset($_GET['booking_id'])
                 'image_url' => $existing_booking['image_url'] ?? '/staynest/assets/images/default-property.jpg'
             ];
             
-            // Ambil riwayat booking
             $stmt = $pdo->prepare("
                 SELECT * FROM bookings 
                 WHERE user_id = ? AND property_id = ? 
@@ -63,7 +62,6 @@ if (!$is_extend && $property_id > 0) {
         $property = $stmt->fetch();
         if (!$property) $error = "Property not found!";
         
-        // Ambil riwayat booking untuk properti ini
         $stmt = $pdo->prepare("
             SELECT * FROM bookings 
             WHERE user_id = ? AND property_id = ? 
@@ -278,7 +276,9 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                             <input type="hidden" name="booking_id" value="<?php echo $existing_booking['id']; ?>">
                         <?php endif; ?>
 
-                        <!-- Durasi -->
+                        <!-- ========================================== -->
+                        <!-- DURASI -->
+                        <!-- ========================================== -->
                         <div>
                             <label class="block text-gray-700 font-medium mb-2">Duration (months) *</label>
                             <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
@@ -293,22 +293,29 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                                     </label>
                                 <?php endforeach; ?>
                             </div>
-                            <?php if ($duration > 3): ?>
-                                <p class="text-xs text-green-600 mt-2"><i class="fas fa-check-circle mr-1"></i> Extended stay (more than 3 months)</p>
+                            <?php if (isset($_POST['duration']) && $_POST['duration'] > 3): ?>
+                                <p class="text-xs text-green-600 mt-2">
+                                    <i class="fas fa-check-circle mr-1"></i> Extended stay (more than 3 months)
+                                </p>
                             <?php endif; ?>
                         </div>
 
-                        <!-- Guests -->
+                        <!-- ========================================== -->
+                        <!-- GUESTS -->
+                        <!-- ========================================== -->
                         <div>
                             <label class="block text-gray-700 font-medium mb-2">Number of Guests</label>
-                            <input type="number" name="guests" min="1" max="10" value="<?php echo $_POST['guests'] ?? ($existing_booking['guests'] ?? 1); ?>" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-500">
+                            <input type="number" name="guests" min="1" max="10" 
+                                   value="<?php echo isset($_POST['guests']) ? $_POST['guests'] : (isset($existing_booking['guests']) ? $existing_booking['guests'] : 1); ?>" 
+                                   class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 transition">
                         </div>
 
-                        <!-- Tenant Information -->
+                        <!-- ========================================== -->
+                        <!-- TENANT INFORMATION -->
+                        <!-- ========================================== -->
                         <div class="border-t border-gray-100 pt-4">
                             <h3 class="text-lg font-semibold text-gray-800 mb-3">👤 Tenant Information</h3>
 
-                            <!-- Pilihan Data untuk Extend -->
                             <?php if ($is_extend && $existing_booking): ?>
                                 <div class="mb-4 p-4 bg-yellow-50 rounded-xl border border-yellow-200">
                                     <p class="text-sm font-semibold text-yellow-800 mb-2"><i class="fas fa-info-circle mr-1"></i> Data Extension Options</p>
@@ -332,7 +339,6 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                                 </div>
                             <?php endif; ?>
 
-                            <!-- Use Account Data -->
                             <?php if (!$is_extend): ?>
                                 <div class="mb-4">
                                     <label class="flex items-center gap-2 cursor-pointer">
@@ -348,13 +354,13 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                                     <label class="block text-gray-700 font-medium mb-2">Full Name *</label>
                                     <input type="text" name="full_name" id="fullName" required
                                            value="<?php echo htmlspecialchars($is_extend && $existing_booking ? $existing_booking['full_name'] : ($user['full_name'] ?? '')); ?>"
-                                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-500">
+                                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 transition">
                                 </div>
                                 <div>
                                     <label class="block text-gray-700 font-medium mb-2">Email *</label>
                                     <input type="email" name="email" id="email" required
                                            value="<?php echo htmlspecialchars($is_extend && $existing_booking ? $existing_booking['email'] : ($user['email'] ?? '')); ?>"
-                                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-500">
+                                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 transition">
                                 </div>
                             </div>
 
@@ -363,7 +369,7 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                                 <input type="tel" name="phone" id="phone" required
                                        value="<?php echo htmlspecialchars($is_extend && $existing_booking ? $existing_booking['phone'] : ($user['phone'] ?? '')); ?>"
                                        placeholder="+62 812 3456 7890"
-                                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-500">
+                                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 transition">
                             </div>
 
                             <div class="mt-4">
@@ -373,7 +379,9 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                             </div>
                         </div>
 
-                        <!-- Summary -->
+                        <!-- ========================================== -->
+                        <!-- SUMMARY -->
+                        <!-- ========================================== -->
                         <div class="bg-gray-50 rounded-xl p-4">
                             <h4 class="font-semibold text-gray-800 mb-2">💳 Booking Summary</h4>
                             <div class="flex justify-between text-sm text-gray-600"><span>Price per month</span><span>Rp <?php echo number_format($property['price_per_month'] ?? 700000, 0, ',', '.'); ?></span></div>
@@ -385,9 +393,9 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                                 <div class="border-t border-gray-200 mt-2 pt-2 flex justify-between font-bold text-gray-800"><span>Total</span><span id="totalDisplay">Rp <?php echo number_format(($property['price_per_month'] ?? 700000) * 3, 0, ',', '.'); ?></span></div>
                             <?php endif; ?>
                             
-                            <?php if ($duration > 3): ?>
+                            <?php if (isset($_POST['duration']) && $_POST['duration'] > 3): ?>
                                 <div class="mt-2 p-2 bg-green-50 rounded-lg border border-green-200">
-                                    <p class="text-xs text-green-700"><i class="fas fa-info-circle mr-1"></i> Long-term booking (<?php echo $duration; ?> months)</p>
+                                    <p class="text-xs text-green-700"><i class="fas fa-info-circle mr-1"></i> Long-term booking (<?php echo $_POST['duration']; ?> months)</p>
                                 </div>
                             <?php endif; ?>
                         </div>
