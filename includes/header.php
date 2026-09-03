@@ -21,7 +21,11 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <!-- ========================================== -->
+    <!-- MUSIC PLAYER JS - LOAD DI SEMUA HALAMAN -->
+    <!-- ========================================== -->
+    <script src="/staynest/assets/js/music-player.js"></script>
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -124,6 +128,9 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
         .user-dropdown-item i { width: 20px; color: #667eea; }
         .user-dropdown-divider { height: 1px; background: #e5e7eb; margin: 8px 0; }
         
+        /* ========================================== */
+        /* MUSIC BUTTON DI NAVBAR */
+        /* ========================================== */
         #musicToggleBtn {
             transition: all 0.3s ease;
             background: transparent;
@@ -132,6 +139,9 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
         }
         #musicToggleBtn:hover { background: rgba(102,126,234,0.1); transform: scale(1.05); }
         
+        /* ========================================== */
+        /* MUSIC PLAYER FLOATING - BAWAH KIRI */
+        /* ========================================== */
         #musicPlayerContainer {
             position: fixed;
             bottom: 20px;
@@ -243,7 +253,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
 <!-- ========================================== -->
 <nav class="navbar-modern fixed top-0 w-full z-50 py-4 px-6 md:px-12" id="mainNavbar">
     <div class="max-w-7xl mx-auto flex justify-between items-center">
-        
         <a href="/staynest/index.php" class="flex items-center gap-3 group">
             <div class="w-10 h-10 gradient-bg rounded-xl flex items-center justify-center group-hover:scale-110 transition">
                 <i class="fas fa-home text-white text-xl"></i>
@@ -258,11 +267,11 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
         </div>
         
         <div class="flex items-center gap-3">
-            
             <a href="/staynest/admin/login.php" class="hidden md:block admin-btn text-white px-5 py-2 rounded-full text-sm font-medium hover:shadow-lg transition flex items-center gap-2">
                 <i class="fas fa-user-shield"></i> <span>Admin</span>
             </a>
             
+            <!-- MUSIC BUTTON DI NAVBAR -->
             <button id="musicToggleBtn" class="hidden md:flex items-center gap-2 text-gray-700 hover:text-purple-600 transition text-sm font-medium px-3 py-2 rounded-full hover:bg-purple-50">
                 <i class="fas fa-music"></i> <span id="musicStatus">Off</span>
             </button>
@@ -324,7 +333,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
 <div style="height: 80px;"></div>
 
 <!-- ========================================== -->
-<!-- MUSIC PLAYER -->
+<!-- MUSIC PLAYER FLOATING - BAWAH KIRI -->
 <!-- ========================================== -->
 <div id="musicPlayerContainer">
     <button id="musicToggle">
@@ -371,36 +380,260 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
 </div>
 
 <script>
-    // Navbar scroll effect
-    window.addEventListener('scroll', function() {
-        var navbar = document.getElementById('mainNavbar');
-        if (navbar) {
-            if (window.scrollY > 50) navbar.classList.add('navbar-scrolled');
-            else navbar.classList.remove('navbar-scrolled');
+// ==========================================
+// NAVBAR SCROLL EFFECT
+// ==========================================
+window.addEventListener('scroll', function() {
+    var navbar = document.getElementById('mainNavbar');
+    if (navbar) {
+        if (window.scrollY > 50) navbar.classList.add('navbar-scrolled');
+        else navbar.classList.remove('navbar-scrolled');
+    }
+});
+
+// ==========================================
+// MOBILE MENU TOGGLE
+// ==========================================
+var mobileMenuBtn = document.getElementById('mobileMenuBtn');
+var mobileMenu = document.getElementById('mobileMenu');
+if (mobileMenuBtn && mobileMenu) {
+    mobileMenuBtn.addEventListener('click', function() {
+        mobileMenu.classList.toggle('hidden');
+    });
+}
+
+// ==========================================
+// USER DROPDOWN TOGGLE
+// ==========================================
+var userMenuBtn = document.getElementById('userMenuBtn');
+var userDropdown = document.getElementById('userDropdown');
+if (userMenuBtn && userDropdown) {
+    userMenuBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        userDropdown.classList.toggle('show');
+    });
+    document.addEventListener('click', function(e) {
+        if (!userMenuBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+            userDropdown.classList.remove('show');
+        }
+    });
+}
+
+// ==========================================
+// MUSIC PLAYER - SCRIPT
+// ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎵 StayNest Music Player Loaded!');
+    
+    // Elements
+    var musicToggle = document.getElementById('musicToggle');
+    var musicToggleBtn = document.getElementById('musicToggleBtn');
+    var musicToggleMobile = document.getElementById('musicToggleMobile');
+    var musicControls = document.getElementById('musicControls');
+    var closeMusicBtn = document.getElementById('closeMusicBtn');
+    var playBtn = document.getElementById('playBtn');
+    var prevBtn = document.getElementById('prevBtn');
+    var nextBtn = document.getElementById('nextBtn');
+    var progressTrack = document.getElementById('progressTrack');
+    var progressFill = document.getElementById('progressFill');
+    var volumeSlider = document.getElementById('volumeSlider');
+    var volumePercent = document.getElementById('volumePercent');
+    var currentTime = document.getElementById('currentTime');
+    var totalTime = document.getElementById('totalTime');
+    var pulseRing = document.getElementById('pulseRing');
+    var musicToggleIcon = document.getElementById('musicToggleIcon');
+    var musicStatus = document.getElementById('musicStatus');
+    var musicStatusMobile = document.getElementById('musicStatusMobile');
+    var musicNoteAnim = document.getElementById('musicNoteAnim');
+    
+    // Check if elements exist
+    if (!musicToggle || !musicControls) {
+        console.log('⚠️ Music Player elements not found');
+        return;
+    }
+    
+    var isPlaying = false;
+    var progress = 0;
+    var progressInterval = null;
+    var noteInterval = null;
+    var volume = 40;
+    var totalDuration = 225;
+    
+    // Toggle controls
+    function toggleControls(e) {
+        if (e) e.stopPropagation();
+        musicControls.classList.toggle('show');
+    }
+    
+    if (musicToggle) musicToggle.addEventListener('click', toggleControls);
+    if (musicToggleBtn) musicToggleBtn.addEventListener('click', toggleControls);
+    if (musicToggleMobile) musicToggleMobile.addEventListener('click', toggleControls);
+    
+    if (closeMusicBtn) {
+        closeMusicBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            musicControls.classList.remove('show');
+        });
+    }
+    
+    document.addEventListener('click', function(e) {
+        if (musicControls && musicControls.classList.contains('show')) {
+            if (!musicControls.contains(e.target) && 
+                !musicToggle.contains(e.target) && 
+                !musicToggleBtn?.contains(e.target) &&
+                !musicToggleMobile?.contains(e.target)) {
+                musicControls.classList.remove('show');
+            }
         }
     });
     
-    // Mobile menu toggle
-    var mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    var mobileMenu = document.getElementById('mobileMenu');
-    if (mobileMenuBtn && mobileMenu) {
-        mobileMenuBtn.addEventListener('click', function() {
-            mobileMenu.classList.toggle('hidden');
-        });
+    // Update time display
+    function updateTimeDisplay() {
+        if (currentTime) {
+            var currentSeconds = Math.floor((progress / 100) * totalDuration);
+            var mins = Math.floor(currentSeconds / 60);
+            var secs = currentSeconds % 60;
+            currentTime.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+        }
     }
     
-    // User dropdown toggle
-    var userMenuBtn = document.getElementById('userMenuBtn');
-    var userDropdown = document.getElementById('userDropdown');
-    if (userMenuBtn && userDropdown) {
-        userMenuBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            userDropdown.classList.toggle('show');
-        });
-        document.addEventListener('click', function(e) {
-            if (!userMenuBtn.contains(e.target) && !userDropdown.contains(e.target)) {
-                userDropdown.classList.remove('show');
+    // Animate music notes
+    function animateNotes() {
+        if (noteInterval) clearInterval(noteInterval);
+        if (!isPlaying) return;
+        var notes = ['🎵', '🎶', '🎧', '🎸', '🎹', '🎤', '🎼'];
+        var i = 0;
+        noteInterval = setInterval(function() {
+            if (!isPlaying) { clearInterval(noteInterval); return; }
+            if (musicNoteAnim) {
+                musicNoteAnim.textContent = notes[i % notes.length];
+                i++;
+            }
+        }, 800);
+    }
+    
+    // Simulate progress
+    function simulateProgress() {
+        if (!isPlaying) return;
+        if (progress >= 100) {
+            progress = 0;
+            if (playBtn) {
+                var icon = playBtn.querySelector('i');
+                icon.className = 'fas fa-play';
+                playBtn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+            }
+            isPlaying = false;
+            if (pulseRing) pulseRing.classList.remove('active');
+            if (musicToggleIcon) musicToggleIcon.className = 'fas fa-music';
+            if (musicStatus) { musicStatus.textContent = 'Off'; musicStatus.style.color = 'gray'; }
+            if (musicStatusMobile) musicStatusMobile.textContent = 'Music: Off';
+            if (noteInterval) clearInterval(noteInterval);
+            return;
+        }
+        progress += 0.5;
+        if (progressFill) progressFill.style.width = progress + '%';
+        updateTimeDisplay();
+        progressInterval = setTimeout(simulateProgress, 100);
+    }
+    
+    // Play/Pause
+    if (playBtn) {
+        playBtn.addEventListener('click', function() {
+            isPlaying = !isPlaying;
+            var icon = this.querySelector('i');
+            if (isPlaying) {
+                icon.className = 'fas fa-pause';
+                this.style.background = 'linear-gradient(135deg, #f093fb, #f5576c)';
+                if (pulseRing) pulseRing.classList.add('active');
+                if (musicToggleIcon) musicToggleIcon.className = 'fas fa-stop';
+                if (musicStatus) { musicStatus.textContent = 'On'; musicStatus.style.color = '#667eea'; }
+                if (musicStatusMobile) musicStatusMobile.textContent = 'Music: On';
+                simulateProgress();
+                animateNotes();
+                console.log('🎵 Music Playing');
+            } else {
+                icon.className = 'fas fa-play';
+                this.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+                if (pulseRing) pulseRing.classList.remove('active');
+                if (musicToggleIcon) musicToggleIcon.className = 'fas fa-music';
+                if (musicStatus) { musicStatus.textContent = 'Off'; musicStatus.style.color = 'gray'; }
+                if (musicStatusMobile) musicStatusMobile.textContent = 'Music: Off';
+                if (progressInterval) { clearTimeout(progressInterval); progressInterval = null; }
+                if (noteInterval) { clearInterval(noteInterval); }
+                console.log('⏸️ Music Paused');
             }
         });
     }
+    
+    // Progress track click
+    if (progressTrack) {
+        progressTrack.addEventListener('click', function(e) {
+            var rect = this.getBoundingClientRect();
+            var x = e.clientX - rect.left;
+            var percent = (x / rect.width) * 100;
+            progress = Math.min(100, Math.max(0, percent));
+            if (progressFill) progressFill.style.width = progress + '%';
+            updateTimeDisplay();
+        });
+    }
+    
+    // Previous / Next
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function() {
+            progress = Math.max(0, progress - 10);
+            if (progressFill) progressFill.style.width = progress + '%';
+            updateTimeDisplay();
+        });
+    }
+    
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function() {
+            progress = Math.min(100, progress + 10);
+            if (progressFill) progressFill.style.width = progress + '%';
+            updateTimeDisplay();
+        });
+    }
+    
+    // Volume control
+    if (volumeSlider) {
+        volumeSlider.addEventListener('input', function() {
+            volume = parseFloat(this.value);
+            if (volumePercent) volumePercent.textContent = volume + '%';
+            var volumeIcon = document.querySelector('.music-volume i');
+            if (volumeIcon) {
+                if (volume === 0) {
+                    volumeIcon.className = 'fas fa-volume-mute';
+                } else {
+                    volumeIcon.className = 'fas fa-volume-down';
+                }
+            }
+            localStorage.setItem('staynest_musicVolume', volume);
+        });
+    }
+    
+    // Restore volume
+    var savedVolume = localStorage.getItem('staynest_musicVolume');
+    if (savedVolume !== null && volumeSlider) {
+        volume = parseFloat(savedVolume);
+        volumeSlider.value = volume;
+        if (volumePercent) volumePercent.textContent = volume + '%';
+    }
+    
+    // Set total time
+    if (totalTime) {
+        var mins = Math.floor(totalDuration / 60);
+        var secs = totalDuration % 60;
+        totalTime.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+    }
+    
+    // Keyboard shortcut
+    document.addEventListener('keydown', function(e) {
+        if (e.target.tagName !== 'INPUT' && e.key === ' ') {
+            e.preventDefault();
+            if (playBtn) playBtn.click();
+        }
+    });
+    
+    console.log('🎵 StayNest Music Player ready!');
+});
 </script>

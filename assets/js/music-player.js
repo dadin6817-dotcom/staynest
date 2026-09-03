@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var progressInterval = null;
     var noteInterval = null;
     var volume = 40;
-    var totalDuration = 225;
+    var totalDuration = 225; // 3:45 menit
 
     // ==========================================
     // FUNGSI TOGGLE CONTROLS
