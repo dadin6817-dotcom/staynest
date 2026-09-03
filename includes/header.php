@@ -22,14 +22,9 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- ========================================== -->
-    <!-- MUSIC PLAYER JS - LOAD DI SEMUA HALAMAN -->
-    <!-- ========================================== -->
-    <script src="/staynest/assets/js/music-player.js"></script>
-    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; overflow-x: hidden; transition: opacity 0.3s ease; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; overflow-x: hidden; }
         
         .gradient-text {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
@@ -136,8 +131,21 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             background: transparent;
             border: none;
             cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         #musicToggleBtn:hover { background: rgba(102,126,234,0.1); transform: scale(1.05); }
+        #musicToggleBtn .music-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            background: #22c55e;
+        }
+        #musicToggleBtn .music-dot.off { background: #9ca3af; }
         
         /* ========================================== */
         /* MUSIC PLAYER FLOATING - BAWAH KIRI */
@@ -150,12 +158,12 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
         }
         
         #musicToggle {
-            width: 52px;
-            height: 52px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             background: linear-gradient(135deg, #667eea, #764ba2);
             border: none;
-            box-shadow: 0 8px 25px rgba(102,126,234,0.4);
+            box-shadow: 0 8px 30px rgba(102,126,234,0.4);
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
@@ -163,7 +171,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             justify-content: center;
             position: relative;
         }
-        #musicToggle:hover { transform: scale(1.08); box-shadow: 0 8px 35px rgba(102,126,234,0.6); }
+        #musicToggle:hover { transform: scale(1.1); box-shadow: 0 8px 40px rgba(102,126,234,0.6); }
         
         #musicToggle .pulse-ring {
             position: absolute;
@@ -181,20 +189,20 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             50% { transform: scale(1.3); opacity: 0.1; }
         }
         
-        #musicToggle i { color: white; font-size: 20px; position: relative; z-index: 1; }
+        #musicToggle i { color: white; font-size: 22px; position: relative; z-index: 1; }
         
         #musicControls {
             position: absolute;
-            bottom: 70px;
+            bottom: 75px;
             left: 0;
             width: 300px;
-            background: rgba(255,255,255,0.97);
+            background: rgba(255,255,255,0.98);
             backdrop-filter: blur(20px);
             border-radius: 20px;
-            padding: 20px 22px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            padding: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
             display: none;
-            border: 1px solid rgba(102,126,234,0.08);
+            border: 1px solid rgba(102,126,234,0.1);
             transition: all 0.3s ease;
         }
         #musicControls.show { display: block; animation: slideUp 0.3s ease-out; }
@@ -204,7 +212,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
         
-        .music-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .music-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .music-header-left { display: flex; align-items: center; gap: 10px; }
         .music-header-left .live-dot {
             width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulseDot 1.5s infinite;
@@ -218,27 +226,27 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
         .music-close-btn { background: none; border: none; color: #999; font-size: 20px; cursor: pointer; padding: 0 5px; transition: color 0.3s ease; }
         .music-close-btn:hover { color: #333; }
         
-        .music-info { background: linear-gradient(135deg, #f5f0ff, #fdf2f8); border-radius: 14px; padding: 12px; text-align: center; margin-bottom: 14px; }
-        .music-info .note-icon { font-size: 24px; display: block; margin-bottom: 4px; }
-        .music-info .song-name { font-size: 14px; font-weight: 600; color: #1a1a2e; }
+        .music-info { background: linear-gradient(135deg, #f5f0ff, #fdf2f8); border-radius: 14px; padding: 12px; text-align: center; margin-bottom: 12px; }
+        .music-info .note-icon { font-size: 24px; display: block; margin-bottom: 2px; }
+        .music-info .song-name { font-size: 13px; font-weight: 600; color: #1a1a2e; }
         
-        .music-progress-container { margin-bottom: 14px; }
-        .music-progress-container .time-row { display: flex; justify-content: space-between; font-size: 10px; color: #999; margin-bottom: 4px; }
+        .music-progress-container { margin-bottom: 12px; }
+        .music-progress-container .time-row { display: flex; justify-content: space-between; font-size: 10px; color: #999; margin-bottom: 3px; }
         .music-progress-track { width: 100%; height: 4px; background: #e8e8e8; border-radius: 4px; cursor: pointer; position: relative; overflow: hidden; }
         .music-progress-track .progress-fill { height: 100%; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 4px; width: 0%; transition: width 0.1s ease; }
         
-        .music-controls { display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 14px; }
+        .music-controls { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 12px; }
         .music-controls button { background: none; border: none; cursor: pointer; transition: all 0.2s ease; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #555; }
         .music-controls button:hover { background: rgba(102,126,234,0.1); color: #667eea; }
-        .music-controls .play-btn { width: 48px; height: 48px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; font-size: 18px; box-shadow: 0 4px 15px rgba(102,126,234,0.3); }
+        .music-controls .play-btn { width: 50px; height: 50px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; font-size: 20px; box-shadow: 0 4px 15px rgba(102,126,234,0.3); }
         .music-controls .play-btn:hover { transform: scale(1.05); box-shadow: 0 6px 25px rgba(102,126,234,0.5); }
         
         .music-volume { display: flex; align-items: center; gap: 10px; }
-        .music-volume i { color: #667eea; font-size: 12px; }
+        .music-volume i { color: #667eea; font-size: 14px; }
         .music-volume input[type=range] { flex: 1; height: 3px; -webkit-appearance: none; appearance: none; background: #e8e8e8; border-radius: 3px; outline: 0; }
-        .music-volume input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); cursor: pointer; box-shadow: 0 2px 8px rgba(102,126,234,0.3); }
-        .music-volume input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); cursor: pointer; border: none; }
-        .music-volume .vol-percent { font-size: 10px; color: #999; min-width: 32px; text-align: right; }
+        .music-volume input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); cursor: pointer; box-shadow: 0 2px 8px rgba(102,126,234,0.3); }
+        .music-volume input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); cursor: pointer; border: none; }
+        .music-volume .vol-percent { font-size: 10px; color: #999; min-width: 35px; text-align: right; }
         
         @media (max-width: 768px) {
             .navbar-modern { padding: 12px 16px; }
@@ -272,8 +280,10 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
             </a>
             
             <!-- MUSIC BUTTON DI NAVBAR -->
-            <button id="musicToggleBtn" class="hidden md:flex items-center gap-2 text-gray-700 hover:text-purple-600 transition text-sm font-medium px-3 py-2 rounded-full hover:bg-purple-50">
-                <i class="fas fa-music"></i> <span id="musicStatus">Off</span>
+            <button id="musicToggleBtn" class="hidden md:flex items-center gap-2 text-gray-700 hover:text-purple-600 transition text-sm font-medium rounded-full hover:bg-purple-50 px-3 py-1.5">
+                <i class="fas fa-music"></i>
+                <span id="musicStatus">Off</span>
+                <span class="music-dot off" id="musicDot"></span>
             </button>
             
             <?php if($is_logged_in): ?>
@@ -420,7 +430,7 @@ if (userMenuBtn && userDropdown) {
 }
 
 // ==========================================
-// MUSIC PLAYER - SCRIPT
+// MUSIC PLAYER - FULL SCRIPT
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🎵 StayNest Music Player Loaded!');
@@ -445,8 +455,9 @@ document.addEventListener('DOMContentLoaded', function() {
     var musicStatus = document.getElementById('musicStatus');
     var musicStatusMobile = document.getElementById('musicStatusMobile');
     var musicNoteAnim = document.getElementById('musicNoteAnim');
+    var musicDot = document.getElementById('musicDot');
     
-    // Check if elements exist
+    // Check elements
     if (!musicToggle || !musicControls) {
         console.log('⚠️ Music Player elements not found');
         return;
@@ -458,6 +469,19 @@ document.addEventListener('DOMContentLoaded', function() {
     var noteInterval = null;
     var volume = 40;
     var totalDuration = 225;
+    
+    // Update UI
+    function updateUI() {
+        if (musicDot) {
+            if (isPlaying) {
+                musicDot.className = 'music-dot';
+                musicDot.style.background = '#22c55e';
+            } else {
+                musicDot.className = 'music-dot off';
+                musicDot.style.background = '#9ca3af';
+            }
+        }
+    }
     
     // Toggle controls
     function toggleControls(e) {
@@ -497,7 +521,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Animate music notes
+    // Animate notes
     function animateNotes() {
         if (noteInterval) clearInterval(noteInterval);
         if (!isPlaying) return;
@@ -528,6 +552,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (musicStatus) { musicStatus.textContent = 'Off'; musicStatus.style.color = 'gray'; }
             if (musicStatusMobile) musicStatusMobile.textContent = 'Music: Off';
             if (noteInterval) clearInterval(noteInterval);
+            updateUI();
             return;
         }
         progress += 0.5;
@@ -550,6 +575,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (musicStatusMobile) musicStatusMobile.textContent = 'Music: On';
                 simulateProgress();
                 animateNotes();
+                updateUI();
                 console.log('🎵 Music Playing');
             } else {
                 icon.className = 'fas fa-play';
@@ -560,6 +586,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (musicStatusMobile) musicStatusMobile.textContent = 'Music: Off';
                 if (progressInterval) { clearTimeout(progressInterval); progressInterval = null; }
                 if (noteInterval) { clearInterval(noteInterval); }
+                updateUI();
                 console.log('⏸️ Music Paused');
             }
         });
@@ -634,6 +661,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    updateUI();
     console.log('🎵 StayNest Music Player ready!');
 });
 </script>
