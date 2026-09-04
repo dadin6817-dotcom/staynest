@@ -8,30 +8,57 @@ require_once dirname(__FILE__) . '/includes/header.php';
 // ==============================================
 // FUNGSI GET GAMBAR PROPERTI (SCAN UPLOADS & IMAGES)
 // ==============================================
-function getPropertyImage($property) {
-    $base_path_images = '/staynest/assets/images/';
-    $base_path_uploads = '/staynest/assets/uploads/';
+function getPropertyImage($property_id) {
+    $base_path = '/staynest/assets/images/';
+    $upload_path = '/staynest/assets/uploads/';
     
     // Mapping gambar berdasarkan ID properti
     $property_images = [
-        1 => ['babelan-1.jpeg', 'babelan-2.jpeg', 'babelan-3.jpeg'],
-        2 => ['alamanda-2.jpeg', 'alamanda-3.jpeg', 'alamanda-4.jpeg'],
-        3 => ['Vip-1.jpeg', 'Vip-2.jpeg', 'Vip-3.jpeg']
+        1 => ['babelan-1.jpeg', 'babelan-2.jpeg'],
+        2 => ['alamanda-2.jpeg', 'alamanda-3.jpeg'],
+        3 => ['Vip-1.jpeg', 'Vip-2.jpeg']
     ];
     
     $default = '/staynest/assets/images/default-property.jpg';
     
-    if (isset($property_images[$property['id']])) {
-        foreach ($property_images[$property['id']] as $filename) {
+    if (isset($property_images[$property_id])) {
+        foreach ($property_images[$property_id] as $filename) {
             // Cek di folder images
-            $img_path = $base_path_images . $filename;
+            $img_path = $base_path . $filename;
             if (file_exists($_SERVER['DOCUMENT_ROOT'] . $img_path)) {
                 return $img_path;
             }
             // Cek di folder uploads
-            $upload_path = $base_path_uploads . $filename;
-            if (file_exists($_SERVER['DOCUMENT_ROOT'] . $upload_path)) {
-                return $upload_path;
+            $upload_img = $upload_path . $filename;
+            if (file_exists($_SERVER['DOCUMENT_ROOT'] . $upload_img)) {
+                return $upload_img;
+            }
+        }
+    }
+    
+    // Jika tidak ada, coba cari file dengan prefix
+    $prefixes = [
+        1 => 'babelan',
+        2 => 'alamanda',
+        3 => 'Vip'
+    ];
+    
+    if (isset($prefixes[$property_id])) {
+        $prefix = $prefixes[$property_id];
+        // Cek di folder images
+        $files = scandir($_SERVER['DOCUMENT_ROOT'] . $base_path);
+        foreach ($files as $file) {
+            if (strpos(strtolower($file), strtolower($prefix)) !== false && !is_dir($file)) {
+                return $base_path . $file;
+            }
+        }
+        // Cek di folder uploads
+        if (is_dir($_SERVER['DOCUMENT_ROOT'] . $upload_path)) {
+            $files = scandir($_SERVER['DOCUMENT_ROOT'] . $upload_path);
+            foreach ($files as $file) {
+                if (strpos(strtolower($file), strtolower($prefix)) !== false && !is_dir($file)) {
+                    return $upload_path . $file;
+                }
             }
         }
     }
@@ -44,56 +71,8 @@ function getPropertyImage($property) {
 }
 
 // ==============================================
-// SCAN SEMUA GAMBAR DARI UPLOADS UNTUK PROPERTI
+// AMBIL DATA PROPERTI
 // ==============================================
-function getAllPropertyImages($property_id) {
-    $images = [];
-    $base_path_uploads = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/uploads/';
-    $base_path_images = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/images/';
-    
-    $prefix_mapping = [
-        1 => ['babelan'],
-        2 => ['alamanda'],
-        3 => ['Vip', 'vip']
-    ];
-    
-    $prefixes = $prefix_mapping[$property_id] ?? ['default'];
-    $extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-    
-    function scanFolderForImages($path, $prefixes, $extensions) {
-        $found = [];
-        if (!is_dir($path)) return $found;
-        $files = scandir($path);
-        foreach ($files as $file) {
-            if ($file == '.' || $file == '..') continue;
-            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-            if (!in_array($ext, $extensions)) continue;
-            $filename = strtolower($file);
-            foreach ($prefixes as $prefix) {
-                if (strpos($filename, strtolower($prefix)) !== false) {
-                    $found[] = '/staynest/assets/uploads/' . $file;
-                    break;
-                }
-            }
-        }
-        return $found;
-    }
-    
-    $upload_images = scanFolderForImages($base_path_uploads, $prefixes, $extensions);
-    foreach ($upload_images as $img) {
-        if (!in_array($img, $images)) {
-            $images[] = $img;
-        }
-    }
-    
-    // Jika tidak ada gambar, pakai default
-    if (empty($images)) {
-        $images[] = '/staynest/assets/images/default-property.jpg';
-    }
-    
-    return $images;
-}
-
 try {
     $stmt = $pdo->query("SELECT * FROM properties ORDER BY is_vip DESC, id ASC");
     $properties = $stmt->fetchAll();
@@ -101,11 +80,12 @@ try {
     $properties = [];
 }
 
+// Fallback data
 if (empty($properties)) {
     $properties = [
-        ['id' => 1, 'name' => 'StayNest Vela', 'location' => 'Babelan, Bekasi', 'total_doors' => 2, 'available_rooms' => 1, 'occupied_rooms' => 1, 'price_per_month' => 700000, 'is_vip' => 0],
-        ['id' => 2, 'name' => 'StayNest Aera', 'location' => 'Tambun, Bekasi', 'total_doors' => 4, 'available_rooms' => 1, 'occupied_rooms' => 3, 'price_per_month' => 700000, 'is_vip' => 1],
-        ['id' => 3, 'name' => 'StayNest Elora', 'location' => 'Babelan, Bekasi', 'total_doors' => 12, 'available_rooms' => 6, 'occupied_rooms' => 6, 'price_per_month' => 800000, 'is_vip' => 1]
+        ['id' => 1, 'name' => 'StayNest Vela', 'location' => 'Kavling Harapan Manunggal Utara, Kec. Bahagia, Babelan, Bekasi', 'total_doors' => 2, 'available_rooms' => 1, 'occupied_rooms' => 1, 'price_per_month' => 700000, 'is_vip' => 0],
+        ['id' => 2, 'name' => 'StayNest Aera', 'location' => 'Jl. Pandawa 15, Kp. Gebang, Karang Satria, Tambun Utara, Bekasi', 'total_doors' => 4, 'available_rooms' => 1, 'occupied_rooms' => 3, 'price_per_month' => 700000, 'is_vip' => 1],
+        ['id' => 3, 'name' => 'StayNest Elora', 'location' => 'Kavling Bumi Mas 2, Kec. Bahagia, Babelan, Bekasi', 'total_doors' => 12, 'available_rooms' => 6, 'occupied_rooms' => 6, 'price_per_month' => 800000, 'is_vip' => 1]
     ];
 }
 ?>
@@ -123,9 +103,8 @@ if (empty($properties)) {
 
     <div class="grid md:grid-cols-3 gap-8">
         <?php foreach ($properties as $property): 
-            $img = getPropertyImage($property);
+            $img = getPropertyImage($property['id']);
             $price = "Rp " . number_format($property['price_per_month'] ?? 700000, 0, ',', '.');
-            $total_images = count(getAllPropertyImages($property['id']));
         ?>
         <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 group">
             <div class="relative h-56 overflow-hidden bg-gradient-to-r from-purple-400 to-blue-400">
@@ -137,13 +116,6 @@ if (empty($properties)) {
                 <?php else: ?>
                     <div class="w-full h-full flex items-center justify-center text-white text-5xl">
                         <i class="fas fa-home"></i>
-                    </div>
-                <?php endif; ?>
-                
-                <!-- Badge Jumlah Gambar -->
-                <?php if ($total_images > 1): ?>
-                    <div class="absolute bottom-4 right-4 bg-black/60 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1">
-                        <i class="fas fa-images"></i> <?php echo $total_images; ?> Photos
                     </div>
                 <?php endif; ?>
                 
@@ -174,11 +146,6 @@ if (empty($properties)) {
                     <span class="text-xs bg-green-100 text-green-600 px-3 py-1.5 rounded-full font-medium">
                         <i class="fas fa-user mr-1"></i> <?php echo $property['occupied_rooms']; ?> Occupied
                     </span>
-                    <?php if ($total_images > 1): ?>
-                        <span class="text-xs bg-blue-100 text-blue-600 px-3 py-1.5 rounded-full font-medium">
-                            <i class="fas fa-images mr-1"></i> <?php echo $total_images; ?> Photos
-                        </span>
-                    <?php endif; ?>
                 </div>
                 
                 <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
