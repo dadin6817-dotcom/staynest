@@ -33,6 +33,25 @@ function getPropertyImage($property) {
 
 $img = getPropertyImage($property);
 $price_display = "Rp " . number_format($property['price_per_month'] ?? 700000, 0, ',', '.');
+
+// Data fasilitas default (bisa diambil dari database nanti)
+$facilities = [
+    '3 Sekat',
+    'Dapur (Wastafel)',
+    'Listrik Token (800 kWh)',
+    'Air Tanah Jetpump'
+];
+
+$advantages = [
+    'Baru Direnovasi',
+    'Akses Mobil Depan Kontrakan',
+    '50 m dari Jalan Raya',
+    'Bebas Banjir',
+    '2 km dari KCM Wisata Asri',
+    '2 km dari McD Gading Terrace',
+    '2 km dari Jembatan Besi Teluk Pucung',
+    '2 km dari Pom Bensin'
+];
 ?>
 
 <div class="max-w-6xl mx-auto px-4 py-8" style="margin-top: 80px;">
@@ -108,7 +127,9 @@ $price_display = "Rp " . number_format($property['price_per_month'] ?? 700000, 0
         </div>
     </div>
 
-    <!-- Description -->
+    <!-- ========================================== -->
+    <!-- DESCRIPTION -->
+    <!-- ========================================== -->
     <div class="mt-10 bg-white rounded-2xl shadow-lg p-8">
         <h2 class="text-2xl font-bold text-gray-800 mb-4">📋 Property Description</h2>
         <p class="text-gray-600 leading-relaxed">
@@ -116,74 +137,74 @@ $price_display = "Rp " . number_format($property['price_per_month'] ?? 700000, 0
         </p>
     </div>
 
-    <!-- Facilities & Advantages -->
+    <!-- ========================================== -->
+    <!-- FACILITIES & ADVANTAGES -->
+    <!-- ========================================== -->
     <div class="grid md:grid-cols-2 gap-6 mt-6">
         <!-- Facilities -->
         <div class="bg-white rounded-2xl shadow-lg p-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">🛋️ Facilities</h2>
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">🛋️ Fasilitas</h2>
             <ul class="space-y-3">
+                <?php foreach ($facilities as $item): ?>
                 <li class="flex items-center gap-3 text-gray-600">
-                    <i class="fas fa-check-circle text-green-500"></i> <?php echo $property['total_doors']; ?> Sekat
+                    <i class="fas fa-check-circle text-green-500"></i> <?php echo $item; ?>
                 </li>
-                <li class="flex items-center gap-3 text-gray-600">
-                    <i class="fas fa-check-circle text-green-500"></i> Dapur (Wastafel)
-                </li>
-                <li class="flex items-center gap-3 text-gray-600">
-                    <i class="fas fa-check-circle text-green-500"></i> Listrik Token (800 kWh)
-                </li>
-                <li class="flex items-center gap-3 text-gray-600">
-                    <i class="fas fa-check-circle text-green-500"></i> Air Tanah Jetpump
-                </li>
+                <?php endforeach; ?>
             </ul>
         </div>
 
         <!-- Advantages -->
         <div class="bg-white rounded-2xl shadow-lg p-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">⭐ Advantages</h2>
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">⭐ Keunggulan</h2>
             <ul class="space-y-3">
+                <?php foreach ($advantages as $item): ?>
                 <li class="flex items-center gap-3 text-gray-600">
-                    <i class="fas fa-star text-yellow-500"></i> Baru Direnovasi
+                    <i class="fas fa-star text-yellow-500"></i> <?php echo $item; ?>
                 </li>
-                <li class="flex items-center gap-3 text-gray-600">
-                    <i class="fas fa-star text-yellow-500"></i> Akses Mobil Depan Kontrakan
-                </li>
-                <li class="flex items-center gap-3 text-gray-600">
-                    <i class="fas fa-star text-yellow-500"></i> 50 m dari Jalan Raya
-                </li>
-                <li class="flex items-center gap-3 text-gray-600">
-                    <i class="fas fa-star text-yellow-500"></i> Bebas Banjir
-                </li>
-                <li class="flex items-center gap-3 text-gray-600">
-                    <i class="fas fa-star text-yellow-500"></i> 2 km dari KCM Wisata Asri
-                </li>
-                <li class="flex items-center gap-3 text-gray-600">
-                    <i class="fas fa-star text-yellow-500"></i> 2 km dari McD Gading Terrace
-                </li>
+                <?php endforeach; ?>
             </ul>
         </div>
     </div>
 
-    <!-- Available Units -->
+    <!-- ========================================== -->
+    <!-- AVAILABLE UNITS - PER UNIT -->
+    <!-- ========================================== -->
     <div class="mt-6 bg-white rounded-2xl shadow-lg p-8">
         <h2 class="text-2xl font-bold text-gray-800 mb-6">🏠 Available Units</h2>
         <p class="text-gray-500 mb-6">Choose your preferred room from <?php echo $property['available_rooms']; ?> available units</p>
         
         <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <?php for ($i = 1; $i <= min($property['available_rooms'], 4); $i++): ?>
-                <div class="border border-gray-200 rounded-xl p-4 hover:shadow-lg transition">
-                    <h4 class="font-bold text-gray-800">Unit 0<?php echo $i; ?></h4>
-                    <p class="text-sm text-gray-500">Unit <?php echo $i; ?> Teras</p>
-                    <p class="text-purple-600 font-bold mt-2"><?php echo $price_display; ?></p>
-                    <span class="text-xs <?php echo $i <= 3 ? 'text-red-500' : 'text-green-500'; ?>">
-                        <?php echo $i <= 3 ? '🔴 Not Available' : '🟢 Available'; ?>
-                    </span>
-                    <?php if ($i == 4 && isset($_SESSION['user_id'])): ?>
-                        <a href="/staynest/bookings/book_now.php?id=<?php echo $property['id']; ?>" 
-                           class="block text-center mt-3 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition text-sm">
-                            <i class="fas fa-calendar-plus mr-1"></i> Book Now →
-                        </a>
-                    <?php endif; ?>
-                </div>
+            <?php 
+            $total_units = $property['total_doors'];
+            $available = $property['available_rooms'];
+            $occupied = $property['occupied_rooms'];
+            
+            for ($i = 1; $i <= $total_units; $i++): 
+                $is_available = $i <= $available;
+                $is_occupied = $i > $available && $i <= $available + $occupied;
+                $status_text = $is_available ? '🟢 Available' : ($is_occupied ? '🔴 Occupied' : '🔴 Not Available');
+                $status_class = $is_available ? 'text-green-500' : 'text-red-500';
+            ?>
+            <div class="border border-gray-200 rounded-xl p-4 hover:shadow-lg transition">
+                <h4 class="font-bold text-gray-800">Unit <?php echo str_pad($i, 2, '0', STR_PAD_LEFT); ?></h4>
+                <p class="text-sm text-gray-500">Unit <?php echo $i; ?> Teras</p>
+                <p class="text-purple-600 font-bold mt-2"><?php echo $price_display; ?></p>
+                <span class="text-sm <?php echo $status_class; ?>">
+                    <?php echo $status_text; ?>
+                </span>
+                
+                <?php if ($is_available && isset($_SESSION['user_id'])): ?>
+                    <a href="/staynest/bookings/book_now.php?id=<?php echo $property['id']; ?>&unit=<?php echo $i; ?>" 
+                       class="block text-center mt-3 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition text-sm">
+                        <i class="fas fa-calendar-plus mr-1"></i> Book Now →
+                    </a>
+                <?php elseif ($is_available && !isset($_SESSION['user_id'])): ?>
+                    <a href="/staynest/login.php?redirect=bookings/book_now.php?id=<?php echo $property['id']; ?>&unit=<?php echo $i; ?>" 
+                       class="block text-center mt-3 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition text-sm">
+                        <i class="fas fa-lock mr-1"></i> Login to Book
+                    </a>
+                <?php endif; ?>
+            </div>
             <?php endfor; ?>
         </div>
     </div>
