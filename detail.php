@@ -1,5 +1,5 @@
 <?php
-// detail.php - Halaman Detail Properti dengan SEMUA GAMBAR DARI UPLOADS
+// detail.php - Halaman Detail Properti dengan SEMUA FOTO DARI UPLOADS
 $page_title = "Property Detail - StayNest";
 
 require_once dirname(__FILE__) . '/config/database.php';
@@ -20,24 +20,24 @@ if (!$property) {
 }
 
 // ==============================================
-// SCAN SEMUA FILE GAMBAR DARI UPLOADS
+// SCAN SEMUA FOTO DARI UPLOADS & IMAGES
 // ==============================================
-function scanUploads($property_id) {
+function getAllPropertyImages($property_id) {
     $images = [];
     $upload_path = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/uploads/';
     $image_path = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/images/';
     
     // Prefix berdasarkan properti
     $prefixes = [
-        1 => ['babelan'],
-        2 => ['alamanda'],
-        3 => ['Vip', 'vip']
+        1 => ['babelan', 'Babelan'],
+        2 => ['alamanda', 'Alamanda'],
+        3 => ['Vip', 'vip', 'VIP']
     ];
     
     $extensions = ['jpeg', 'jpg', 'png', 'gif', 'webp'];
     $prefix_list = $prefixes[$property_id] ?? ['default'];
     
-    // 1. SCAN FOLDER UPLOADS
+    // 1. SCAN UPLOADS FOLDER
     if (is_dir($upload_path)) {
         $files = scandir($upload_path);
         foreach ($files as $file) {
@@ -54,7 +54,7 @@ function scanUploads($property_id) {
         }
     }
     
-    // 2. SCAN FOLDER IMAGES (tambahan)
+    // 2. SCAN IMAGES FOLDER
     if (is_dir($image_path)) {
         $files = scandir($image_path);
         foreach ($files as $file) {
@@ -74,10 +74,10 @@ function scanUploads($property_id) {
         }
     }
     
-    // 3. SORTIR gambar (urutkan sesuai nama)
+    // 3. SORTIR
     sort($images);
     
-    // 4. Jika tidak ada gambar, pakai default
+    // 4. DEFAULT
     if (empty($images)) {
         $images[] = '/staynest/assets/images/default-property.jpg';
     }
@@ -86,18 +86,19 @@ function scanUploads($property_id) {
 }
 
 // ==============================================
-// FUNGSI GET GAMBAR PER UNIT
+// AMBIL GAMBAR PER UNIT
 // ==============================================
 function getUnitImages($property_id, $total_units) {
-    $all_images = scanUploads($property_id);
+    $all_images = getAllPropertyImages($property_id);
     $unit_images = [];
     
     // Ambil gambar sesuai jumlah unit
-    $unit_images = array_slice($all_images, 0, $total_units);
-    
-    // Jika kurang dari total unit, isi dengan gambar pertama
-    while (count($unit_images) < $total_units) {
-        $unit_images[] = $all_images[0] ?? '/staynest/assets/images/default-property.jpg';
+    for ($i = 0; $i < $total_units; $i++) {
+        if (isset($all_images[$i])) {
+            $unit_images[$i + 1] = $all_images[$i];
+        } else {
+            $unit_images[$i + 1] = $all_images[0] ?? '/staynest/assets/images/default-property.jpg';
+        }
     }
     
     return $unit_images;
@@ -106,20 +107,18 @@ function getUnitImages($property_id, $total_units) {
 // ==============================================
 // DATA
 // ==============================================
-$all_images = scanUploads($property_id);
+$all_images = getAllPropertyImages($property_id);
 $main_img = $all_images[0] ?? '/staynest/assets/images/default-property.jpg';
+$total_images = count($all_images);
 $price_display = "Rp " . number_format($property['price_per_month'] ?? 700000, 0, ',', '.');
 $total_units = $property['total_doors'];
 $unit_images = getUnitImages($property_id, $total_units);
-
-// Debug: cek jumlah gambar
-// var_dump(count($all_images)); // Uncomment untuk cek
 
 // Data fasilitas & keunggulan
 $facilities = ['3 Sekat', 'Dapur (Wastafel)', 'Listrik Token (800 kWh)', 'Air Tanah Jetpump'];
 $advantages = ['Baru Direnovasi', 'Akses Mobil Depan Kontrakan', '50 m dari Jalan Raya', 'Bebas Banjir', '2 km dari KCM Wisata Asri', '2 km dari McD Gading Terrace', '2 km dari Jembatan Besi Teluk Pucung', '2 km dari Pom Bensin'];
 
-// Data status unit
+// Status unit
 $available = $property['available_rooms'];
 $occupied = $property['occupied_rooms'];
 $unit_status = [];
@@ -132,12 +131,10 @@ for ($i = 1; $i <= $total_units; $i++) {
 ?>
 
 <div class="max-w-6xl mx-auto px-4 py-8" style="margin-top: 80px;">
-    <!-- Back Button -->
     <a href="properties.php" class="inline-flex items-center gap-2 text-purple-600 hover:text-purple-800 transition mb-6">
         <i class="fas fa-arrow-left"></i> Back to Properties
     </a>
 
-    <!-- VIP Badge -->
     <?php if ($property['is_vip']): ?>
         <div class="mb-4">
             <span class="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-bold px-4 py-1.5 rounded-full text-sm shadow-lg">
@@ -158,7 +155,7 @@ for ($i = 1; $i <= $total_units; $i++) {
                 
                 <!-- Image Counter -->
                 <div class="absolute bottom-4 left-4 bg-black/60 text-white text-xs px-3 py-1 rounded-full">
-                    <span id="imageCounter">1 / <?php echo count($all_images); ?></span>
+                    <span id="imageCounter">1 / <?php echo $total_images; ?></span>
                 </div>
                 
                 <!-- Navigation Buttons -->
@@ -171,9 +168,7 @@ for ($i = 1; $i <= $total_units; $i++) {
             </div>
             
             <!-- Thumbnails -->
-            <div id="thumbnailContainer" class="flex gap-2 p-3 overflow-x-auto">
-                <!-- Thumbnails diisi JavaScript -->
-            </div>
+            <div id="thumbnailContainer" class="flex gap-2 p-3 overflow-x-auto"></div>
         </div>
 
         <!-- Right: Info -->
@@ -248,7 +243,7 @@ for ($i = 1; $i <= $total_units; $i++) {
     </div>
 
     <!-- ========================================== -->
-    <!-- AVAILABLE UNITS - SEMUA UNIT DENGAN GAMBAR -->
+    <!-- AVAILABLE UNITS - DENGAN GAMBAR -->
     <!-- ========================================== -->
     <div class="mt-6 bg-white rounded-2xl shadow-lg p-8">
         <h2 class="text-2xl font-bold text-gray-800 mb-6">🏠 Available Units</h2>
@@ -262,7 +257,6 @@ for ($i = 1; $i <= $total_units; $i++) {
                 $unit_img = isset($unit_images[$i]) ? $unit_images[$i] : $main_img;
             ?>
             <div class="border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition group">
-                <!-- Unit Image -->
                 <div class="h-40 overflow-hidden bg-gray-100 relative">
                     <img src="<?php echo htmlspecialchars($unit_img); ?>" 
                          alt="Unit <?php echo str_pad($i, 2, '0', STR_PAD_LEFT); ?>"
@@ -295,9 +289,9 @@ for ($i = 1; $i <= $total_units; $i++) {
             <?php endfor; ?>
         </div>
         
-        <!-- Info jumlah gambar -->
+        <!-- Info total gambar -->
         <div class="mt-4 text-center text-sm text-gray-400">
-            <i class="fas fa-images mr-1"></i> Total <?php echo count($all_images); ?> photos available
+            <i class="fas fa-images mr-1"></i> Total <?php echo $total_images; ?> photos available
         </div>
     </div>
 </div>
@@ -307,18 +301,17 @@ for ($i = 1; $i <= $total_units; $i++) {
 <!-- ========================================== -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Ambil semua gambar dari PHP
+    // Ambil semua gambar
     var images = [];
     <?php foreach ($all_images as $img): ?>
     images.push('<?php echo htmlspecialchars($img); ?>');
     <?php endforeach; ?>
     
-    // Jika tidak ada gambar, pakai default
     if (images.length === 0) {
         images.push('/staynest/assets/images/default-property.jpg');
     }
     
-    console.log('📸 Total images: ' + images.length);
+    console.log('📸 Total images loaded: ' + images.length);
     
     var currentIndex = 0;
     var mainImage = document.getElementById('mainPropertyImage');
@@ -334,7 +327,6 @@ document.addEventListener('DOMContentLoaded', function() {
         mainImage.src = images[currentIndex];
         imageCounter.textContent = (currentIndex + 1) + ' / ' + images.length;
         
-        // Update thumbnails
         document.querySelectorAll('.thumb-img').forEach(function(el, i) {
             if (i === currentIndex) {
                 el.classList.add('border-purple-600', 'ring-2', 'ring-purple-300');
@@ -346,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Buat thumbnails
+    // Thumbnails
     thumbnailContainer.innerHTML = '';
     images.forEach(function(src, index) {
         var thumb = document.createElement('img');
@@ -385,12 +377,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     startAutoSlide();
     
-    // Pause on hover
     var imageContainer = document.getElementById('mainPropertyImage').parentElement;
     imageContainer.addEventListener('mouseenter', stopAutoSlide);
     imageContainer.addEventListener('mouseleave', startAutoSlide);
     
-    // Inisialisasi
     updateImage(0);
 });
 </script>
