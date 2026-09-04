@@ -1,5 +1,5 @@
 <?php
-// detail.php - Halaman Detail Properti dengan SEMUA FOTO DARI UPLOADS
+// detail.php - Halaman Detail Properti dengan SEMUA FOTO
 $page_title = "Property Detail - StayNest";
 
 require_once dirname(__FILE__) . '/config/database.php';
@@ -12,20 +12,24 @@ try {
     $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ?");
     $stmt->execute([$property_id]);
     $property = $stmt->fetch();
-} catch(Exception $e) {}
+} catch(Exception $e) {
+    die("Error: " . $e->getMessage());
+}
 
 if (!$property) {
     header('Location: properties.php');
     exit;
 }
 
-// ==============================================
-// SCAN SEMUA FOTO DARI UPLOADS & IMAGES
-// ==============================================
-function getAllPropertyImages($property_id) {
+// ================================================================
+// CEK FOLDER UPLOADS - AMBIL SEMUA GAMBAR
+// ================================================================
+function getImagesFromFolder($property_id) {
     $images = [];
-    $upload_path = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/uploads/';
-    $image_path = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/images/';
+    
+    // Path folder
+    $upload_dir = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/uploads/';
+    $image_dir = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/images/';
     
     // Prefix berdasarkan properti
     $prefixes = [
@@ -37,16 +41,15 @@ function getAllPropertyImages($property_id) {
     $extensions = ['jpeg', 'jpg', 'png', 'gif', 'webp'];
     $prefix_list = $prefixes[$property_id] ?? ['default'];
     
-    // 1. SCAN UPLOADS FOLDER
-    if (is_dir($upload_path)) {
-        $files = scandir($upload_path);
+    // 1. Scan UPLOADS
+    if (is_dir($upload_dir)) {
+        $files = scandir($upload_dir);
         foreach ($files as $file) {
             if ($file == '.' || $file == '..') continue;
             $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
             if (!in_array($ext, $extensions)) continue;
-            $filename = strtolower($file);
             foreach ($prefix_list as $prefix) {
-                if (strpos($filename, strtolower($prefix)) !== false) {
+                if (stripos($file, $prefix) !== false) {
                     $images[] = '/staynest/assets/uploads/' . $file;
                     break;
                 }
@@ -54,16 +57,15 @@ function getAllPropertyImages($property_id) {
         }
     }
     
-    // 2. SCAN IMAGES FOLDER
-    if (is_dir($image_path)) {
-        $files = scandir($image_path);
+    // 2. Scan IMAGES
+    if (is_dir($image_dir)) {
+        $files = scandir($image_dir);
         foreach ($files as $file) {
             if ($file == '.' || $file == '..') continue;
             $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
             if (!in_array($ext, $extensions)) continue;
-            $filename = strtolower($file);
             foreach ($prefix_list as $prefix) {
-                if (strpos($filename, strtolower($prefix)) !== false) {
+                if (stripos($file, $prefix) !== false) {
                     $img_path = '/staynest/assets/images/' . $file;
                     if (!in_array($img_path, $images)) {
                         $images[] = $img_path;
@@ -74,10 +76,11 @@ function getAllPropertyImages($property_id) {
         }
     }
     
-    // 3. SORTIR
+    // 3. Sortir dan hapus duplikat
+    $images = array_unique($images);
     sort($images);
     
-    // 4. DEFAULT
+    // 4. Default
     if (empty($images)) {
         $images[] = '/staynest/assets/images/default-property.jpg';
     }
@@ -85,36 +88,24 @@ function getAllPropertyImages($property_id) {
     return $images;
 }
 
-// ==============================================
-// AMBIL GAMBAR PER UNIT
-// ==============================================
-function getUnitImages($property_id, $total_units) {
-    $all_images = getAllPropertyImages($property_id);
-    $unit_images = [];
-    
-    // Ambil gambar sesuai jumlah unit
-    for ($i = 0; $i < $total_units; $i++) {
-        if (isset($all_images[$i])) {
-            $unit_images[$i + 1] = $all_images[$i];
-        } else {
-            $unit_images[$i + 1] = $all_images[0] ?? '/staynest/assets/images/default-property.jpg';
-        }
-    }
-    
-    return $unit_images;
-}
-
-// ==============================================
-// DATA
-// ==============================================
-$all_images = getAllPropertyImages($property_id);
+$all_images = getImagesFromFolder($property_id);
 $main_img = $all_images[0] ?? '/staynest/assets/images/default-property.jpg';
 $total_images = count($all_images);
-$price_display = "Rp " . number_format($property['price_per_month'] ?? 700000, 0, ',', '.');
-$total_units = $property['total_doors'];
-$unit_images = getUnitImages($property_id, $total_units);
 
-// Data fasilitas & keunggulan
+// Debug di browser (bisa dihapus setelah berhasil)
+// echo "<!-- Total Images: " . $total_images . " -->";
+// foreach ($all_images as $img) { echo "<!-- " . $img . " -->"; }
+
+$price_display = "Rp " . number_format($property['price_per_month'] ?? 700000, 0, ',', '.');
+$total_units = $property['total_doors'] ?? 4;
+
+// Unit images - pakai gambar dari folder
+$unit_images = [];
+for ($i = 0; $i < $total_units; $i++) {
+    $unit_images[$i + 1] = isset($all_images[$i]) ? $all_images[$i] : $main_img;
+}
+
+// Fasilitas
 $facilities = ['3 Sekat', 'Dapur (Wastafel)', 'Listrik Token (800 kWh)', 'Air Tanah Jetpump'];
 $advantages = ['Baru Direnovasi', 'Akses Mobil Depan Kontrakan', '50 m dari Jalan Raya', 'Bebas Banjir', '2 km dari KCM Wisata Asri', '2 km dari McD Gading Terrace', '2 km dari Jembatan Besi Teluk Pucung', '2 km dari Pom Bensin'];
 
@@ -122,7 +113,6 @@ $advantages = ['Baru Direnovasi', 'Akses Mobil Depan Kontrakan', '50 m dari Jala
 $available = $property['available_rooms'];
 $occupied = $property['occupied_rooms'];
 $unit_status = [];
-
 for ($i = 1; $i <= $total_units; $i++) {
     if ($i <= $available) $unit_status[$i] = 'available';
     elseif ($i <= $available + $occupied) $unit_status[$i] = 'occupied';
@@ -144,34 +134,39 @@ for ($i = 1; $i <= $total_units; $i++) {
     <?php endif; ?>
 
     <div class="grid md:grid-cols-2 gap-8">
-        <!-- Left: Image Slide -->
-        <div class="bg-white rounded-2xl shadow-lg overflow-hidden relative">
+        <!-- LEFT: GAMBAR SLIDE -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
             <div class="relative">
-                <img id="mainPropertyImage" 
+                <img id="mainImage" 
                      src="<?php echo htmlspecialchars($main_img); ?>" 
                      alt="<?php echo htmlspecialchars($property['name']); ?>"
                      class="w-full h-96 object-cover"
                      onerror="this.src='/staynest/assets/images/default-property.jpg'">
                 
-                <!-- Image Counter -->
                 <div class="absolute bottom-4 left-4 bg-black/60 text-white text-xs px-3 py-1 rounded-full">
-                    <span id="imageCounter">1 / <?php echo $total_images; ?></span>
+                    <span id="imgCounter">1 / <?php echo $total_images; ?></span>
                 </div>
                 
-                <!-- Navigation Buttons -->
-                <button id="prevImageBtn" class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 w-10 h-10 rounded-full shadow-lg transition flex items-center justify-center">
+                <button onclick="changeImage(-1)" class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 w-10 h-10 rounded-full shadow-lg transition flex items-center justify-center">
                     <i class="fas fa-chevron-left"></i>
                 </button>
-                <button id="nextImageBtn" class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 w-10 h-10 rounded-full shadow-lg transition flex items-center justify-center">
+                <button onclick="changeImage(1)" class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 w-10 h-10 rounded-full shadow-lg transition flex items-center justify-center">
                     <i class="fas fa-chevron-right"></i>
                 </button>
             </div>
             
             <!-- Thumbnails -->
-            <div id="thumbnailContainer" class="flex gap-2 p-3 overflow-x-auto"></div>
+            <div id="thumbnails" class="flex gap-2 p-3 overflow-x-auto">
+                <?php foreach ($all_images as $index => $img): ?>
+                <img src="<?php echo htmlspecialchars($img); ?>" 
+                     class="thumb-img w-16 h-12 object-cover rounded-lg cursor-pointer transition border-2 <?php echo $index === 0 ? 'border-purple-600 ring-2 ring-purple-300' : 'border-transparent opacity-50 hover:opacity-100'; ?>"
+                     onclick="goToImage(<?php echo $index; ?>)"
+                     onerror="this.style.display='none'">
+                <?php endforeach; ?>
+            </div>
         </div>
 
-        <!-- Right: Info -->
+        <!-- RIGHT: INFO -->
         <div class="bg-white rounded-2xl shadow-lg p-8">
             <h1 class="text-3xl font-bold text-gray-800"><?php echo htmlspecialchars($property['name']); ?></h1>
             <p class="text-gray-500 mt-2 flex items-center gap-2">
@@ -213,7 +208,7 @@ for ($i = 1; $i <= $total_units; $i++) {
         </div>
     </div>
 
-    <!-- Description -->
+    <!-- DESCRIPTION -->
     <div class="mt-10 bg-white rounded-2xl shadow-lg p-8">
         <h2 class="text-2xl font-bold text-gray-800 mb-4">📋 Property Description</h2>
         <p class="text-gray-600 leading-relaxed">
@@ -221,7 +216,7 @@ for ($i = 1; $i <= $total_units; $i++) {
         </p>
     </div>
 
-    <!-- Facilities & Advantages -->
+    <!-- FACILITIES & ADVANTAGES -->
     <div class="grid md:grid-cols-2 gap-6 mt-6">
         <div class="bg-white rounded-2xl shadow-lg p-8">
             <h2 class="text-2xl font-bold text-gray-800 mb-4">🛋️ Fasilitas</h2>
@@ -231,7 +226,6 @@ for ($i = 1; $i <= $total_units; $i++) {
                 <?php endforeach; ?>
             </ul>
         </div>
-
         <div class="bg-white rounded-2xl shadow-lg p-8">
             <h2 class="text-2xl font-bold text-gray-800 mb-4">⭐ Keunggulan</h2>
             <ul class="space-y-3">
@@ -242,9 +236,7 @@ for ($i = 1; $i <= $total_units; $i++) {
         </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- AVAILABLE UNITS - DENGAN GAMBAR -->
-    <!-- ========================================== -->
+    <!-- AVAILABLE UNITS -->
     <div class="mt-6 bg-white rounded-2xl shadow-lg p-8">
         <h2 class="text-2xl font-bold text-gray-800 mb-6">🏠 Available Units</h2>
         <p class="text-gray-500 mb-6">Choose your preferred room from <?php echo $available; ?> available units</p>
@@ -254,135 +246,109 @@ for ($i = 1; $i <= $total_units; $i++) {
                 $status = $unit_status[$i] ?? 'not_available';
                 $status_text = $status == 'available' ? '🟢 Available' : ($status == 'occupied' ? '🔴 Occupied' : '🔴 Not Available');
                 $status_class = $status == 'available' ? 'text-green-500' : 'text-red-500';
-                $unit_img = isset($unit_images[$i]) ? $unit_images[$i] : $main_img;
+                $unit_img = $unit_images[$i] ?? $main_img;
             ?>
             <div class="border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition group">
                 <div class="h-40 overflow-hidden bg-gray-100 relative">
                     <img src="<?php echo htmlspecialchars($unit_img); ?>" 
                          alt="Unit <?php echo str_pad($i, 2, '0', STR_PAD_LEFT); ?>"
-                         class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                         class="w-full h-full object-cover group-hover:scale-110 transition duration-500"
                          onerror="this.src='<?php echo htmlspecialchars($main_img); ?>'">
                     <div class="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-bold <?php echo $status == 'available' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'; ?>">
-                        <?php echo $status == 'available' ? 'Available' : ($status == 'occupied' ? 'Occupied' : 'Not Available'); ?>
+                        <?php echo $status == 'available' ? 'Available' : 'Not Available'; ?>
                     </div>
                 </div>
-                
                 <div class="p-4">
                     <h4 class="font-bold text-gray-800">Unit <?php echo str_pad($i, 2, '0', STR_PAD_LEFT); ?></h4>
                     <p class="text-sm text-gray-500">Unit <?php echo $i; ?> Teras</p>
                     <p class="text-purple-600 font-bold mt-2"><?php echo $price_display; ?></p>
                     <span class="text-sm <?php echo $status_class; ?>"><?php echo $status_text; ?></span>
                     
-                    <?php if ($status == 'available' && isset($_SESSION['user_id'])): ?>
-                        <a href="/staynest/bookings/book_now.php?id=<?php echo $property['id']; ?>&unit=<?php echo $i; ?>" 
-                           class="block text-center mt-3 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition text-sm">
-                            <i class="fas fa-calendar-plus mr-1"></i> Book Now →
-                        </a>
-                    <?php elseif ($status == 'available' && !isset($_SESSION['user_id'])): ?>
-                        <a href="/staynest/login.php?redirect=bookings/book_now.php?id=<?php echo $property['id']; ?>&unit=<?php echo $i; ?>" 
-                           class="block text-center mt-3 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition text-sm">
-                            <i class="fas fa-lock mr-1"></i> Login to Book
-                        </a>
+                    <?php if ($status == 'available'): ?>
+                        <?php if (isset($_SESSION['user_id'])): ?>
+                            <a href="/staynest/bookings/book_now.php?id=<?php echo $property['id']; ?>&unit=<?php echo $i; ?>" 
+                               class="block text-center mt-3 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition text-sm">
+                                <i class="fas fa-calendar-plus mr-1"></i> Book Now →
+                            </a>
+                        <?php else: ?>
+                            <a href="/staynest/login.php?redirect=bookings/book_now.php?id=<?php echo $property['id']; ?>&unit=<?php echo $i; ?>" 
+                               class="block text-center mt-3 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition text-sm">
+                                <i class="fas fa-lock mr-1"></i> Login to Book
+                            </a>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
             </div>
             <?php endfor; ?>
         </div>
-        
-        <!-- Info total gambar -->
         <div class="mt-4 text-center text-sm text-gray-400">
             <i class="fas fa-images mr-1"></i> Total <?php echo $total_images; ?> photos available
         </div>
     </div>
 </div>
 
-<!-- ========================================== -->
+<!-- ================================================================ -->
 <!-- SLIDE SCRIPT -->
-<!-- ========================================== -->
+<!-- ================================================================ -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Ambil semua gambar
-    var images = [];
-    <?php foreach ($all_images as $img): ?>
-    images.push('<?php echo htmlspecialchars($img); ?>');
-    <?php endforeach; ?>
+// Data gambar dari PHP
+var images = [];
+<?php foreach ($all_images as $img): ?>
+images.push('<?php echo htmlspecialchars($img); ?>');
+<?php endforeach; ?>
+
+var currentIndex = 0;
+var mainImage = document.getElementById('mainImage');
+var imgCounter = document.getElementById('imgCounter');
+
+function changeImage(direction) {
+    currentIndex += direction;
+    if (currentIndex < 0) currentIndex = images.length - 1;
+    if (currentIndex >= images.length) currentIndex = 0;
+    updateImage();
+}
+
+function goToImage(index) {
+    currentIndex = index;
+    updateImage();
+}
+
+function updateImage() {
+    mainImage.src = images[currentIndex];
+    imgCounter.textContent = (currentIndex + 1) + ' / ' + images.length;
     
-    if (images.length === 0) {
-        images.push('/staynest/assets/images/default-property.jpg');
-    }
-    
-    console.log('📸 Total images loaded: ' + images.length);
-    
-    var currentIndex = 0;
-    var mainImage = document.getElementById('mainPropertyImage');
-    var imageCounter = document.getElementById('imageCounter');
-    var thumbnailContainer = document.getElementById('thumbnailContainer');
-    var autoSlideInterval;
-    
-    function updateImage(index) {
-        if (index < 0) index = images.length - 1;
-        if (index >= images.length) index = 0;
-        currentIndex = index;
-        
-        mainImage.src = images[currentIndex];
-        imageCounter.textContent = (currentIndex + 1) + ' / ' + images.length;
-        
-        document.querySelectorAll('.thumb-img').forEach(function(el, i) {
-            if (i === currentIndex) {
-                el.classList.add('border-purple-600', 'ring-2', 'ring-purple-300');
-                el.classList.remove('opacity-50');
-            } else {
-                el.classList.remove('border-purple-600', 'ring-2', 'ring-purple-300');
-                el.classList.add('opacity-50');
-            }
-        });
-    }
-    
-    // Thumbnails
-    thumbnailContainer.innerHTML = '';
-    images.forEach(function(src, index) {
-        var thumb = document.createElement('img');
-        thumb.src = src;
-        thumb.className = 'thumb-img w-16 h-12 object-cover rounded-lg cursor-pointer transition border-2 border-transparent hover:opacity-100 ' + (index === 0 ? 'border-purple-600 ring-2 ring-purple-300' : 'opacity-50');
-        thumb.onclick = function() { updateImage(index); };
-        thumbnailContainer.appendChild(thumb);
+    // Update thumbnails
+    document.querySelectorAll('.thumb-img').forEach(function(el, i) {
+        if (i === currentIndex) {
+            el.className = 'thumb-img w-16 h-12 object-cover rounded-lg cursor-pointer transition border-2 border-purple-600 ring-2 ring-purple-300';
+        } else {
+            el.className = 'thumb-img w-16 h-12 object-cover rounded-lg cursor-pointer transition border-2 border-transparent opacity-50 hover:opacity-100';
+        }
     });
-    
-    // Navigasi
-    document.getElementById('prevImageBtn').addEventListener('click', function() {
-        updateImage(currentIndex - 1);
-    });
-    
-    document.getElementById('nextImageBtn').addEventListener('click', function() {
-        updateImage(currentIndex + 1);
-    });
-    
-    // Keyboard
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'ArrowLeft') updateImage(currentIndex - 1);
-        else if (e.key === 'ArrowRight') updateImage(currentIndex + 1);
-    });
-    
-    // Auto slide
-    function startAutoSlide() {
-        if (autoSlideInterval) clearInterval(autoSlideInterval);
-        autoSlideInterval = setInterval(function() {
-            updateImage(currentIndex + 1);
-        }, 4000);
-    }
-    
-    function stopAutoSlide() {
-        clearInterval(autoSlideInterval);
-    }
-    
-    startAutoSlide();
-    
-    var imageContainer = document.getElementById('mainPropertyImage').parentElement;
-    imageContainer.addEventListener('mouseenter', stopAutoSlide);
-    imageContainer.addEventListener('mouseleave', startAutoSlide);
-    
-    updateImage(0);
+}
+
+// Auto slide
+var autoSlide = setInterval(function() {
+    changeImage(1);
+}, 4000);
+
+// Pause on hover
+document.querySelector('.bg-white.rounded-2xl.shadow-lg.overflow-hidden').addEventListener('mouseenter', function() {
+    clearInterval(autoSlide);
 });
+document.querySelector('.bg-white.rounded-2xl.shadow-lg.overflow-hidden').addEventListener('mouseleave', function() {
+    autoSlide = setInterval(function() {
+        changeImage(1);
+    }, 4000);
+});
+
+// Keyboard
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowLeft') changeImage(-1);
+    else if (e.key === 'ArrowRight') changeImage(1);
+});
+
+console.log('📸 Total images loaded: ' + images.length);
 </script>
 
 <style>
@@ -393,8 +359,8 @@ document.addEventListener('DOMContentLoaded', function() {
     background-clip: text;
 }
 .thumb-img {
-    transition: all 0.3s ease;
     min-width: 64px;
+    max-width: 64px;
 }
 .thumb-img:hover {
     opacity: 0.8 !important;
