@@ -1,5 +1,5 @@
 // ==============================================
-// assets/js/music-player.js - Music Player untuk SEMUA HALAMAN (DENGAN AUDIO)
+// assets/js/music-player.js - Music Player PASTI JALAN
 // ==============================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -32,64 +32,75 @@ document.addEventListener('DOMContentLoaded', function() {
     var liveDot = document.getElementById('liveDot');
 
     // ==========================================
-    // CEK APAKAH ELEMEN ADA
+    // CEK ELEMEN
     // ==========================================
     if (!musicToggle || !musicControls) {
-        console.log('⚠️ Music Player elements not found on this page');
+        console.log('⚠️ Music Player elements not found');
         return;
     }
 
     // ==========================================
-    // CREATE AUDIO PLAYER
+    // BUAT AUDIO PLAYER
     // ==========================================
     var audio = new Audio();
 
     // ==========================================
-    // DAFTAR LAGU - PASTIKAN FILE MP3 ADA!
+    // PATH FILE MP3 - COBA SEMUA KEMUNGKINAN
     // ==========================================
-    // Hanya gunakan 1 lagu yang pasti ada
-    var playlists = [
-        '/staynest/assets/music/nastelbom-elegant.mp3'
+    var possiblePaths = [
+        '/staynest/assets/music/nastelbom-elegant.mp3',
+        '/staynest/assets/music/nastelbom-elegant.mp3',
+        '/staynest/music/nastelbom-elegant.mp3',
+        '/assets/music/nastelbom-elegant.mp3'
     ];
 
-    var songNames = [
-        'Nastelbom Elegant'
-    ];
-
-    var currentTrack = 0;
-
-    // ==========================================
-    // FUNGSI UNTUK MEMUAT LAGU
-    // ==========================================
-    function loadTrack(index) {
-        if (index < 0) index = playlists.length - 1;
-        if (index >= playlists.length) index = 0;
-        currentTrack = index;
-        
-        audio.src = playlists[currentTrack];
-        audio.load();
-        
-        if (songName) {
-            songName.textContent = songNames[currentTrack] || 'Nastelbom Elegant';
-        }
-        
-        console.log('🎵 Loading: ' + playlists[currentTrack]);
-    }
-
-    // Muat lagu pertama
-    loadTrack(0);
-
-    // ==========================================
-    // STATE / VARIABEL
-    // ==========================================
+    var currentPathIndex = 0;
     var isPlaying = false;
     var volume = 40;
 
     // ==========================================
-    // FUNGSI UPDATE UI
+    // FUNGSI MEMUAT LAGU
+    // ==========================================
+    function loadMusic() {
+        var path = possiblePaths[currentPathIndex];
+        audio.src = path;
+        audio.load();
+        console.log('🎵 Loading: ' + path);
+        
+        if (songName) {
+            songName.textContent = 'Nastelbom Elegant';
+        }
+        
+        audio.addEventListener('loadedmetadata', function() {
+            if (totalTime && audio.duration) {
+                var mins = Math.floor(audio.duration / 60);
+                var secs = Math.floor(audio.duration % 60);
+                totalTime.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+            }
+        });
+        
+        audio.addEventListener('error', function(e) {
+            console.log('❌ Error loading: ' + path);
+            currentPathIndex++;
+            if (currentPathIndex < possiblePaths.length) {
+                console.log('🔄 Trying next path...');
+                loadMusic();
+            } else {
+                console.log('❌ All paths failed!');
+                if (musicStatus) {
+                    musicStatus.textContent = 'Error';
+                    musicStatus.style.color = 'red';
+                }
+            }
+        });
+    }
+
+    loadMusic();
+
+    // ==========================================
+    // UPDATE UI
     // ==========================================
     function updateUI() {
-        // Music status di navbar
         if (musicStatus) {
             musicStatus.textContent = isPlaying ? 'On' : 'Off';
             musicStatus.style.color = isPlaying ? '#667eea' : 'gray';
@@ -97,7 +108,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (musicStatusMobile) {
             musicStatusMobile.textContent = isPlaying ? 'Music: On' : 'Music: Off';
         }
-        // Dot indicator
         if (musicDot) {
             musicDot.className = isPlaying ? 'music-dot' : 'music-dot off';
             musicDot.style.background = isPlaying ? '#22c55e' : '#9ca3af';
@@ -105,7 +115,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (liveDot) {
             liveDot.style.background = isPlaying ? '#22c55e' : '#9ca3af';
         }
-        // Pulse ring
         if (pulseRing) {
             if (isPlaying) {
                 pulseRing.classList.add('active');
@@ -113,11 +122,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 pulseRing.classList.remove('active');
             }
         }
-        // Main toggle icon
         if (musicToggleIcon) {
             musicToggleIcon.className = isPlaying ? 'fas fa-stop' : 'fas fa-music';
         }
-        // Play button
         if (playBtn) {
             var icon = playBtn.querySelector('i');
             if (icon) {
@@ -129,9 +136,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // ==========================================
-    // UPDATE TIME DISPLAY
-    // ==========================================
     function updateTimeDisplay() {
         if (currentTime && audio.duration) {
             var currentSeconds = Math.floor(audio.currentTime);
@@ -147,9 +151,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // ==========================================
-    // UPDATE PROGRESS BAR
-    // ==========================================
     function updateProgress() {
         if (progressFill && audio.duration) {
             var percent = (audio.currentTime / audio.duration) * 100;
@@ -158,23 +159,13 @@ document.addEventListener('DOMContentLoaded', function() {
         updateTimeDisplay();
     }
 
-    // ==========================================
-    // ANIMASI NOT MUSIK
-    // ==========================================
     function animateNotes() {
-        if (noteInterval) {
-            clearInterval(noteInterval);
-            noteInterval = null;
-        }
+        if (noteInterval) clearInterval(noteInterval);
         if (!isPlaying) return;
         var notes = ['🎵', '🎶', '🎧', '🎸', '🎹', '🎤', '🎼'];
         var i = 0;
         noteInterval = setInterval(function() {
-            if (!isPlaying) {
-                clearInterval(noteInterval);
-                noteInterval = null;
-                return;
-            }
+            if (!isPlaying) { clearInterval(noteInterval); return; }
             if (musicNoteAnim) {
                 musicNoteAnim.textContent = notes[i % notes.length];
                 i++;
@@ -183,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==========================================
-    // FUNGSI TOGGLE CONTROLS
+    // TOGGLE CONTROLS
     // ==========================================
     function toggleControls(e) {
         if (e) e.stopPropagation();
@@ -192,22 +183,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // ==========================================
-    // EVENT LISTENER TOGGLE
-    // ==========================================
-    if (musicToggle) {
-        musicToggle.addEventListener('click', toggleControls);
-    }
-    if (musicToggleBtn) {
-        musicToggleBtn.addEventListener('click', toggleControls);
-    }
-    if (musicToggleMobile) {
-        musicToggleMobile.addEventListener('click', toggleControls);
-    }
+    if (musicToggle) musicToggle.addEventListener('click', toggleControls);
+    if (musicToggleBtn) musicToggleBtn.addEventListener('click', toggleControls);
+    if (musicToggleMobile) musicToggleMobile.addEventListener('click', toggleControls);
 
-    // ==========================================
-    // TUTUP PANEL DENGAN TOMBOL CLOSE
-    // ==========================================
     if (closeMusicBtn) {
         closeMusicBtn.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -217,9 +196,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ==========================================
-    // TUTUP PANEL KETIKA KLIK DI LUAR
-    // ==========================================
     document.addEventListener('click', function(e) {
         if (musicControls && musicControls.classList.contains('show')) {
             if (!musicControls.contains(e.target) &&
@@ -232,16 +208,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ==========================================
-    // PLAY / PAUSE - FUNGSI UTAMA
+    // PLAY / PAUSE
     // ==========================================
     function playMusic() {
         console.log('🎵 Trying to play music...');
-        console.log('🎵 File path: ' + audio.src);
+        console.log('🎵 Current path: ' + audio.src);
         
-        // Set volume
+        if (!audio.src || audio.src === '') {
+            loadMusic();
+        }
+        
         audio.volume = volume / 100;
         
-        // Play audio
         audio.play().then(function() {
             isPlaying = true;
             updateUI();
@@ -249,9 +227,6 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('🎵 Music is playing! 🎵');
         }).catch(function(error) {
             console.log('❌ Play error:', error);
-            console.log('❌ Coba reload audio...');
-            
-            // Coba reload
             audio.load();
             setTimeout(function() {
                 audio.play().then(function() {
@@ -261,8 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('🎵 Music is playing after reload! 🎵');
                 }).catch(function(e) {
                     console.log('❌ Still cannot play:', e);
-                    console.log('❌ Pastikan file MP3 ada di: ' + audio.src);
-                    // Tampilkan pesan error di UI
+                    alert('⚠️ Tidak bisa memutar musik. Pastikan file MP3 ada di: assets/music/nastelbom-elegant.mp3');
                     if (musicStatus) {
                         musicStatus.textContent = 'Error';
                         musicStatus.style.color = 'red';
@@ -304,31 +278,27 @@ document.addEventListener('DOMContentLoaded', function() {
     if (prevBtn) {
         prevBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            // Putar ulang dari awal (karena hanya 1 lagu)
             audio.currentTime = 0;
             if (isPlaying) {
                 audio.play().catch(function() {});
             }
             updateProgress();
-            console.log('⏮️ Restart song');
         });
     }
 
     if (nextBtn) {
         nextBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            // Putar ulang dari awal (karena hanya 1 lagu)
             audio.currentTime = 0;
             if (isPlaying) {
                 audio.play().catch(function() {});
             }
             updateProgress();
-            console.log('⏭️ Restart song');
         });
     }
 
     // ==========================================
-    // KLIK PROGRESS TRACK (SEEK)
+    // PROGRESS TRACK
     // ==========================================
     if (progressTrack) {
         progressTrack.addEventListener('click', function(e) {
@@ -343,7 +313,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==========================================
-    // VOLUME CONTROL
+    // VOLUME
     // ==========================================
     if (volumeSlider) {
         volumeSlider.addEventListener('input', function() {
@@ -360,15 +330,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     volumeIcon.className = 'fas fa-volume-down';
                 }
             }
-            try {
-                localStorage.setItem('staynest_musicVolume', volume);
-            } catch(e) {}
+            localStorage.setItem('staynest_musicVolume', volume);
         });
     }
 
-    // ==========================================
-    // RESTORE VOLUME DARI LOCALSTORAGE
-    // ==========================================
     try {
         var savedVolume = localStorage.getItem('staynest_musicVolume');
         if (savedVolume !== null && volumeSlider) {
@@ -382,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch(e) {}
 
     // ==========================================
-    // AUDIO EVENT LISTENERS
+    // AUDIO EVENTS
     // ==========================================
     audio.addEventListener('timeupdate', function() {
         updateProgress();
@@ -391,30 +356,19 @@ document.addEventListener('DOMContentLoaded', function() {
     audio.addEventListener('loadedmetadata', function() {
         updateTimeDisplay();
         updateProgress();
-        console.log('✅ Audio loaded successfully: ' + audio.src);
+        console.log('✅ Audio loaded: ' + audio.src);
     });
 
     audio.addEventListener('ended', function() {
-        // Loop: putar ulang dari awal
         audio.currentTime = 0;
         if (isPlaying) {
             audio.play().catch(function() {});
         }
-        console.log('🔄 Music looped (replay from start)');
-    });
-
-    audio.addEventListener('error', function(e) {
-        console.log('❌ Audio error:', e);
-        console.log('❌ File path: ' + audio.src);
-        console.log('❌ Pastikan file MP3 ada di folder /assets/music/');
-        if (musicStatus) {
-            musicStatus.textContent = 'Error';
-            musicStatus.style.color = 'red';
-        }
+        console.log('🔄 Music looped');
     });
 
     // ==========================================
-    // KEYBOARD SHORTCUT: SPACE UNTUK PLAY/PAUSE
+    // KEYBOARD SHORTCUT
     // ==========================================
     document.addEventListener('keydown', function(e) {
         if (e.target.tagName !== 'INPUT' && e.key === ' ') {
@@ -424,18 +378,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ==========================================
-    // SET SONG NAME
-    // ==========================================
-    if (songName) {
-        songName.textContent = 'Nastelbom Elegant';
-    }
-
-    // ==========================================
     // INISIALISASI
     // ==========================================
     updateUI();
     updateTimeDisplay();
     console.log('🎵 StayNest Music Player ready!');
     console.log('🎵 Music file: ' + audio.src);
-    console.log('🎵 Volume: ' + volume + '%');
 });

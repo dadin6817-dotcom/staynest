@@ -22,133 +22,14 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
+    <!-- ========================================== -->
+    <!-- MUSIC PLAYER JS - LOAD DI SEMUA HALAMAN -->
+    <!-- ========================================== -->
+    <script src="/staynest/assets/js/music-player.js"></script>
+    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; overflow-x: hidden; }
-        
-        .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        
-        .navbar-modern {
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(20px);
-            box-shadow: 0 2px 20px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
-        }
-        
-        .navbar-scrolled {
-            box-shadow: 0 5px 30px rgba(0,0,0,0.1);
-            background: rgba(255,255,255,0.98);
-        }
-        
-        .nav-link {
-            transition: all 0.3s ease;
-            position: relative;
-            font-weight: 500;
-            text-decoration: none;
-            color: #4a5568;
-            padding: 8px 0;
-        }
-        
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 0;
-            height: 2.5px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            transition: width 0.3s ease;
-            border-radius: 2px;
-        }
-        
-        .nav-link:hover::after,
-        .nav-link.active::after { width: 100%; }
-        
-        .nav-link:hover { color: #667eea; transform: translateY(-2px); }
-        
-        .admin-btn {
-            background: linear-gradient(135deg, #f093fb, #f5576c);
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-        .admin-btn:hover { transform: scale(1.05); box-shadow: 0 5px 20px rgba(240,147,251,0.4); }
-        
-        .user-btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-        .user-btn:hover { transform: scale(1.05); box-shadow: 0 5px 20px rgba(102,126,234,0.4); }
-        
-        .user-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            margin-top: 8px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-            min-width: 220px;
-            padding: 8px;
-            display: none;
-            z-index: 100;
-        }
-        
-        .user-dropdown.show { display: block; animation: slideDown 0.2s ease-out; }
-        
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .user-dropdown-item {
-            padding: 10px 16px;
-            border-radius: 10px;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #374151;
-            text-decoration: none;
-        }
-        .user-dropdown-item:hover { background: #f3f4f6; }
-        .user-dropdown-item i { width: 20px; color: #667eea; }
-        .user-dropdown-divider { height: 1px; background: #e5e7eb; margin: 8px 0; }
-        
         /* ========================================== */
-        /* MUSIC BUTTON DI NAVBAR */
-        /* ========================================== */
-        #musicToggleBtn {
-            transition: all 0.3s ease;
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            padding: 8px 12px;
-            border-radius: 50px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        #musicToggleBtn:hover { background: rgba(102,126,234,0.1); transform: scale(1.05); }
-        #musicToggleBtn .music-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            background: #22c55e;
-        }
-        #musicToggleBtn .music-dot.off { background: #9ca3af; }
-        
-        /* ========================================== */
-        /* MUSIC PLAYER FLOATING - BAWAH KIRI */
+        /* MUSIC PLAYER STYLES */
         /* ========================================== */
         #musicPlayerContainer {
             position: fixed;
@@ -249,7 +130,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
         .music-volume .vol-percent { font-size: 10px; color: #999; min-width: 35px; text-align: right; }
         
         @media (max-width: 768px) {
-            .navbar-modern { padding: 12px 16px; }
             #musicControls { width: 280px !important; left: 0 !important; }
         }
     </style>
@@ -279,7 +159,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
                 <i class="fas fa-user-shield"></i> <span>Admin</span>
             </a>
             
-            <!-- MUSIC BUTTON DI NAVBAR -->
             <button id="musicToggleBtn" class="hidden md:flex items-center gap-2 text-gray-700 hover:text-purple-600 transition text-sm font-medium rounded-full hover:bg-purple-50 px-3 py-1.5">
                 <i class="fas fa-music"></i>
                 <span id="musicStatus">Off</span>
@@ -346,7 +225,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
 <!-- MUSIC PLAYER FLOATING - BAWAH KIRI -->
 <!-- ========================================== -->
 <div id="musicPlayerContainer">
-    <button id="musicToggle">
+    <button id="musicToggle" aria-label="Toggle Music Player">
         <span class="pulse-ring" id="pulseRing"></span>
         <i class="fas fa-music" id="musicToggleIcon"></i>
     </button>
@@ -354,14 +233,14 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
     <div id="musicControls">
         <div class="music-header">
             <div class="music-header-left">
-                <span class="live-dot"></span>
+                <span class="live-dot" id="liveDot"></span>
                 <h3><i class="fas fa-music"></i> StayNest Radio</h3>
             </div>
-            <button class="music-close-btn" id="closeMusicBtn">&times;</button>
+            <button class="music-close-btn" id="closeMusicBtn" aria-label="Close Music Player">&times;</button>
         </div>
         
         <div class="music-info">
-            <span class="note-icon" id="musicNoteAnim">🎧</span>
+            <span class="note-icon music-note-float" id="musicNoteAnim">🎧</span>
             <p class="song-name" id="songName">Nastelbom Elegant</p>
         </div>
         
@@ -376,292 +255,18 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
         </div>
         
         <div class="music-controls">
-            <button id="prevBtn"><i class="fas fa-step-backward"></i></button>
-            <button class="play-btn" id="playBtn"><i class="fas fa-play"></i></button>
-            <button id="nextBtn"><i class="fas fa-step-forward"></i></button>
+            <button id="prevBtn" aria-label="Previous Track"><i class="fas fa-step-backward"></i></button>
+            <button class="play-btn" id="playBtn" aria-label="Play/Pause"><i class="fas fa-play"></i></button>
+            <button id="nextBtn" aria-label="Next Track"><i class="fas fa-step-forward"></i></button>
         </div>
         
         <div class="music-volume">
             <i class="fas fa-volume-down"></i>
-            <input type="range" id="volumeSlider" min="0" max="100" value="40">
+            <input type="range" id="volumeSlider" min="0" max="100" value="40" aria-label="Volume">
             <span class="vol-percent" id="volumePercent">40%</span>
         </div>
     </div>
 </div>
 
-<script>
-// ==========================================
-// NAVBAR SCROLL EFFECT
-// ==========================================
-window.addEventListener('scroll', function() {
-    var navbar = document.getElementById('mainNavbar');
-    if (navbar) {
-        if (window.scrollY > 50) navbar.classList.add('navbar-scrolled');
-        else navbar.classList.remove('navbar-scrolled');
-    }
-});
-
-// ==========================================
-// MOBILE MENU TOGGLE
-// ==========================================
-var mobileMenuBtn = document.getElementById('mobileMenuBtn');
-var mobileMenu = document.getElementById('mobileMenu');
-if (mobileMenuBtn && mobileMenu) {
-    mobileMenuBtn.addEventListener('click', function() {
-        mobileMenu.classList.toggle('hidden');
-    });
-}
-
-// ==========================================
-// USER DROPDOWN TOGGLE
-// ==========================================
-var userMenuBtn = document.getElementById('userMenuBtn');
-var userDropdown = document.getElementById('userDropdown');
-if (userMenuBtn && userDropdown) {
-    userMenuBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        userDropdown.classList.toggle('show');
-    });
-    document.addEventListener('click', function(e) {
-        if (!userMenuBtn.contains(e.target) && !userDropdown.contains(e.target)) {
-            userDropdown.classList.remove('show');
-        }
-    });
-}
-
-// ==========================================
-// MUSIC PLAYER - FULL SCRIPT
-// ==========================================
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🎵 StayNest Music Player Loaded!');
-    
-    // Elements
-    var musicToggle = document.getElementById('musicToggle');
-    var musicToggleBtn = document.getElementById('musicToggleBtn');
-    var musicToggleMobile = document.getElementById('musicToggleMobile');
-    var musicControls = document.getElementById('musicControls');
-    var closeMusicBtn = document.getElementById('closeMusicBtn');
-    var playBtn = document.getElementById('playBtn');
-    var prevBtn = document.getElementById('prevBtn');
-    var nextBtn = document.getElementById('nextBtn');
-    var progressTrack = document.getElementById('progressTrack');
-    var progressFill = document.getElementById('progressFill');
-    var volumeSlider = document.getElementById('volumeSlider');
-    var volumePercent = document.getElementById('volumePercent');
-    var currentTime = document.getElementById('currentTime');
-    var totalTime = document.getElementById('totalTime');
-    var pulseRing = document.getElementById('pulseRing');
-    var musicToggleIcon = document.getElementById('musicToggleIcon');
-    var musicStatus = document.getElementById('musicStatus');
-    var musicStatusMobile = document.getElementById('musicStatusMobile');
-    var musicNoteAnim = document.getElementById('musicNoteAnim');
-    var musicDot = document.getElementById('musicDot');
-    
-    // Check elements
-    if (!musicToggle || !musicControls) {
-        console.log('⚠️ Music Player elements not found');
-        return;
-    }
-    
-    var isPlaying = false;
-    var progress = 0;
-    var progressInterval = null;
-    var noteInterval = null;
-    var volume = 40;
-    var totalDuration = 225;
-    
-    // Update UI
-    function updateUI() {
-        if (musicDot) {
-            if (isPlaying) {
-                musicDot.className = 'music-dot';
-                musicDot.style.background = '#22c55e';
-            } else {
-                musicDot.className = 'music-dot off';
-                musicDot.style.background = '#9ca3af';
-            }
-        }
-    }
-    
-    // Toggle controls
-    function toggleControls(e) {
-        if (e) e.stopPropagation();
-        musicControls.classList.toggle('show');
-    }
-    
-    if (musicToggle) musicToggle.addEventListener('click', toggleControls);
-    if (musicToggleBtn) musicToggleBtn.addEventListener('click', toggleControls);
-    if (musicToggleMobile) musicToggleMobile.addEventListener('click', toggleControls);
-    
-    if (closeMusicBtn) {
-        closeMusicBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            musicControls.classList.remove('show');
-        });
-    }
-    
-    document.addEventListener('click', function(e) {
-        if (musicControls && musicControls.classList.contains('show')) {
-            if (!musicControls.contains(e.target) && 
-                !musicToggle.contains(e.target) && 
-                !musicToggleBtn?.contains(e.target) &&
-                !musicToggleMobile?.contains(e.target)) {
-                musicControls.classList.remove('show');
-            }
-        }
-    });
-    
-    // Update time display
-    function updateTimeDisplay() {
-        if (currentTime) {
-            var currentSeconds = Math.floor((progress / 100) * totalDuration);
-            var mins = Math.floor(currentSeconds / 60);
-            var secs = currentSeconds % 60;
-            currentTime.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
-        }
-    }
-    
-    // Animate notes
-    function animateNotes() {
-        if (noteInterval) clearInterval(noteInterval);
-        if (!isPlaying) return;
-        var notes = ['🎵', '🎶', '🎧', '🎸', '🎹', '🎤', '🎼'];
-        var i = 0;
-        noteInterval = setInterval(function() {
-            if (!isPlaying) { clearInterval(noteInterval); return; }
-            if (musicNoteAnim) {
-                musicNoteAnim.textContent = notes[i % notes.length];
-                i++;
-            }
-        }, 800);
-    }
-    
-    // Simulate progress
-    function simulateProgress() {
-        if (!isPlaying) return;
-        if (progress >= 100) {
-            progress = 0;
-            if (playBtn) {
-                var icon = playBtn.querySelector('i');
-                icon.className = 'fas fa-play';
-                playBtn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-            }
-            isPlaying = false;
-            if (pulseRing) pulseRing.classList.remove('active');
-            if (musicToggleIcon) musicToggleIcon.className = 'fas fa-music';
-            if (musicStatus) { musicStatus.textContent = 'Off'; musicStatus.style.color = 'gray'; }
-            if (musicStatusMobile) musicStatusMobile.textContent = 'Music: Off';
-            if (noteInterval) clearInterval(noteInterval);
-            updateUI();
-            return;
-        }
-        progress += 0.5;
-        if (progressFill) progressFill.style.width = progress + '%';
-        updateTimeDisplay();
-        progressInterval = setTimeout(simulateProgress, 100);
-    }
-    
-    // Play/Pause
-    if (playBtn) {
-        playBtn.addEventListener('click', function() {
-            isPlaying = !isPlaying;
-            var icon = this.querySelector('i');
-            if (isPlaying) {
-                icon.className = 'fas fa-pause';
-                this.style.background = 'linear-gradient(135deg, #f093fb, #f5576c)';
-                if (pulseRing) pulseRing.classList.add('active');
-                if (musicToggleIcon) musicToggleIcon.className = 'fas fa-stop';
-                if (musicStatus) { musicStatus.textContent = 'On'; musicStatus.style.color = '#667eea'; }
-                if (musicStatusMobile) musicStatusMobile.textContent = 'Music: On';
-                simulateProgress();
-                animateNotes();
-                updateUI();
-                console.log('🎵 Music Playing');
-            } else {
-                icon.className = 'fas fa-play';
-                this.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-                if (pulseRing) pulseRing.classList.remove('active');
-                if (musicToggleIcon) musicToggleIcon.className = 'fas fa-music';
-                if (musicStatus) { musicStatus.textContent = 'Off'; musicStatus.style.color = 'gray'; }
-                if (musicStatusMobile) musicStatusMobile.textContent = 'Music: Off';
-                if (progressInterval) { clearTimeout(progressInterval); progressInterval = null; }
-                if (noteInterval) { clearInterval(noteInterval); }
-                updateUI();
-                console.log('⏸️ Music Paused');
-            }
-        });
-    }
-    
-    // Progress track click
-    if (progressTrack) {
-        progressTrack.addEventListener('click', function(e) {
-            var rect = this.getBoundingClientRect();
-            var x = e.clientX - rect.left;
-            var percent = (x / rect.width) * 100;
-            progress = Math.min(100, Math.max(0, percent));
-            if (progressFill) progressFill.style.width = progress + '%';
-            updateTimeDisplay();
-        });
-    }
-    
-    // Previous / Next
-    if (prevBtn) {
-        prevBtn.addEventListener('click', function() {
-            progress = Math.max(0, progress - 10);
-            if (progressFill) progressFill.style.width = progress + '%';
-            updateTimeDisplay();
-        });
-    }
-    
-    if (nextBtn) {
-        nextBtn.addEventListener('click', function() {
-            progress = Math.min(100, progress + 10);
-            if (progressFill) progressFill.style.width = progress + '%';
-            updateTimeDisplay();
-        });
-    }
-    
-    // Volume control
-    if (volumeSlider) {
-        volumeSlider.addEventListener('input', function() {
-            volume = parseFloat(this.value);
-            if (volumePercent) volumePercent.textContent = volume + '%';
-            var volumeIcon = document.querySelector('.music-volume i');
-            if (volumeIcon) {
-                if (volume === 0) {
-                    volumeIcon.className = 'fas fa-volume-mute';
-                } else {
-                    volumeIcon.className = 'fas fa-volume-down';
-                }
-            }
-            localStorage.setItem('staynest_musicVolume', volume);
-        });
-    }
-    
-    // Restore volume
-    var savedVolume = localStorage.getItem('staynest_musicVolume');
-    if (savedVolume !== null && volumeSlider) {
-        volume = parseFloat(savedVolume);
-        volumeSlider.value = volume;
-        if (volumePercent) volumePercent.textContent = volume + '%';
-    }
-    
-    // Set total time
-    if (totalTime) {
-        var mins = Math.floor(totalDuration / 60);
-        var secs = totalDuration % 60;
-        totalTime.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
-    }
-    
-    // Keyboard shortcut
-    document.addEventListener('keydown', function(e) {
-        if (e.target.tagName !== 'INPUT' && e.key === ' ') {
-            e.preventDefault();
-            if (playBtn) playBtn.click();
-        }
-    });
-    
-    updateUI();
-    console.log('🎵 StayNest Music Player ready!');
-});
-</script>
+</body>
+</html>
