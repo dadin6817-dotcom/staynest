@@ -1,5 +1,5 @@
 // ==============================================
-// assets/js/music-player.js - Music Player untuk SEMUA HALAMAN
+// assets/js/music-player.js - Music Player untuk SEMUA HALAMAN (DENGAN AUDIO)
 // ==============================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -44,37 +44,46 @@ document.addEventListener('DOMContentLoaded', function() {
     // ==========================================
     var audio = new Audio();
 
-    // DAFTAR LAGU (Ganti dengan file MP3 kamu)
+    // ==========================================
+    // DAFTAR LAGU - PASTIKAN FILE MP3 ADA!
+    // ==========================================
+    // Hanya gunakan 1 lagu yang pasti ada
     var playlists = [
-        '/staynest/assets/music/nastelbom-elegant.mp3',
-        '/staynest/assets/music/song2.mp3',
-        '/staynest/assets/music/song3.mp3'
+        '/staynest/assets/music/nastelbom-elegant.mp3'
     ];
 
     var songNames = [
-        'Nastelbom Elegant',
-        'Relaxing Piano',
-        'Chill Vibes'
+        'Nastelbom Elegant'
     ];
 
     var currentTrack = 0;
 
-    // Set lagu pertama
-    audio.src = playlists[0];
-    audio.load();
-    if (songName) {
-        songName.textContent = songNames[0];
+    // ==========================================
+    // FUNGSI UNTUK MEMUAT LAGU
+    // ==========================================
+    function loadTrack(index) {
+        if (index < 0) index = playlists.length - 1;
+        if (index >= playlists.length) index = 0;
+        currentTrack = index;
+        
+        audio.src = playlists[currentTrack];
+        audio.load();
+        
+        if (songName) {
+            songName.textContent = songNames[currentTrack] || 'Nastelbom Elegant';
+        }
+        
+        console.log('🎵 Loading: ' + playlists[currentTrack]);
     }
+
+    // Muat lagu pertama
+    loadTrack(0);
 
     // ==========================================
     // STATE / VARIABEL
     // ==========================================
     var isPlaying = false;
-    var progress = 0;
-    var progressInterval = null;
-    var noteInterval = null;
     var volume = 40;
-    var totalDuration = 225;
 
     // ==========================================
     // FUNGSI UPDATE UI
@@ -223,25 +232,41 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ==========================================
-    // PLAY / PAUSE
+    // PLAY / PAUSE - FUNGSI UTAMA
     // ==========================================
     function playMusic() {
-        if (!audio.src || audio.src === '') {
-            audio.src = playlists[currentTrack];
-            audio.load();
-        }
+        console.log('🎵 Trying to play music...');
+        console.log('🎵 File path: ' + audio.src);
+        
+        // Set volume
+        audio.volume = volume / 100;
+        
+        // Play audio
         audio.play().then(function() {
             isPlaying = true;
             updateUI();
             animateNotes();
-            console.log('🎵 Music Playing: ' + songNames[currentTrack]);
+            console.log('🎵 Music is playing! 🎵');
         }).catch(function(error) {
-            console.log('⚠️ Play error:', error);
-            audio.src = playlists[currentTrack];
+            console.log('❌ Play error:', error);
+            console.log('❌ Coba reload audio...');
+            
+            // Coba reload
             audio.load();
             setTimeout(function() {
-                audio.play().catch(function(e) {
+                audio.play().then(function() {
+                    isPlaying = true;
+                    updateUI();
+                    animateNotes();
+                    console.log('🎵 Music is playing after reload! 🎵');
+                }).catch(function(e) {
                     console.log('❌ Still cannot play:', e);
+                    console.log('❌ Pastikan file MP3 ada di: ' + audio.src);
+                    // Tampilkan pesan error di UI
+                    if (musicStatus) {
+                        musicStatus.textContent = 'Error';
+                        musicStatus.style.color = 'red';
+                    }
                 });
             }, 500);
         });
@@ -279,34 +304,26 @@ document.addEventListener('DOMContentLoaded', function() {
     if (prevBtn) {
         prevBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            currentTrack = (currentTrack - 1 + playlists.length) % playlists.length;
-            audio.src = playlists[currentTrack];
-            audio.load();
+            // Putar ulang dari awal (karena hanya 1 lagu)
+            audio.currentTime = 0;
             if (isPlaying) {
                 audio.play().catch(function() {});
             }
-            if (songName) {
-                songName.textContent = songNames[currentTrack] || 'Nastelbom Elegant';
-            }
-            updateTimeDisplay();
-            console.log('⏮️ Previous: ' + songNames[currentTrack]);
+            updateProgress();
+            console.log('⏮️ Restart song');
         });
     }
 
     if (nextBtn) {
         nextBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            currentTrack = (currentTrack + 1) % playlists.length;
-            audio.src = playlists[currentTrack];
-            audio.load();
+            // Putar ulang dari awal (karena hanya 1 lagu)
+            audio.currentTime = 0;
             if (isPlaying) {
                 audio.play().catch(function() {});
             }
-            if (songName) {
-                songName.textContent = songNames[currentTrack] || 'Nastelbom Elegant';
-            }
-            updateTimeDisplay();
-            console.log('⏭️ Next: ' + songNames[currentTrack]);
+            updateProgress();
+            console.log('⏭️ Restart song');
         });
     }
 
@@ -374,26 +391,26 @@ document.addEventListener('DOMContentLoaded', function() {
     audio.addEventListener('loadedmetadata', function() {
         updateTimeDisplay();
         updateProgress();
-        console.log('✅ Audio loaded: ' + audio.src);
+        console.log('✅ Audio loaded successfully: ' + audio.src);
     });
 
     audio.addEventListener('ended', function() {
-        currentTrack = (currentTrack + 1) % playlists.length;
-        audio.src = playlists[currentTrack];
-        audio.load();
+        // Loop: putar ulang dari awal
+        audio.currentTime = 0;
         if (isPlaying) {
             audio.play().catch(function() {});
         }
-        if (songName) {
-            songName.textContent = songNames[currentTrack] || 'Nastelbom Elegant';
-        }
-        console.log('⏭️ Auto next: ' + songNames[currentTrack]);
+        console.log('🔄 Music looped (replay from start)');
     });
 
     audio.addEventListener('error', function(e) {
         console.log('❌ Audio error:', e);
-        console.log('❌ Please check if music files exist in /assets/music/');
         console.log('❌ File path: ' + audio.src);
+        console.log('❌ Pastikan file MP3 ada di folder /assets/music/');
+        if (musicStatus) {
+            musicStatus.textContent = 'Error';
+            musicStatus.style.color = 'red';
+        }
     });
 
     // ==========================================
@@ -410,7 +427,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // SET SONG NAME
     // ==========================================
     if (songName) {
-        songName.textContent = songNames[currentTrack] || 'Nastelbom Elegant';
+        songName.textContent = 'Nastelbom Elegant';
     }
 
     // ==========================================
@@ -419,5 +436,6 @@ document.addEventListener('DOMContentLoaded', function() {
     updateUI();
     updateTimeDisplay();
     console.log('🎵 StayNest Music Player ready!');
-    console.log('🎵 Current song: ' + songNames[currentTrack]);
+    console.log('🎵 Music file: ' + audio.src);
+    console.log('🎵 Volume: ' + volume + '%');
 });
