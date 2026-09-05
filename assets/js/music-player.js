@@ -1,5 +1,5 @@
 // ==============================================
-// assets/js/music-player.js - Music Player PASTI JALAN!
+// assets/js/music-player.js - PASTI JALAN DI SEMUA HALAMAN
 // ==============================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -31,19 +31,23 @@ document.addEventListener('DOMContentLoaded', function() {
     var musicDot = document.getElementById('musicDot');
     var liveDot = document.getElementById('liveDot');
 
+    // ==========================================
+    // CEK ELEMEN - JIKA TIDAK ADA, TUNGGU 1 DETIK
+    // ==========================================
     if (!musicToggle || !musicControls) {
-        console.log('⚠️ Music Player elements not found');
+        console.log('⚠️ Music Player elements not found, retrying...');
+        setTimeout(function() {
+            location.reload();
+        }, 1000);
         return;
     }
 
     // ==========================================
-    // BUAT AUDIO PLAYER - PAKAI MP3 DARI INTERNET
+    // BUAT AUDIO - PAKAI MP3 DARI INTERNET (PASTI JALAN)
     // ==========================================
     var audio = new Audio();
 
-    // ==========================================
-    // DAFTAR MP3 DARI INTERNET (PASTI BISA DIPUTAR)
-    // ==========================================
+    // DAFTAR MP3 DARI INTERNET
     var playlists = [
         'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
         'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
@@ -57,6 +61,9 @@ document.addEventListener('DOMContentLoaded', function() {
     ];
 
     var currentTrack = 0;
+    var isPlaying = false;
+    var volume = 40;
+    var noteInterval = null;
 
     // ==========================================
     // FUNGSI MEMUAT LAGU
@@ -73,38 +80,43 @@ document.addEventListener('DOMContentLoaded', function() {
             songName.textContent = songNames[currentTrack];
         }
 
-        console.log('🎵 Loading: ' + playlists[currentTrack]);
-        console.log('🎵 Song: ' + songNames[currentTrack]);
+        console.log('🎵 Loading: ' + songNames[currentTrack]);
+        console.log('🎵 URL: ' + playlists[currentTrack]);
     }
 
-    // Muat lagu pertama
-    loadTrack(0);
-
     // ==========================================
-    // STATE
-    // ==========================================
-    var isPlaying = false;
-    var volume = 40;
-    var noteInterval = null;
-
-    // ==========================================
-    // UPDATE UI
+    // UPDATE UI - PASTI BERUBAH
     // ==========================================
     function updateUI() {
+        // Status di navbar
         if (musicStatus) {
             musicStatus.textContent = isPlaying ? 'On' : 'Off';
-            musicStatus.style.color = isPlaying ? '#667eea' : 'gray';
+            musicStatus.style.color = isPlaying ? '#667eea' : '#9ca3af';
+            musicStatus.style.fontWeight = isPlaying ? 'bold' : 'normal';
         }
+
+        // Status di mobile menu
         if (musicStatusMobile) {
             musicStatusMobile.textContent = isPlaying ? 'Music: On' : 'Music: Off';
         }
+
+        // Dot indicator
         if (musicDot) {
-            musicDot.className = isPlaying ? 'music-dot' : 'music-dot off';
-            musicDot.style.background = isPlaying ? '#22c55e' : '#9ca3af';
+            if (isPlaying) {
+                musicDot.className = 'music-dot';
+                musicDot.style.background = '#22c55e';
+            } else {
+                musicDot.className = 'music-dot off';
+                musicDot.style.background = '#9ca3af';
+            }
         }
+
+        // Live dot
         if (liveDot) {
             liveDot.style.background = isPlaying ? '#22c55e' : '#9ca3af';
         }
+
+        // Pulse ring
         if (pulseRing) {
             if (isPlaying) {
                 pulseRing.classList.add('active');
@@ -112,9 +124,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 pulseRing.classList.remove('active');
             }
         }
+
+        // Music toggle icon
         if (musicToggleIcon) {
             musicToggleIcon.className = isPlaying ? 'fas fa-stop' : 'fas fa-music';
         }
+
+        // Play button
         if (playBtn) {
             var icon = playBtn.querySelector('i');
             if (icon) {
@@ -124,8 +140,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 'linear-gradient(135deg, #f093fb, #f5576c)' :
                 'linear-gradient(135deg, #667eea, #764ba2)';
         }
+
+        console.log('🎵 UI Updated: isPlaying = ' + isPlaying);
     }
 
+    // ==========================================
+    // UPDATE TIME & PROGRESS
+    // ==========================================
     function updateTimeDisplay() {
         if (currentTime && audio.duration) {
             var currentSeconds = Math.floor(audio.currentTime);
@@ -164,45 +185,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==========================================
-    // TOGGLE CONTROLS
-    // ==========================================
-    function toggleControls(e) {
-        if (e) e.stopPropagation();
-        if (musicControls) {
-            musicControls.classList.toggle('show');
-        }
-    }
-
-    if (musicToggle) musicToggle.addEventListener('click', toggleControls);
-    if (musicToggleBtn) musicToggleBtn.addEventListener('click', toggleControls);
-    if (musicToggleMobile) musicToggleMobile.addEventListener('click', toggleControls);
-
-    if (closeMusicBtn) {
-        closeMusicBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            if (musicControls) {
-                musicControls.classList.remove('show');
-            }
-        });
-    }
-
-    document.addEventListener('click', function(e) {
-        if (musicControls && musicControls.classList.contains('show')) {
-            if (!musicControls.contains(e.target) &&
-                !musicToggle.contains(e.target) &&
-                !musicToggleBtn?.contains(e.target) &&
-                !musicToggleMobile?.contains(e.target)) {
-                musicControls.classList.remove('show');
-            }
-        }
-    });
-
-    // ==========================================
-    // PLAY / PAUSE
+    // FUNGSI PLAY / PAUSE
     // ==========================================
     function playMusic() {
         console.log('🎵 Trying to play music...');
-        console.log('🎵 Current song: ' + songNames[currentTrack]);
+
+        // Jika audio belum di-load, load dulu
+        if (!audio.src || audio.src === '') {
+            loadTrack(currentTrack);
+        }
 
         audio.volume = volume / 100;
 
@@ -210,26 +201,20 @@ document.addEventListener('DOMContentLoaded', function() {
             isPlaying = true;
             updateUI();
             animateNotes();
-            console.log('🎵 Music is playing! 🎵');
+            console.log('🎵 Music is PLAYING!');
         }).catch(function(error) {
             console.log('❌ Play error:', error);
-            console.log('🔄 Trying next song...');
-            // Coba lagu berikutnya
-            currentTrack = (currentTrack + 1) % playlists.length;
-            loadTrack(currentTrack);
+            // Coba reload dan play ulang
+            audio.load();
             setTimeout(function() {
                 audio.play().then(function() {
                     isPlaying = true;
                     updateUI();
                     animateNotes();
-                    console.log('🎵 Music is playing! 🎵');
+                    console.log('🎵 Music is PLAYING after reload!');
                 }).catch(function(e) {
                     console.log('❌ Still cannot play:', e);
                     alert('⚠️ Tidak bisa memutar musik. Coba refresh halaman.');
-                    if (musicStatus) {
-                        musicStatus.textContent = 'Error';
-                        musicStatus.style.color = 'red';
-                    }
                 });
             }, 500);
         });
@@ -247,6 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function togglePlay() {
+        console.log('🎵 Toggle Play: isPlaying = ' + isPlaying);
         if (isPlaying) {
             pauseMusic();
         } else {
@@ -254,16 +240,70 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    if (playBtn) {
-        playBtn.addEventListener('click', function(e) {
+    // ==========================================
+    // LOAD LAGU PERTAMA
+    // ==========================================
+    loadTrack(0);
+
+    // ==========================================
+    // EVENT LISTENERS
+    // ==========================================
+
+    // 1. Toggle controls panel
+    function toggleControls(e) {
+        if (e) e.stopPropagation();
+        if (musicControls) {
+            musicControls.classList.toggle('show');
+            console.log('🎵 Controls toggled');
+        }
+    }
+
+    if (musicToggle) {
+        musicToggle.addEventListener('click', toggleControls);
+        console.log('✅ musicToggle event attached');
+    }
+    if (musicToggleBtn) {
+        musicToggleBtn.addEventListener('click', toggleControls);
+        console.log('✅ musicToggleBtn event attached');
+    }
+    if (musicToggleMobile) {
+        musicToggleMobile.addEventListener('click', toggleControls);
+        console.log('✅ musicToggleMobile event attached');
+    }
+
+    // 2. Close button
+    if (closeMusicBtn) {
+        closeMusicBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            togglePlay();
+            if (musicControls) {
+                musicControls.classList.remove('show');
+            }
         });
     }
 
-    // ==========================================
-    // PREVIOUS / NEXT
-    // ==========================================
+    // 3. Close on outside click
+    document.addEventListener('click', function(e) {
+        if (musicControls && musicControls.classList.contains('show')) {
+            if (!musicControls.contains(e.target) &&
+                !musicToggle.contains(e.target) &&
+                !musicToggleBtn?.contains(e.target) &&
+                !musicToggleMobile?.contains(e.target)) {
+                musicControls.classList.remove('show');
+            }
+        }
+    });
+
+    // 4. Play button
+    if (playBtn) {
+        playBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            console.log('🎵 Play button clicked!');
+            togglePlay();
+        });
+        console.log('✅ playBtn event attached');
+    }
+
+    // 5. Previous / Next
     if (prevBtn) {
         prevBtn.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -288,9 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ==========================================
-    // PROGRESS TRACK
-    // ==========================================
+    // 6. Progress track
     if (progressTrack) {
         progressTrack.addEventListener('click', function(e) {
             if (audio.duration) {
@@ -303,9 +341,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ==========================================
-    // VOLUME
-    // ==========================================
+    // 7. Volume
     if (volumeSlider) {
         volumeSlider.addEventListener('input', function() {
             volume = parseFloat(this.value);
@@ -325,6 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Restore volume
     try {
         var savedVolume = localStorage.getItem('staynest_musicVolume');
         if (savedVolume !== null && volumeSlider) {
@@ -337,9 +374,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     } catch(e) {}
 
-    // ==========================================
-    // AUDIO EVENTS
-    // ==========================================
+    // 8. Audio events
     audio.addEventListener('timeupdate', function() {
         updateProgress();
     });
@@ -366,9 +401,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loadTrack(currentTrack);
     });
 
-    // ==========================================
-    // KEYBOARD SHORTCUT
-    // ==========================================
+    // 9. Keyboard shortcut
     document.addEventListener('keydown', function(e) {
         if (e.target.tagName !== 'INPUT' && e.key === ' ') {
             e.preventDefault();
@@ -377,10 +410,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ==========================================
-    // INISIALISASI
+    // UPDATE UI AWAL
     // ==========================================
     updateUI();
     updateTimeDisplay();
+
     console.log('🎵 StayNest Music Player ready!');
     console.log('🎵 Current song: ' + songNames[currentTrack]);
+    console.log('🎵 Is playing: ' + isPlaying);
 });
