@@ -1,12 +1,12 @@
 <?php
-// properties.php - Halaman Properties dengan Scan Uploads
+// properties.php - Halaman Properties dengan Status Unit
 $page_title = "Properties - StayNest";
 
 require_once dirname(__FILE__) . '/config/database.php';
 require_once dirname(__FILE__) . '/includes/header.php';
 
 // ==============================================
-// FUNGSI GET GAMBAR PROPERTI (SCAN UPLOADS)
+// FUNGSI GET GAMBAR PROPERTI
 // ==============================================
 function getPropertyImage($property_id) {
     $upload_path = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/uploads/';
@@ -51,53 +51,23 @@ function getPropertyImage($property_id) {
 }
 
 // ==============================================
-// FUNGSI GET ALL IMAGES (SCAN UPLOADS)
+// FUNGSI CEK STATUS UNIT
 // ==============================================
-function getAllPropertyImages($property_id) {
-    $images = [];
-    $upload_path = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/uploads/';
-    $image_path = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/images/';
-    
-    $prefixes = [1 => 'babelan', 2 => 'alamanda', 3 => 'Vip'];
-    $prefix = $prefixes[$property_id] ?? 'default';
-    $extensions = ['jpeg', 'jpg', 'png', 'gif', 'webp'];
-    
-    // SCAN UPLOADS
-    if (is_dir($upload_path)) {
-        $files = scandir($upload_path);
-        foreach ($files as $file) {
-            if ($file == '.' || $file == '..') continue;
-            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-            if (!in_array($ext, $extensions)) continue;
-            if (stripos($file, $prefix) !== false) {
-                $images[] = '/staynest/assets/uploads/' . $file;
-            }
-        }
+function isUnitBooked($property_id, $unit_number) {
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare("
+            SELECT * FROM bookings 
+            WHERE property_id = ? 
+            AND unit_number = ? 
+            AND status IN ('active', 'pending')
+            AND check_out > CURDATE()
+        ");
+        $stmt->execute([$property_id, $unit_number]);
+        return $stmt->rowCount() > 0;
+    } catch (Exception $e) {
+        return false;
     }
-    
-    // SCAN IMAGES (tambahan)
-    if (is_dir($image_path)) {
-        $files = scandir($image_path);
-        foreach ($files as $file) {
-            if ($file == '.' || $file == '..') continue;
-            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-            if (!in_array($ext, $extensions)) continue;
-            if (stripos($file, $prefix) !== false) {
-                $img_path = '/staynest/assets/images/' . $file;
-                if (!in_array($img_path, $images)) {
-                    $images[] = $img_path;
-                }
-            }
-        }
-    }
-    
-    sort($images);
-    
-    if (empty($images)) {
-        $images[] = '/staynest/assets/images/default-property.jpg';
-    }
-    
-    return $images;
 }
 
 // ==============================================
@@ -110,7 +80,6 @@ try {
     $properties = [];
 }
 
-// Fallback data
 if (empty($properties)) {
     $properties = [
         ['id' => 1, 'name' => 'StayNest Vela', 'location' => 'Kavling Harapan Manunggal Utara, Kec. Bahagia, Babelan, Bekasi', 'total_doors' => 2, 'available_rooms' => 1, 'occupied_rooms' => 1, 'price_per_month' => 700000, 'is_vip' => 0],
@@ -133,8 +102,6 @@ if (empty($properties)) {
     <div class="grid md:grid-cols-3 gap-8">
         <?php foreach ($properties as $property): 
             $img = getPropertyImage($property['id']);
-            $all_imgs = getAllPropertyImages($property['id']);
-            $total_images = count($all_imgs);
             $price = "Rp " . number_format($property['price_per_month'] ?? 700000, 0, ',', '.');
         ?>
         <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 group">
@@ -157,12 +124,6 @@ if (empty($properties)) {
                     🛏 <?php echo $property['available_rooms']; ?> Available
                 </div>
                 
-                <?php if ($total_images > 1): ?>
-                    <div class="absolute bottom-4 right-4 bg-black/60 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1">
-                        <i class="fas fa-images"></i> <?php echo $total_images; ?>
-                    </div>
-                <?php endif; ?>
-                
                 <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/50 to-transparent"></div>
             </div>
 
@@ -180,6 +141,25 @@ if (empty($properties)) {
                     <span class="text-xs bg-green-100 text-green-600 px-3 py-1.5 rounded-full font-medium">
                         <i class="fas fa-user mr-1"></i> <?php echo $property['occupied_rooms']; ?> Occupied
                     </span>
+                </div>
+
+                <!-- STATUS UNIT -->
+                <div class="mt-3">
+                    <p class="text-xs text-gray-500 mb-1">Unit Status:</p>
+                    <div class="flex flex-wrap gap-1">
+                        <?php for ($u = 1; $u <= $property['total_doors']; $u++): 
+                            $booked = isUnitBooked($property['id'], $u);
+                        ?>
+                            <span class="inline-block w-7 h-7 rounded-full text-xs flex items-center justify-center <?php echo $booked ? 'bg-red-500 text-white' : 'bg-green-500 text-white'; ?>" 
+                                  title="Unit <?php echo $u; ?> - <?php echo $booked ? 'Booked' : 'Available'; ?>">
+                                <?php echo $u; ?>
+                            </span>
+                        <?php endfor; ?>
+                    </div>
+                    <div class="flex gap-4 mt-1 text-[10px] text-gray-400">
+                        <span><span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-1"></span> Available</span>
+                        <span><span class="inline-block w-3 h-3 rounded-full bg-red-500 mr-1"></span> Booked</span>
+                    </div>
                 </div>
                 
                 <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
