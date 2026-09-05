@@ -366,7 +366,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
         
         <div class="music-info">
             <span class="note-icon music-note-float" id="musicNoteAnim">🎧</span>
-            <p class="song-name" id="songName">Nastelbom Elegant</p>
+            <p class="song-name" id="songName">SoundHelix - Song 1</p>
         </div>
         
         <div class="music-progress-container">
@@ -393,9 +393,6 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
     </div>
 </div>
 
-<!-- ========================================== -->
-<!-- SCRIPTS -->
-<!-- ========================================== -->
 <script>
 // ==========================================
 // NAVBAR SCROLL EFFECT
@@ -437,12 +434,11 @@ if (userMenuBtn && userDropdown) {
 }
 
 // ==========================================
-// MUSIC PLAYER - FULL SCRIPT
+// MUSIC PLAYER
 // ==========================================
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🎵 StayNest Music Player Loaded!');
     
-    // Elements
     var musicToggle = document.getElementById('musicToggle');
     var musicToggleBtn = document.getElementById('musicToggleBtn');
     var musicToggleMobile = document.getElementById('musicToggleMobile');
@@ -472,44 +468,48 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     var audio = new Audio();
-    var musicPath = window.location.origin + '/staynest/assets/music/nastelbom-elegant.mp3';
-    audio.src = musicPath;
-    audio.load();
-    
+    var playlists = [
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'
+    ];
+    var songNames = ['SoundHelix - Song 1', 'SoundHelix - Song 2', 'SoundHelix - Song 3'];
+    var currentTrack = 0;
     var isPlaying = false;
     var volume = 40;
     var noteInterval = null;
+    
+    function loadTrack(index) {
+        if (index < 0) index = playlists.length - 1;
+        if (index >= playlists.length) index = 0;
+        currentTrack = index;
+        audio.src = playlists[currentTrack];
+        audio.load();
+        if (songName) songName.textContent = songNames[currentTrack];
+        console.log('🎵 Loading: ' + songNames[currentTrack]);
+    }
+    
+    loadTrack(0);
     
     function updateUI() {
         if (musicStatus) {
             musicStatus.textContent = isPlaying ? 'On' : 'Off';
             musicStatus.style.color = isPlaying ? '#667eea' : 'gray';
         }
-        if (musicStatusMobile) {
-            musicStatusMobile.textContent = isPlaying ? 'Music: On' : 'Music: Off';
-        }
+        if (musicStatusMobile) musicStatusMobile.textContent = isPlaying ? 'Music: On' : 'Music: Off';
         if (musicDot) {
             musicDot.className = isPlaying ? 'music-dot' : 'music-dot off';
             musicDot.style.background = isPlaying ? '#22c55e' : '#9ca3af';
         }
-        if (liveDot) {
-            liveDot.style.background = isPlaying ? '#22c55e' : '#9ca3af';
-        }
+        if (liveDot) liveDot.style.background = isPlaying ? '#22c55e' : '#9ca3af';
         if (pulseRing) {
-            if (isPlaying) {
-                pulseRing.classList.add('active');
-            } else {
-                pulseRing.classList.remove('active');
-            }
+            if (isPlaying) pulseRing.classList.add('active');
+            else pulseRing.classList.remove('active');
         }
-        if (musicToggleIcon) {
-            musicToggleIcon.className = isPlaying ? 'fas fa-stop' : 'fas fa-music';
-        }
+        if (musicToggleIcon) musicToggleIcon.className = isPlaying ? 'fas fa-stop' : 'fas fa-music';
         if (playBtn) {
             var icon = playBtn.querySelector('i');
-            if (icon) {
-                icon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
-            }
+            if (icon) icon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
             playBtn.style.background = isPlaying ?
                 'linear-gradient(135deg, #f093fb, #f5576c)' :
                 'linear-gradient(135deg, #667eea, #764ba2)';
@@ -555,9 +555,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function toggleControls(e) {
         if (e) e.stopPropagation();
-        if (musicControls) {
-            musicControls.classList.toggle('show');
-        }
+        if (musicControls) musicControls.classList.toggle('show');
     }
     
     if (musicToggle) musicToggle.addEventListener('click', toggleControls);
@@ -567,25 +565,21 @@ document.addEventListener('DOMContentLoaded', function() {
     if (closeMusicBtn) {
         closeMusicBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            if (musicControls) {
-                musicControls.classList.remove('show');
-            }
+            if (musicControls) musicControls.classList.remove('show');
         });
     }
     
     document.addEventListener('click', function(e) {
         if (musicControls && musicControls.classList.contains('show')) {
-            if (!musicControls.contains(e.target) &&
-                !musicToggle.contains(e.target) &&
-                !musicToggleBtn?.contains(e.target) &&
-                !musicToggleMobile?.contains(e.target)) {
+            if (!musicControls.contains(e.target) && !musicToggle.contains(e.target) &&
+                !musicToggleBtn?.contains(e.target) && !musicToggleMobile?.contains(e.target)) {
                 musicControls.classList.remove('show');
             }
         }
     });
     
     function playMusic() {
-        console.log('🎵 Trying to play music...');
+        console.log('🎵 Trying to play...');
         audio.volume = volume / 100;
         audio.play().then(function() {
             isPlaying = true;
@@ -593,17 +587,18 @@ document.addEventListener('DOMContentLoaded', function() {
             animateNotes();
             console.log('🎵 Music is playing! 🎵');
         }).catch(function(error) {
-            console.log('❌ Play error:', error);
-            audio.load();
+            console.log('❌ Error:', error);
+            currentTrack = (currentTrack + 1) % playlists.length;
+            loadTrack(currentTrack);
             setTimeout(function() {
                 audio.play().then(function() {
                     isPlaying = true;
                     updateUI();
                     animateNotes();
-                    console.log('🎵 Music is playing after reload! 🎵');
+                    console.log('🎵 Music is playing! 🎵');
                 }).catch(function(e) {
-                    console.log('❌ Still cannot play:', e);
-                    alert('⚠️ Tidak bisa memutar musik. Pastikan file MP3 ada di: assets/music/nastelbom-elegant.mp3');
+                    console.log('❌ Still error:', e);
+                    alert('⚠️ Tidak bisa memutar musik. Coba refresh halaman.');
                 });
             }, 500);
         });
@@ -613,46 +608,31 @@ document.addEventListener('DOMContentLoaded', function() {
         audio.pause();
         isPlaying = false;
         updateUI();
-        if (noteInterval) {
-            clearInterval(noteInterval);
-            noteInterval = null;
-        }
-        console.log('⏸️ Music Paused');
+        if (noteInterval) clearInterval(noteInterval);
+        console.log('⏸️ Paused');
     }
     
     function togglePlay() {
-        if (isPlaying) {
-            pauseMusic();
-        } else {
-            playMusic();
-        }
+        if (isPlaying) pauseMusic();
+        else playMusic();
     }
     
-    if (playBtn) {
-        playBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            togglePlay();
-        });
-    }
-    
+    if (playBtn) playBtn.addEventListener('click', function(e) { e.stopPropagation(); togglePlay(); });
     if (prevBtn) {
         prevBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            audio.currentTime = 0;
-            if (isPlaying) {
-                audio.play().catch(function() {});
-            }
+            currentTrack = (currentTrack - 1 + playlists.length) % playlists.length;
+            loadTrack(currentTrack);
+            if (isPlaying) audio.play().catch(function() {});
             updateProgress();
         });
     }
-    
     if (nextBtn) {
         nextBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            audio.currentTime = 0;
-            if (isPlaying) {
-                audio.play().catch(function() {});
-            }
+            currentTrack = (currentTrack + 1) % playlists.length;
+            loadTrack(currentTrack);
+            if (isPlaying) audio.play().catch(function() {});
             updateProgress();
         });
     }
@@ -673,16 +653,11 @@ document.addEventListener('DOMContentLoaded', function() {
         volumeSlider.addEventListener('input', function() {
             volume = parseFloat(this.value);
             audio.volume = volume / 100;
-            if (volumePercent) {
-                volumePercent.textContent = volume + '%';
-            }
+            if (volumePercent) volumePercent.textContent = volume + '%';
             var volumeIcon = document.querySelector('.music-volume i');
             if (volumeIcon) {
-                if (volume === 0) {
-                    volumeIcon.className = 'fas fa-volume-mute';
-                } else {
-                    volumeIcon.className = 'fas fa-volume-down';
-                }
+                if (volume === 0) volumeIcon.className = 'fas fa-volume-mute';
+                else volumeIcon.className = 'fas fa-volume-down';
             }
             localStorage.setItem('staynest_musicVolume', volume);
         });
@@ -694,33 +669,25 @@ document.addEventListener('DOMContentLoaded', function() {
             volume = parseFloat(savedVolume);
             volumeSlider.value = volume;
             audio.volume = volume / 100;
-            if (volumePercent) {
-                volumePercent.textContent = volume + '%';
-            }
+            if (volumePercent) volumePercent.textContent = volume + '%';
         }
     } catch(e) {}
     
-    audio.addEventListener('timeupdate', function() {
-        updateProgress();
-    });
-    
+    audio.addEventListener('timeupdate', function() { updateProgress(); });
     audio.addEventListener('loadedmetadata', function() {
         updateTimeDisplay();
         updateProgress();
         console.log('✅ Audio loaded: ' + audio.src);
     });
-    
     audio.addEventListener('ended', function() {
-        audio.currentTime = 0;
-        if (isPlaying) {
-            audio.play().catch(function() {});
-        }
-        console.log('🔄 Music looped');
+        currentTrack = (currentTrack + 1) % playlists.length;
+        loadTrack(currentTrack);
+        if (isPlaying) audio.play().catch(function() {});
     });
-    
     audio.addEventListener('error', function(e) {
         console.log('❌ Audio error:', e);
-        console.log('❌ File path: ' + audio.src);
+        currentTrack = (currentTrack + 1) % playlists.length;
+        loadTrack(currentTrack);
     });
     
     document.addEventListener('keydown', function(e) {
@@ -733,7 +700,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateUI();
     updateTimeDisplay();
     console.log('🎵 StayNest Music Player ready!');
-    console.log('🎵 Music file: ' + audio.src);
+    console.log('🎵 Current song: ' + songNames[currentTrack]);
 });
 </script>
 
