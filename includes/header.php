@@ -28,8 +28,131 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
     <script src="/staynest/assets/js/music-player.js"></script>
     
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; overflow-x: hidden; }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        
+        .navbar-modern {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .navbar-scrolled {
+            box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.98);
+        }
+        
+        .nav-link {
+            transition: all 0.3s ease;
+            position: relative;
+            font-weight: 500;
+            text-decoration: none;
+            color: #4a5568;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+        
+        .nav-link:hover::after,
+        .nav-link.active::after { width: 100%; }
+        
+        .nav-link:hover { color: #667eea; transform: translateY(-2px); }
+        
+        .admin-btn {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        .admin-btn:hover { transform: scale(1.05); box-shadow: 0 5px 20px rgba(240,147,251,0.4); }
+        
+        .user-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        .user-btn:hover { transform: scale(1.05); box-shadow: 0 5px 20px rgba(102,126,234,0.4); }
+        
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            min-width: 220px;
+            padding: 8px;
+            display: none;
+            z-index: 100;
+        }
+        
+        .user-dropdown.show { display: block; animation: slideDown 0.2s ease-out; }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-dropdown-item {
+            padding: 10px 16px;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #374151;
+            text-decoration: none;
+        }
+        .user-dropdown-item:hover { background: #f3f4f6; }
+        .user-dropdown-item i { width: 20px; color: #667eea; }
+        .user-dropdown-divider { height: 1px; background: #e5e7eb; margin: 8px 0; }
+        
         /* ========================================== */
-        /* MUSIC PLAYER STYLES */
+        /* MUSIC BUTTON DI NAVBAR */
+        /* ========================================== */
+        #musicToggleBtn {
+            transition: all 0.3s ease;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        #musicToggleBtn:hover { background: rgba(102,126,234,0.1); transform: scale(1.05); }
+        #musicToggleBtn .music-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            background: #22c55e;
+        }
+        #musicToggleBtn .music-dot.off { background: #9ca3af; }
+        
+        /* ========================================== */
+        /* MUSIC PLAYER FLOATING - BAWAH KIRI */
         /* ========================================== */
         #musicPlayerContainer {
             position: fixed;
@@ -130,6 +253,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
         .music-volume .vol-percent { font-size: 10px; color: #999; min-width: 35px; text-align: right; }
         
         @media (max-width: 768px) {
+            .navbar-modern { padding: 12px 16px; }
             #musicControls { width: 280px !important; left: 0 !important; }
         }
     </style>
@@ -159,6 +283,7 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
                 <i class="fas fa-user-shield"></i> <span>Admin</span>
             </a>
             
+            <!-- MUSIC BUTTON DI NAVBAR -->
             <button id="musicToggleBtn" class="hidden md:flex items-center gap-2 text-gray-700 hover:text-purple-600 transition text-sm font-medium rounded-full hover:bg-purple-50 px-3 py-1.5">
                 <i class="fas fa-music"></i>
                 <span id="musicStatus">Off</span>
@@ -268,5 +393,357 @@ $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
     </div>
 </div>
 
-</body>
-</html>
+<!-- ========================================== -->
+<!-- SCRIPTS -->
+<!-- ========================================== -->
+<script>
+// ==========================================
+// NAVBAR SCROLL EFFECT
+// ==========================================
+window.addEventListener('scroll', function() {
+    var navbar = document.getElementById('mainNavbar');
+    if (navbar) {
+        if (window.scrollY > 50) navbar.classList.add('navbar-scrolled');
+        else navbar.classList.remove('navbar-scrolled');
+    }
+});
+
+// ==========================================
+// MOBILE MENU TOGGLE
+// ==========================================
+var mobileMenuBtn = document.getElementById('mobileMenuBtn');
+var mobileMenu = document.getElementById('mobileMenu');
+if (mobileMenuBtn && mobileMenu) {
+    mobileMenuBtn.addEventListener('click', function() {
+        mobileMenu.classList.toggle('hidden');
+    });
+}
+
+// ==========================================
+// USER DROPDOWN TOGGLE
+// ==========================================
+var userMenuBtn = document.getElementById('userMenuBtn');
+var userDropdown = document.getElementById('userDropdown');
+if (userMenuBtn && userDropdown) {
+    userMenuBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        userDropdown.classList.toggle('show');
+    });
+    document.addEventListener('click', function(e) {
+        if (!userMenuBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+            userDropdown.classList.remove('show');
+        }
+    });
+}
+
+// ==========================================
+// MUSIC PLAYER - FULL SCRIPT
+// ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎵 StayNest Music Player Loaded!');
+    
+    // Elements
+    var musicToggle = document.getElementById('musicToggle');
+    var musicToggleBtn = document.getElementById('musicToggleBtn');
+    var musicToggleMobile = document.getElementById('musicToggleMobile');
+    var musicControls = document.getElementById('musicControls');
+    var closeMusicBtn = document.getElementById('closeMusicBtn');
+    var playBtn = document.getElementById('playBtn');
+    var prevBtn = document.getElementById('prevBtn');
+    var nextBtn = document.getElementById('nextBtn');
+    var progressTrack = document.getElementById('progressTrack');
+    var progressFill = document.getElementById('progressFill');
+    var volumeSlider = document.getElementById('volumeSlider');
+    var volumePercent = document.getElementById('volumePercent');
+    var currentTime = document.getElementById('currentTime');
+    var totalTime = document.getElementById('totalTime');
+    var pulseRing = document.getElementById('pulseRing');
+    var musicToggleIcon = document.getElementById('musicToggleIcon');
+    var musicStatus = document.getElementById('musicStatus');
+    var musicStatusMobile = document.getElementById('musicStatusMobile');
+    var musicNoteAnim = document.getElementById('musicNoteAnim');
+    var songName = document.getElementById('songName');
+    var musicDot = document.getElementById('musicDot');
+    var liveDot = document.getElementById('liveDot');
+    
+    if (!musicToggle || !musicControls) {
+        console.log('⚠️ Music Player elements not found');
+        return;
+    }
+    
+    var audio = new Audio();
+    var musicPath = window.location.origin + '/staynest/assets/music/nastelbom-elegant.mp3';
+    audio.src = musicPath;
+    audio.load();
+    
+    var isPlaying = false;
+    var volume = 40;
+    var noteInterval = null;
+    
+    function updateUI() {
+        if (musicStatus) {
+            musicStatus.textContent = isPlaying ? 'On' : 'Off';
+            musicStatus.style.color = isPlaying ? '#667eea' : 'gray';
+        }
+        if (musicStatusMobile) {
+            musicStatusMobile.textContent = isPlaying ? 'Music: On' : 'Music: Off';
+        }
+        if (musicDot) {
+            musicDot.className = isPlaying ? 'music-dot' : 'music-dot off';
+            musicDot.style.background = isPlaying ? '#22c55e' : '#9ca3af';
+        }
+        if (liveDot) {
+            liveDot.style.background = isPlaying ? '#22c55e' : '#9ca3af';
+        }
+        if (pulseRing) {
+            if (isPlaying) {
+                pulseRing.classList.add('active');
+            } else {
+                pulseRing.classList.remove('active');
+            }
+        }
+        if (musicToggleIcon) {
+            musicToggleIcon.className = isPlaying ? 'fas fa-stop' : 'fas fa-music';
+        }
+        if (playBtn) {
+            var icon = playBtn.querySelector('i');
+            if (icon) {
+                icon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
+            }
+            playBtn.style.background = isPlaying ?
+                'linear-gradient(135deg, #f093fb, #f5576c)' :
+                'linear-gradient(135deg, #667eea, #764ba2)';
+        }
+    }
+    
+    function updateTimeDisplay() {
+        if (currentTime && audio.duration) {
+            var currentSeconds = Math.floor(audio.currentTime);
+            var mins = Math.floor(currentSeconds / 60);
+            var secs = currentSeconds % 60;
+            currentTime.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+        }
+        if (totalTime && audio.duration) {
+            var totalSeconds = Math.floor(audio.duration);
+            var mins = Math.floor(totalSeconds / 60);
+            var secs = totalSeconds % 60;
+            totalTime.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+        }
+    }
+    
+    function updateProgress() {
+        if (progressFill && audio.duration) {
+            var percent = (audio.currentTime / audio.duration) * 100;
+            progressFill.style.width = percent + '%';
+        }
+        updateTimeDisplay();
+    }
+    
+    function animateNotes() {
+        if (noteInterval) clearInterval(noteInterval);
+        if (!isPlaying) return;
+        var notes = ['🎵', '🎶', '🎧', '🎸', '🎹', '🎤', '🎼'];
+        var i = 0;
+        noteInterval = setInterval(function() {
+            if (!isPlaying) { clearInterval(noteInterval); return; }
+            if (musicNoteAnim) {
+                musicNoteAnim.textContent = notes[i % notes.length];
+                i++;
+            }
+        }, 800);
+    }
+    
+    function toggleControls(e) {
+        if (e) e.stopPropagation();
+        if (musicControls) {
+            musicControls.classList.toggle('show');
+        }
+    }
+    
+    if (musicToggle) musicToggle.addEventListener('click', toggleControls);
+    if (musicToggleBtn) musicToggleBtn.addEventListener('click', toggleControls);
+    if (musicToggleMobile) musicToggleMobile.addEventListener('click', toggleControls);
+    
+    if (closeMusicBtn) {
+        closeMusicBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (musicControls) {
+                musicControls.classList.remove('show');
+            }
+        });
+    }
+    
+    document.addEventListener('click', function(e) {
+        if (musicControls && musicControls.classList.contains('show')) {
+            if (!musicControls.contains(e.target) &&
+                !musicToggle.contains(e.target) &&
+                !musicToggleBtn?.contains(e.target) &&
+                !musicToggleMobile?.contains(e.target)) {
+                musicControls.classList.remove('show');
+            }
+        }
+    });
+    
+    function playMusic() {
+        console.log('🎵 Trying to play music...');
+        audio.volume = volume / 100;
+        audio.play().then(function() {
+            isPlaying = true;
+            updateUI();
+            animateNotes();
+            console.log('🎵 Music is playing! 🎵');
+        }).catch(function(error) {
+            console.log('❌ Play error:', error);
+            audio.load();
+            setTimeout(function() {
+                audio.play().then(function() {
+                    isPlaying = true;
+                    updateUI();
+                    animateNotes();
+                    console.log('🎵 Music is playing after reload! 🎵');
+                }).catch(function(e) {
+                    console.log('❌ Still cannot play:', e);
+                    alert('⚠️ Tidak bisa memutar musik. Pastikan file MP3 ada di: assets/music/nastelbom-elegant.mp3');
+                });
+            }, 500);
+        });
+    }
+    
+    function pauseMusic() {
+        audio.pause();
+        isPlaying = false;
+        updateUI();
+        if (noteInterval) {
+            clearInterval(noteInterval);
+            noteInterval = null;
+        }
+        console.log('⏸️ Music Paused');
+    }
+    
+    function togglePlay() {
+        if (isPlaying) {
+            pauseMusic();
+        } else {
+            playMusic();
+        }
+    }
+    
+    if (playBtn) {
+        playBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            togglePlay();
+        });
+    }
+    
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            audio.currentTime = 0;
+            if (isPlaying) {
+                audio.play().catch(function() {});
+            }
+            updateProgress();
+        });
+    }
+    
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            audio.currentTime = 0;
+            if (isPlaying) {
+                audio.play().catch(function() {});
+            }
+            updateProgress();
+        });
+    }
+    
+    if (progressTrack) {
+        progressTrack.addEventListener('click', function(e) {
+            if (audio.duration) {
+                var rect = this.getBoundingClientRect();
+                var x = e.clientX - rect.left;
+                var percent = x / rect.width;
+                audio.currentTime = percent * audio.duration;
+                updateProgress();
+            }
+        });
+    }
+    
+    if (volumeSlider) {
+        volumeSlider.addEventListener('input', function() {
+            volume = parseFloat(this.value);
+            audio.volume = volume / 100;
+            if (volumePercent) {
+                volumePercent.textContent = volume + '%';
+            }
+            var volumeIcon = document.querySelector('.music-volume i');
+            if (volumeIcon) {
+                if (volume === 0) {
+                    volumeIcon.className = 'fas fa-volume-mute';
+                } else {
+                    volumeIcon.className = 'fas fa-volume-down';
+                }
+            }
+            localStorage.setItem('staynest_musicVolume', volume);
+        });
+    }
+    
+    try {
+        var savedVolume = localStorage.getItem('staynest_musicVolume');
+        if (savedVolume !== null && volumeSlider) {
+            volume = parseFloat(savedVolume);
+            volumeSlider.value = volume;
+            audio.volume = volume / 100;
+            if (volumePercent) {
+                volumePercent.textContent = volume + '%';
+            }
+        }
+    } catch(e) {}
+    
+    audio.addEventListener('timeupdate', function() {
+        updateProgress();
+    });
+    
+    audio.addEventListener('loadedmetadata', function() {
+        updateTimeDisplay();
+        updateProgress();
+        console.log('✅ Audio loaded: ' + audio.src);
+    });
+    
+    audio.addEventListener('ended', function() {
+        audio.currentTime = 0;
+        if (isPlaying) {
+            audio.play().catch(function() {});
+        }
+        console.log('🔄 Music looped');
+    });
+    
+    audio.addEventListener('error', function(e) {
+        console.log('❌ Audio error:', e);
+        console.log('❌ File path: ' + audio.src);
+    });
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.target.tagName !== 'INPUT' && e.key === ' ') {
+            e.preventDefault();
+            togglePlay();
+        }
+    });
+    
+    updateUI();
+    updateTimeDisplay();
+    console.log('🎵 StayNest Music Player ready!');
+    console.log('🎵 Music file: ' + audio.src);
+});
+</script>
+
+<style>
+.music-note-float {
+    animation: floatNote 2s ease-in-out infinite;
+}
+
+@keyframes floatNote {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(10deg); }
+}
+</style>

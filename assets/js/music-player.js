@@ -31,9 +31,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var musicDot = document.getElementById('musicDot');
     var liveDot = document.getElementById('liveDot');
 
-    // ==========================================
-    // CEK ELEMEN
-    // ==========================================
     if (!musicToggle || !musicControls) {
         console.log('⚠️ Music Player elements not found');
         return;
@@ -44,58 +41,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // ==========================================
     var audio = new Audio();
 
-    // ==========================================
-    // PATH FILE MP3 - COBA SEMUA KEMUNGKINAN
-    // ==========================================
-    var possiblePaths = [
-        '/staynest/assets/music/nastelbom-elegant.mp3',
-        '/staynest/assets/music/nastelbom-elegant.mp3',
-        '/staynest/music/nastelbom-elegant.mp3',
-        '/assets/music/nastelbom-elegant.mp3'
-    ];
+    // PATH FILE MP3 - PASTIKAN BENAR!
+    var musicPath = window.location.origin + '/staynest/assets/music/nastelbom-elegant.mp3';
+    console.log('🎵 Music path: ' + musicPath);
 
-    var currentPathIndex = 0;
+    audio.src = musicPath;
+    audio.load();
+
     var isPlaying = false;
     var volume = 40;
-
-    // ==========================================
-    // FUNGSI MEMUAT LAGU
-    // ==========================================
-    function loadMusic() {
-        var path = possiblePaths[currentPathIndex];
-        audio.src = path;
-        audio.load();
-        console.log('🎵 Loading: ' + path);
-        
-        if (songName) {
-            songName.textContent = 'Nastelbom Elegant';
-        }
-        
-        audio.addEventListener('loadedmetadata', function() {
-            if (totalTime && audio.duration) {
-                var mins = Math.floor(audio.duration / 60);
-                var secs = Math.floor(audio.duration % 60);
-                totalTime.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
-            }
-        });
-        
-        audio.addEventListener('error', function(e) {
-            console.log('❌ Error loading: ' + path);
-            currentPathIndex++;
-            if (currentPathIndex < possiblePaths.length) {
-                console.log('🔄 Trying next path...');
-                loadMusic();
-            } else {
-                console.log('❌ All paths failed!');
-                if (musicStatus) {
-                    musicStatus.textContent = 'Error';
-                    musicStatus.style.color = 'red';
-                }
-            }
-        });
-    }
-
-    loadMusic();
+    var noteInterval = null;
 
     // ==========================================
     // UPDATE UI
@@ -212,14 +167,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // ==========================================
     function playMusic() {
         console.log('🎵 Trying to play music...');
-        console.log('🎵 Current path: ' + audio.src);
-        
-        if (!audio.src || audio.src === '') {
-            loadMusic();
-        }
-        
         audio.volume = volume / 100;
-        
+
         audio.play().then(function() {
             isPlaying = true;
             updateUI();
@@ -227,6 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('🎵 Music is playing! 🎵');
         }).catch(function(error) {
             console.log('❌ Play error:', error);
+            // Coba reload
             audio.load();
             setTimeout(function() {
                 audio.play().then(function() {
@@ -237,10 +187,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }).catch(function(e) {
                     console.log('❌ Still cannot play:', e);
                     alert('⚠️ Tidak bisa memutar musik. Pastikan file MP3 ada di: assets/music/nastelbom-elegant.mp3');
-                    if (musicStatus) {
-                        musicStatus.textContent = 'Error';
-                        musicStatus.style.color = 'red';
-                    }
                 });
             }, 500);
         });
@@ -365,6 +311,11 @@ document.addEventListener('DOMContentLoaded', function() {
             audio.play().catch(function() {});
         }
         console.log('🔄 Music looped');
+    });
+
+    audio.addEventListener('error', function(e) {
+        console.log('❌ Audio error:', e);
+        console.log('❌ File path: ' + audio.src);
     });
 
     // ==========================================
