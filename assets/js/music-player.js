@@ -28,6 +28,8 @@ document.addEventListener('DOMContentLoaded', function() {
     var musicStatusMobile = document.getElementById('musicStatusMobile');
     var musicNoteAnim = document.getElementById('musicNoteAnim');
     var songName = document.getElementById('songName');
+    var musicDot = document.getElementById('musicDot');
+    var liveDot = document.getElementById('liveDot');
 
     // ==========================================
     // CEK APAKAH ELEMEN ADA
@@ -38,6 +40,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==========================================
+    // CREATE AUDIO PLAYER
+    // ==========================================
+    var audio = new Audio();
+
+    // DAFTAR LAGU (Ganti dengan file MP3 kamu)
+    var playlists = [
+        '/staynest/assets/music/nastelbom-elegant.mp3',
+        '/staynest/assets/music/song2.mp3',
+        '/staynest/assets/music/song3.mp3'
+    ];
+
+    var songNames = [
+        'Nastelbom Elegant',
+        'Relaxing Piano',
+        'Chill Vibes'
+    ];
+
+    var currentTrack = 0;
+
+    // Set lagu pertama
+    audio.src = playlists[0];
+    audio.load();
+    if (songName) {
+        songName.textContent = songNames[0];
+    }
+
+    // ==========================================
     // STATE / VARIABEL
     // ==========================================
     var isPlaying = false;
@@ -45,7 +74,104 @@ document.addEventListener('DOMContentLoaded', function() {
     var progressInterval = null;
     var noteInterval = null;
     var volume = 40;
-    var totalDuration = 225; // 3:45 menit
+    var totalDuration = 225;
+
+    // ==========================================
+    // FUNGSI UPDATE UI
+    // ==========================================
+    function updateUI() {
+        // Music status di navbar
+        if (musicStatus) {
+            musicStatus.textContent = isPlaying ? 'On' : 'Off';
+            musicStatus.style.color = isPlaying ? '#667eea' : 'gray';
+        }
+        if (musicStatusMobile) {
+            musicStatusMobile.textContent = isPlaying ? 'Music: On' : 'Music: Off';
+        }
+        // Dot indicator
+        if (musicDot) {
+            musicDot.className = isPlaying ? 'music-dot' : 'music-dot off';
+            musicDot.style.background = isPlaying ? '#22c55e' : '#9ca3af';
+        }
+        if (liveDot) {
+            liveDot.style.background = isPlaying ? '#22c55e' : '#9ca3af';
+        }
+        // Pulse ring
+        if (pulseRing) {
+            if (isPlaying) {
+                pulseRing.classList.add('active');
+            } else {
+                pulseRing.classList.remove('active');
+            }
+        }
+        // Main toggle icon
+        if (musicToggleIcon) {
+            musicToggleIcon.className = isPlaying ? 'fas fa-stop' : 'fas fa-music';
+        }
+        // Play button
+        if (playBtn) {
+            var icon = playBtn.querySelector('i');
+            if (icon) {
+                icon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
+            }
+            playBtn.style.background = isPlaying ?
+                'linear-gradient(135deg, #f093fb, #f5576c)' :
+                'linear-gradient(135deg, #667eea, #764ba2)';
+        }
+    }
+
+    // ==========================================
+    // UPDATE TIME DISPLAY
+    // ==========================================
+    function updateTimeDisplay() {
+        if (currentTime && audio.duration) {
+            var currentSeconds = Math.floor(audio.currentTime);
+            var mins = Math.floor(currentSeconds / 60);
+            var secs = currentSeconds % 60;
+            currentTime.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+        }
+        if (totalTime && audio.duration) {
+            var totalSeconds = Math.floor(audio.duration);
+            var mins = Math.floor(totalSeconds / 60);
+            var secs = totalSeconds % 60;
+            totalTime.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+        }
+    }
+
+    // ==========================================
+    // UPDATE PROGRESS BAR
+    // ==========================================
+    function updateProgress() {
+        if (progressFill && audio.duration) {
+            var percent = (audio.currentTime / audio.duration) * 100;
+            progressFill.style.width = percent + '%';
+        }
+        updateTimeDisplay();
+    }
+
+    // ==========================================
+    // ANIMASI NOT MUSIK
+    // ==========================================
+    function animateNotes() {
+        if (noteInterval) {
+            clearInterval(noteInterval);
+            noteInterval = null;
+        }
+        if (!isPlaying) return;
+        var notes = ['🎵', '🎶', '🎧', '🎸', '🎹', '🎤', '🎼'];
+        var i = 0;
+        noteInterval = setInterval(function() {
+            if (!isPlaying) {
+                clearInterval(noteInterval);
+                noteInterval = null;
+                return;
+            }
+            if (musicNoteAnim) {
+                musicNoteAnim.textContent = notes[i % notes.length];
+                i++;
+            }
+        }, 800);
+    }
 
     // ==========================================
     // FUNGSI TOGGLE CONTROLS
@@ -87,171 +213,100 @@ document.addEventListener('DOMContentLoaded', function() {
     // ==========================================
     document.addEventListener('click', function(e) {
         if (musicControls && musicControls.classList.contains('show')) {
-            var isInside = musicControls.contains(e.target);
-            var isToggle = musicToggle && musicToggle.contains(e.target);
-            var isToggleBtn = musicToggleBtn && musicToggleBtn.contains(e.target);
-            var isToggleMobile = musicToggleMobile && musicToggleMobile.contains(e.target);
-            
-            if (!isInside && !isToggle && !isToggleBtn && !isToggleMobile) {
+            if (!musicControls.contains(e.target) &&
+                !musicToggle.contains(e.target) &&
+                !musicToggleBtn?.contains(e.target) &&
+                !musicToggleMobile?.contains(e.target)) {
                 musicControls.classList.remove('show');
             }
         }
     });
 
     // ==========================================
-    // UPDATE TIME DISPLAY
+    // PLAY / PAUSE
     // ==========================================
-    function updateTimeDisplay() {
-        if (currentTime) {
-            var currentSeconds = Math.floor((progress / 100) * totalDuration);
-            var mins = Math.floor(currentSeconds / 60);
-            var secs = currentSeconds % 60;
-            currentTime.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+    function playMusic() {
+        if (!audio.src || audio.src === '') {
+            audio.src = playlists[currentTrack];
+            audio.load();
         }
+        audio.play().then(function() {
+            isPlaying = true;
+            updateUI();
+            animateNotes();
+            console.log('🎵 Music Playing: ' + songNames[currentTrack]);
+        }).catch(function(error) {
+            console.log('⚠️ Play error:', error);
+            audio.src = playlists[currentTrack];
+            audio.load();
+            setTimeout(function() {
+                audio.play().catch(function(e) {
+                    console.log('❌ Still cannot play:', e);
+                });
+            }, 500);
+        });
     }
 
-    // ==========================================
-    // ANIMASI NOT MUSIK
-    // ==========================================
-    function animateNotes() {
+    function pauseMusic() {
+        audio.pause();
+        isPlaying = false;
+        updateUI();
         if (noteInterval) {
             clearInterval(noteInterval);
             noteInterval = null;
         }
-        if (!isPlaying) return;
-        
-        var notes = ['🎵', '🎶', '🎧', '🎸', '🎹', '🎤', '🎼'];
-        var i = 0;
-        
-        noteInterval = setInterval(function() {
-            if (!isPlaying) {
-                clearInterval(noteInterval);
-                noteInterval = null;
-                return;
-            }
-            if (musicNoteAnim) {
-                musicNoteAnim.textContent = notes[i % notes.length];
-                i++;
-            }
-        }, 800);
+        console.log('⏸️ Music Paused');
     }
 
-    // ==========================================
-    // SIMULASI PROGRESS BAR
-    // ==========================================
-    function simulateProgress() {
-        if (!isPlaying) return;
-
-        if (progress >= 100) {
-            progress = 0;
-            
-            if (playBtn) {
-                var icon = playBtn.querySelector('i');
-                if (icon) {
-                    icon.className = 'fas fa-play';
-                }
-                playBtn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-            }
-            
-            isPlaying = false;
-            
-            if (pulseRing) {
-                pulseRing.classList.remove('active');
-            }
-            if (musicToggleIcon) {
-                musicToggleIcon.className = 'fas fa-music';
-            }
-            if (musicStatus) {
-                musicStatus.textContent = 'Off';
-                musicStatus.style.color = 'gray';
-            }
-            if (musicStatusMobile) {
-                musicStatusMobile.textContent = 'Music: Off';
-            }
-            if (noteInterval) {
-                clearInterval(noteInterval);
-                noteInterval = null;
-            }
-            
-            return;
+    function togglePlay() {
+        if (isPlaying) {
+            pauseMusic();
+        } else {
+            playMusic();
         }
-
-        progress += 0.5;
-        if (progressFill) {
-            progressFill.style.width = progress + '%';
-        }
-        updateTimeDisplay();
-        
-        progressInterval = setTimeout(simulateProgress, 100);
     }
 
-    // ==========================================
-    // PLAY / PAUSE
-    // ==========================================
     if (playBtn) {
-        playBtn.addEventListener('click', function() {
-            isPlaying = !isPlaying;
-            var icon = this.querySelector('i');
+        playBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            togglePlay();
+        });
+    }
 
+    // ==========================================
+    // PREVIOUS / NEXT
+    // ==========================================
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            currentTrack = (currentTrack - 1 + playlists.length) % playlists.length;
+            audio.src = playlists[currentTrack];
+            audio.load();
             if (isPlaying) {
-                // PLAY
-                if (icon) {
-                    icon.className = 'fas fa-pause';
-                }
-                this.style.background = 'linear-gradient(135deg, #f093fb, #f5576c)';
-                
-                if (pulseRing) {
-                    pulseRing.classList.add('active');
-                }
-                if (musicToggleIcon) {
-                    musicToggleIcon.className = 'fas fa-stop';
-                }
-                
-                if (musicStatus) {
-                    musicStatus.textContent = 'On';
-                    musicStatus.style.color = '#667eea';
-                }
-                if (musicStatusMobile) {
-                    musicStatusMobile.textContent = 'Music: On';
-                }
-                
-                simulateProgress();
-                animateNotes();
-                console.log('🎵 Music Playing');
-                
-            } else {
-                // PAUSE
-                if (icon) {
-                    icon.className = 'fas fa-play';
-                }
-                this.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-                
-                if (pulseRing) {
-                    pulseRing.classList.remove('active');
-                }
-                if (musicToggleIcon) {
-                    musicToggleIcon.className = 'fas fa-music';
-                }
-                
-                if (musicStatus) {
-                    musicStatus.textContent = 'Off';
-                    musicStatus.style.color = 'gray';
-                }
-                if (musicStatusMobile) {
-                    musicStatusMobile.textContent = 'Music: Off';
-                }
-                
-                if (progressInterval) {
-                    clearTimeout(progressInterval);
-                    progressInterval = null;
-                }
-                if (noteInterval) {
-                    clearInterval(noteInterval);
-                    noteInterval = null;
-                }
-                
-                console.log('⏸️ Music Paused');
+                audio.play().catch(function() {});
             }
+            if (songName) {
+                songName.textContent = songNames[currentTrack] || 'Nastelbom Elegant';
+            }
+            updateTimeDisplay();
+            console.log('⏮️ Previous: ' + songNames[currentTrack]);
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            currentTrack = (currentTrack + 1) % playlists.length;
+            audio.src = playlists[currentTrack];
+            audio.load();
+            if (isPlaying) {
+                audio.play().catch(function() {});
+            }
+            if (songName) {
+                songName.textContent = songNames[currentTrack] || 'Nastelbom Elegant';
+            }
+            updateTimeDisplay();
+            console.log('⏭️ Next: ' + songNames[currentTrack]);
         });
     }
 
@@ -260,41 +315,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // ==========================================
     if (progressTrack) {
         progressTrack.addEventListener('click', function(e) {
-            var rect = this.getBoundingClientRect();
-            var x = e.clientX - rect.left;
-            var percent = (x / rect.width) * 100;
-            progress = Math.min(100, Math.max(0, percent));
-            
-            if (progressFill) {
-                progressFill.style.width = progress + '%';
+            if (audio.duration) {
+                var rect = this.getBoundingClientRect();
+                var x = e.clientX - rect.left;
+                var percent = x / rect.width;
+                audio.currentTime = percent * audio.duration;
+                updateProgress();
             }
-            updateTimeDisplay();
-        });
-    }
-
-    // ==========================================
-    // TOMBOL PREVIOUS
-    // ==========================================
-    if (prevBtn) {
-        prevBtn.addEventListener('click', function() {
-            progress = Math.max(0, progress - 10);
-            if (progressFill) {
-                progressFill.style.width = progress + '%';
-            }
-            updateTimeDisplay();
-        });
-    }
-
-    // ==========================================
-    // TOMBOL NEXT
-    // ==========================================
-    if (nextBtn) {
-        nextBtn.addEventListener('click', function() {
-            progress = Math.min(100, progress + 10);
-            if (progressFill) {
-                progressFill.style.width = progress + '%';
-            }
-            updateTimeDisplay();
         });
     }
 
@@ -304,10 +331,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (volumeSlider) {
         volumeSlider.addEventListener('input', function() {
             volume = parseFloat(this.value);
+            audio.volume = volume / 100;
             if (volumePercent) {
                 volumePercent.textContent = volume + '%';
             }
-            
             var volumeIcon = document.querySelector('.music-volume i');
             if (volumeIcon) {
                 if (volume === 0) {
@@ -316,12 +343,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     volumeIcon.className = 'fas fa-volume-down';
                 }
             }
-            
             try {
                 localStorage.setItem('staynest_musicVolume', volume);
-            } catch(e) {
-                // LocalStorage tidak tersedia
-            }
+            } catch(e) {}
         });
     }
 
@@ -333,29 +357,44 @@ document.addEventListener('DOMContentLoaded', function() {
         if (savedVolume !== null && volumeSlider) {
             volume = parseFloat(savedVolume);
             volumeSlider.value = volume;
+            audio.volume = volume / 100;
             if (volumePercent) {
                 volumePercent.textContent = volume + '%';
             }
         }
-    } catch(e) {
-        // LocalStorage tidak tersedia
-    }
+    } catch(e) {}
 
     // ==========================================
-    // SET TOTAL TIME (3:45)
+    // AUDIO EVENT LISTENERS
     // ==========================================
-    if (totalTime) {
-        var mins = Math.floor(totalDuration / 60);
-        var secs = totalDuration % 60;
-        totalTime.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
-    }
+    audio.addEventListener('timeupdate', function() {
+        updateProgress();
+    });
 
-    // ==========================================
-    // SET SONG NAME
-    // ==========================================
-    if (songName) {
-        songName.textContent = 'Nastelbom Elegant';
-    }
+    audio.addEventListener('loadedmetadata', function() {
+        updateTimeDisplay();
+        updateProgress();
+        console.log('✅ Audio loaded: ' + audio.src);
+    });
+
+    audio.addEventListener('ended', function() {
+        currentTrack = (currentTrack + 1) % playlists.length;
+        audio.src = playlists[currentTrack];
+        audio.load();
+        if (isPlaying) {
+            audio.play().catch(function() {});
+        }
+        if (songName) {
+            songName.textContent = songNames[currentTrack] || 'Nastelbom Elegant';
+        }
+        console.log('⏭️ Auto next: ' + songNames[currentTrack]);
+    });
+
+    audio.addEventListener('error', function(e) {
+        console.log('❌ Audio error:', e);
+        console.log('❌ Please check if music files exist in /assets/music/');
+        console.log('❌ File path: ' + audio.src);
+    });
 
     // ==========================================
     // KEYBOARD SHORTCUT: SPACE UNTUK PLAY/PAUSE
@@ -363,11 +402,22 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('keydown', function(e) {
         if (e.target.tagName !== 'INPUT' && e.key === ' ') {
             e.preventDefault();
-            if (playBtn) {
-                playBtn.click();
-            }
+            togglePlay();
         }
     });
 
+    // ==========================================
+    // SET SONG NAME
+    // ==========================================
+    if (songName) {
+        songName.textContent = songNames[currentTrack] || 'Nastelbom Elegant';
+    }
+
+    // ==========================================
+    // INISIALISASI
+    // ==========================================
+    updateUI();
+    updateTimeDisplay();
     console.log('🎵 StayNest Music Player ready!');
+    console.log('🎵 Current song: ' + songNames[currentTrack]);
 });
