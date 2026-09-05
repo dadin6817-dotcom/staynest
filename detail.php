@@ -1,5 +1,5 @@
 <?php
-// detail.php - Halaman Detail Properti dengan SEMUA FOTO
+// detail.php - Halaman Detail Properti dengan Scan Uploads
 $page_title = "Property Detail - StayNest";
 
 require_once dirname(__FILE__) . '/config/database.php';
@@ -21,66 +21,50 @@ if (!$property) {
     exit;
 }
 
-// ================================================================
-// CEK FOLDER UPLOADS - AMBIL SEMUA GAMBAR
-// ================================================================
-function getImagesFromFolder($property_id) {
+// ==============================================
+// FUNGSI GET ALL IMAGES (SCAN UPLOADS)
+// ==============================================
+function getAllPropertyImages($property_id) {
     $images = [];
-    
-    // Path folder
-    $upload_dir = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/uploads/';
-    $image_dir = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/images/';
+    $upload_path = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/uploads/';
+    $image_path = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/images/';
     
     // Prefix berdasarkan properti
-    $prefixes = [
-        1 => ['babelan', 'Babelan'],
-        2 => ['alamanda', 'Alamanda'],
-        3 => ['Vip', 'vip', 'VIP']
-    ];
-    
+    $prefixes = [1 => 'babelan', 2 => 'alamanda', 3 => 'Vip'];
+    $prefix = $prefixes[$property_id] ?? 'default';
     $extensions = ['jpeg', 'jpg', 'png', 'gif', 'webp'];
-    $prefix_list = $prefixes[$property_id] ?? ['default'];
     
-    // 1. Scan UPLOADS
-    if (is_dir($upload_dir)) {
-        $files = scandir($upload_dir);
+    // SCAN UPLOADS
+    if (is_dir($upload_path)) {
+        $files = scandir($upload_path);
         foreach ($files as $file) {
             if ($file == '.' || $file == '..') continue;
             $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
             if (!in_array($ext, $extensions)) continue;
-            foreach ($prefix_list as $prefix) {
-                if (stripos($file, $prefix) !== false) {
-                    $images[] = '/staynest/assets/uploads/' . $file;
-                    break;
+            if (stripos($file, $prefix) !== false) {
+                $images[] = '/staynest/assets/uploads/' . $file;
+            }
+        }
+    }
+    
+    // SCAN IMAGES
+    if (is_dir($image_path)) {
+        $files = scandir($image_path);
+        foreach ($files as $file) {
+            if ($file == '.' || $file == '..') continue;
+            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+            if (!in_array($ext, $extensions)) continue;
+            if (stripos($file, $prefix) !== false) {
+                $img_path = '/staynest/assets/images/' . $file;
+                if (!in_array($img_path, $images)) {
+                    $images[] = $img_path;
                 }
             }
         }
     }
     
-    // 2. Scan IMAGES
-    if (is_dir($image_dir)) {
-        $files = scandir($image_dir);
-        foreach ($files as $file) {
-            if ($file == '.' || $file == '..') continue;
-            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-            if (!in_array($ext, $extensions)) continue;
-            foreach ($prefix_list as $prefix) {
-                if (stripos($file, $prefix) !== false) {
-                    $img_path = '/staynest/assets/images/' . $file;
-                    if (!in_array($img_path, $images)) {
-                        $images[] = $img_path;
-                    }
-                    break;
-                }
-            }
-        }
-    }
-    
-    // 3. Sortir dan hapus duplikat
-    $images = array_unique($images);
     sort($images);
     
-    // 4. Default
     if (empty($images)) {
         $images[] = '/staynest/assets/images/default-property.jpg';
     }
@@ -88,30 +72,41 @@ function getImagesFromFolder($property_id) {
     return $images;
 }
 
-$all_images = getImagesFromFolder($property_id);
+// ==============================================
+// FUNGSI GET GAMBAR UNIT
+// ==============================================
+function getUnitImages($property_id, $total_units) {
+    $all_images = getAllPropertyImages($property_id);
+    $unit_images = [];
+    
+    for ($i = 0; $i < $total_units; $i++) {
+        if (isset($all_images[$i])) {
+            $unit_images[$i + 1] = $all_images[$i];
+        } else {
+            $unit_images[$i + 1] = $all_images[0] ?? '/staynest/assets/images/default-property.jpg';
+        }
+    }
+    
+    return $unit_images;
+}
+
+// ==============================================
+// DATA
+// ==============================================
+$all_images = getAllPropertyImages($property_id);
 $main_img = $all_images[0] ?? '/staynest/assets/images/default-property.jpg';
 $total_images = count($all_images);
-
-// Debug di browser (bisa dihapus setelah berhasil)
-// echo "<!-- Total Images: " . $total_images . " -->";
-// foreach ($all_images as $img) { echo "<!-- " . $img . " -->"; }
-
 $price_display = "Rp " . number_format($property['price_per_month'] ?? 700000, 0, ',', '.');
 $total_units = $property['total_doors'] ?? 4;
-
-// Unit images - pakai gambar dari folder
-$unit_images = [];
-for ($i = 0; $i < $total_units; $i++) {
-    $unit_images[$i + 1] = isset($all_images[$i]) ? $all_images[$i] : $main_img;
-}
+$unit_images = getUnitImages($property_id, $total_units);
 
 // Fasilitas
 $facilities = ['3 Sekat', 'Dapur (Wastafel)', 'Listrik Token (800 kWh)', 'Air Tanah Jetpump'];
 $advantages = ['Baru Direnovasi', 'Akses Mobil Depan Kontrakan', '50 m dari Jalan Raya', 'Bebas Banjir', '2 km dari KCM Wisata Asri', '2 km dari McD Gading Terrace', '2 km dari Jembatan Besi Teluk Pucung', '2 km dari Pom Bensin'];
 
 // Status unit
-$available = $property['available_rooms'];
-$occupied = $property['occupied_rooms'];
+$available = $property['available_rooms'] ?? 0;
+$occupied = $property['occupied_rooms'] ?? 0;
 $unit_status = [];
 for ($i = 1; $i <= $total_units; $i++) {
     if ($i <= $available) $unit_status[$i] = 'available';
@@ -281,17 +276,17 @@ for ($i = 1; $i <= $total_units; $i++) {
             </div>
             <?php endfor; ?>
         </div>
+        
         <div class="mt-4 text-center text-sm text-gray-400">
             <i class="fas fa-images mr-1"></i> Total <?php echo $total_images; ?> photos available
         </div>
     </div>
 </div>
 
-<!-- ================================================================ -->
+<!-- ============================================== -->
 <!-- SLIDE SCRIPT -->
-<!-- ================================================================ -->
+<!-- ============================================== -->
 <script>
-// Data gambar dari PHP
 var images = [];
 <?php foreach ($all_images as $img): ?>
 images.push('<?php echo htmlspecialchars($img); ?>');
@@ -316,8 +311,6 @@ function goToImage(index) {
 function updateImage() {
     mainImage.src = images[currentIndex];
     imgCounter.textContent = (currentIndex + 1) + ' / ' + images.length;
-    
-    // Update thumbnails
     document.querySelectorAll('.thumb-img').forEach(function(el, i) {
         if (i === currentIndex) {
             el.className = 'thumb-img w-16 h-12 object-cover rounded-lg cursor-pointer transition border-2 border-purple-600 ring-2 ring-purple-300';
@@ -328,19 +321,16 @@ function updateImage() {
 }
 
 // Auto slide
-var autoSlide = setInterval(function() {
-    changeImage(1);
-}, 4000);
+var autoSlide = setInterval(function() { changeImage(1); }, 4000);
 
 // Pause on hover
-document.querySelector('.bg-white.rounded-2xl.shadow-lg.overflow-hidden').addEventListener('mouseenter', function() {
-    clearInterval(autoSlide);
-});
-document.querySelector('.bg-white.rounded-2xl.shadow-lg.overflow-hidden').addEventListener('mouseleave', function() {
-    autoSlide = setInterval(function() {
-        changeImage(1);
-    }, 4000);
-});
+var slideContainer = document.querySelector('.bg-white.rounded-2xl.shadow-lg.overflow-hidden');
+if (slideContainer) {
+    slideContainer.addEventListener('mouseenter', function() { clearInterval(autoSlide); });
+    slideContainer.addEventListener('mouseleave', function() {
+        autoSlide = setInterval(function() { changeImage(1); }, 4000);
+    });
+}
 
 // Keyboard
 document.addEventListener('keydown', function(e) {
@@ -367,4 +357,4 @@ console.log('📸 Total images loaded: ' + images.length);
 }
 </style>
 
-<?php require_once dirname(__FILE__) . '/includes/footer.php'; ?>
+<?php require_once dirname(__FILE__) . '/includes/footer.php'; ?>~

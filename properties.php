@@ -1,54 +1,43 @@
 <?php
-// properties.php - Halaman Properties dengan Gambar dari Uploads
+// properties.php - Halaman Properties dengan Scan Uploads
 $page_title = "Properties - StayNest";
 
 require_once dirname(__FILE__) . '/config/database.php';
 require_once dirname(__FILE__) . '/includes/header.php';
 
 // ==============================================
-// FUNGSI GET GAMBAR PROPERTI (SCAN UPLOADS & IMAGES)
+// FUNGSI GET GAMBAR PROPERTI (SCAN UPLOADS)
 // ==============================================
 function getPropertyImage($property_id) {
-    $image_path = '/staynest/assets/images/';
-    $upload_path = '/staynest/assets/uploads/';
+    $upload_path = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/uploads/';
+    $image_path = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/images/';
     
-    // Mapping prefix berdasarkan ID properti
-    $prefixes = [
-        1 => ['babelan', 'Babelan'],
-        2 => ['alamanda', 'Alamanda'],
-        3 => ['Vip', 'vip', 'VIP']
-    ];
-    
+    $prefixes = [1 => 'babelan', 2 => 'alamanda', 3 => 'Vip'];
+    $prefix = $prefixes[$property_id] ?? 'default';
     $extensions = ['jpeg', 'jpg', 'png', 'gif', 'webp'];
     
-    if (isset($prefixes[$property_id])) {
-        $prefix_list = $prefixes[$property_id];
-        
-        // Cek di folder uploads dulu (prioritas)
-        if (is_dir($_SERVER['DOCUMENT_ROOT'] . $upload_path)) {
-            $files = scandir($_SERVER['DOCUMENT_ROOT'] . $upload_path);
-            foreach ($files as $file) {
-                if ($file == '.' || $file == '..') continue;
-                $filename = strtolower($file);
-                foreach ($prefix_list as $prefix) {
-                    if (strpos($filename, strtolower($prefix)) !== false) {
-                        return $upload_path . $file;
-                    }
-                }
+    // Cari di uploads
+    if (is_dir($upload_path)) {
+        $files = scandir($upload_path);
+        foreach ($files as $file) {
+            if ($file == '.' || $file == '..') continue;
+            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+            if (!in_array($ext, $extensions)) continue;
+            if (stripos($file, $prefix) !== false) {
+                return '/staynest/assets/uploads/' . $file;
             }
         }
-        
-        // Cek di folder images
-        if (is_dir($_SERVER['DOCUMENT_ROOT'] . $image_path)) {
-            $files = scandir($_SERVER['DOCUMENT_ROOT'] . $image_path);
-            foreach ($files as $file) {
-                if ($file == '.' || $file == '..') continue;
-                $filename = strtolower($file);
-                foreach ($prefix_list as $prefix) {
-                    if (strpos($filename, strtolower($prefix)) !== false) {
-                        return $image_path . $file;
-                    }
-                }
+    }
+    
+    // Cari di images
+    if (is_dir($image_path)) {
+        $files = scandir($image_path);
+        foreach ($files as $file) {
+            if ($file == '.' || $file == '..') continue;
+            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+            if (!in_array($ext, $extensions)) continue;
+            if (stripos($file, $prefix) !== false) {
+                return '/staynest/assets/images/' . $file;
             }
         }
     }
@@ -62,60 +51,48 @@ function getPropertyImage($property_id) {
 }
 
 // ==============================================
-// FUNGSI GET SEMUA GAMBAR UNTUK SLIDE
+// FUNGSI GET ALL IMAGES (SCAN UPLOADS)
 // ==============================================
 function getAllPropertyImages($property_id) {
     $images = [];
-    $image_path = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/images/';
     $upload_path = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/uploads/';
+    $image_path = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/images/';
     
-    $prefixes = [
-        1 => ['babelan', 'Babelan'],
-        2 => ['alamanda', 'Alamanda'],
-        3 => ['Vip', 'vip', 'VIP']
-    ];
-    
+    $prefixes = [1 => 'babelan', 2 => 'alamanda', 3 => 'Vip'];
+    $prefix = $prefixes[$property_id] ?? 'default';
     $extensions = ['jpeg', 'jpg', 'png', 'gif', 'webp'];
-    $prefix_list = $prefixes[$property_id] ?? ['default'];
     
-    // Scan uploads
+    // SCAN UPLOADS
     if (is_dir($upload_path)) {
         $files = scandir($upload_path);
         foreach ($files as $file) {
             if ($file == '.' || $file == '..') continue;
             $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
             if (!in_array($ext, $extensions)) continue;
-            $filename = strtolower($file);
-            foreach ($prefix_list as $prefix) {
-                if (strpos($filename, strtolower($prefix)) !== false) {
-                    $images[] = '/staynest/assets/uploads/' . $file;
-                    break;
-                }
+            if (stripos($file, $prefix) !== false) {
+                $images[] = '/staynest/assets/uploads/' . $file;
             }
         }
     }
     
-    // Scan images
+    // SCAN IMAGES (tambahan)
     if (is_dir($image_path)) {
         $files = scandir($image_path);
         foreach ($files as $file) {
             if ($file == '.' || $file == '..') continue;
             $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
             if (!in_array($ext, $extensions)) continue;
-            $filename = strtolower($file);
-            foreach ($prefix_list as $prefix) {
-                if (strpos($filename, strtolower($prefix)) !== false) {
-                    $img_path = '/staynest/assets/images/' . $file;
-                    if (!in_array($img_path, $images)) {
-                        $images[] = $img_path;
-                    }
-                    break;
+            if (stripos($file, $prefix) !== false) {
+                $img_path = '/staynest/assets/images/' . $file;
+                if (!in_array($img_path, $images)) {
+                    $images[] = $img_path;
                 }
             }
         }
     }
     
-    // Jika tidak ada gambar
+    sort($images);
+    
     if (empty($images)) {
         $images[] = '/staynest/assets/images/default-property.jpg';
     }
@@ -133,11 +110,12 @@ try {
     $properties = [];
 }
 
+// Fallback data
 if (empty($properties)) {
     $properties = [
-        ['id' => 1, 'name' => 'StayNest Vela', 'location' => 'Babelan, Bekasi', 'total_doors' => 2, 'available_rooms' => 1, 'occupied_rooms' => 1, 'price_per_month' => 700000, 'is_vip' => 0],
-        ['id' => 2, 'name' => 'StayNest Aera', 'location' => 'Tambun, Bekasi', 'total_doors' => 4, 'available_rooms' => 1, 'occupied_rooms' => 3, 'price_per_month' => 700000, 'is_vip' => 1],
-        ['id' => 3, 'name' => 'StayNest Elora', 'location' => 'Babelan, Bekasi', 'total_doors' => 12, 'available_rooms' => 6, 'occupied_rooms' => 6, 'price_per_month' => 800000, 'is_vip' => 1]
+        ['id' => 1, 'name' => 'StayNest Vela', 'location' => 'Kavling Harapan Manunggal Utara, Kec. Bahagia, Babelan, Bekasi', 'total_doors' => 2, 'available_rooms' => 1, 'occupied_rooms' => 1, 'price_per_month' => 700000, 'is_vip' => 0],
+        ['id' => 2, 'name' => 'StayNest Aera', 'location' => 'Jl. Pandawa 15, Kp. Gebang, Karang Satria, Tambun Utara, Bekasi', 'total_doors' => 4, 'available_rooms' => 1, 'occupied_rooms' => 3, 'price_per_month' => 700000, 'is_vip' => 1],
+        ['id' => 3, 'name' => 'StayNest Elora', 'location' => 'Kavling Bumi Mas 2, Kec. Bahagia, Babelan, Bekasi', 'total_doors' => 12, 'available_rooms' => 6, 'occupied_rooms' => 6, 'price_per_month' => 800000, 'is_vip' => 1]
     ];
 }
 ?>
@@ -164,8 +142,7 @@ if (empty($properties)) {
                 <?php if (!empty($img)): ?>
                     <img src="<?php echo htmlspecialchars($img); ?>" 
                          alt="<?php echo htmlspecialchars($property['name']); ?>"
-                         class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                         onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center text-white text-5xl\'><i class=\'fas fa-home\'></i></div>';">
+                         class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
                 <?php else: ?>
                     <div class="w-full h-full flex items-center justify-center text-white text-5xl">
                         <i class="fas fa-home"></i>
