@@ -1,5 +1,5 @@
 <?php
-// bookings/my_bookings.php - Halaman My Bookings
+// bookings/my_bookings.php - Halaman My Bookings dengan Status Lengkap
 $page_title = "My Bookings - StayNest";
 
 require_once dirname(__FILE__) . '/../config/database.php';
@@ -67,17 +67,23 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                             <span><i class="fas fa-calendar-alt mr-1"></i> <?php echo date('d M Y', strtotime($b['check_in'])); ?></span>
                             <span><i class="fas fa-calendar-check mr-1"></i> <?php echo date('d M Y', strtotime($b['check_out'])); ?></span>
                             <span><i class="fas fa-clock mr-1"></i> <?php echo $b['duration_months']; ?> months</span>
+                            <span><i class="fas fa-door-open mr-1"></i> Unit <?php echo $b['unit_number']; ?></span>
                         </div>
                         <p class="text-sm text-gray-500 mt-1"><i class="fas fa-user mr-1"></i> <?php echo htmlspecialchars($b['full_name']); ?></p>
+                        <p class="text-sm mt-1">
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold <?php echo $b['payment_status'] == 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'; ?>">
+                                <?php echo $b['payment_status'] == 'paid' ? '✅ Paid' : '⏳ ' . ucfirst($b['payment_status']); ?>
+                            </span>
+                            <span class="ml-2 px-2 py-1 rounded-full text-xs font-semibold <?php echo $b['status'] == 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'; ?>">
+                                <?php echo ucfirst($b['status']); ?>
+                            </span>
+                        </p>
                         <?php if (!empty($b['notes'])): ?>
                             <p class="text-sm text-gray-400 mt-1"><i class="fas fa-sticky-note mr-1"></i> <?php echo htmlspecialchars($b['notes']); ?></p>
                         <?php endif; ?>
                     </div>
                     <div class="text-right">
-                        <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold <?php echo $b['status'] == 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'; ?>">
-                            <?php echo $b['status'] == 'active' ? '✅ Active' : '⏳ Pending'; ?>
-                        </span>
-                        <p class="font-bold text-purple-600 mt-2">Rp <?php echo number_format($b['total_price'], 0, ',', '.'); ?></p>
+                        <p class="font-bold text-purple-600">Rp <?php echo number_format($b['total_price'], 0, ',', '.'); ?></p>
                         <?php if ($b['status'] == 'active'): ?>
                             <div class="mt-2">
                                 <a href="book_now.php?extend=1&booking_id=<?php echo $b['id']; ?>" class="bg-purple-600 text-white text-sm px-4 py-1 rounded-lg hover:bg-purple-700 transition inline-block">
@@ -103,10 +109,11 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                             <span><i class="fas fa-calendar-alt mr-1"></i> <?php echo date('d M Y', strtotime($b['check_in'])); ?></span>
                             <span><i class="fas fa-calendar-check mr-1"></i> <?php echo date('d M Y', strtotime($b['check_out'])); ?></span>
                             <span><i class="fas fa-clock mr-1"></i> <?php echo $b['duration_months']; ?> months</span>
+                            <span><i class="fas fa-door-open mr-1"></i> Unit <?php echo $b['unit_number']; ?></span>
                         </div>
                     </div>
                     <div class="text-right">
-                        <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700">
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold <?php echo $b['status'] == 'extended' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'; ?>">
                             <?php echo $b['status'] == 'extended' ? '🔄 Extended' : '✅ Completed'; ?>
                         </span>
                         <p class="font-bold text-gray-500 mt-2">Rp <?php echo number_format($b['total_price'], 0, ',', '.'); ?></p>
@@ -129,4 +136,4 @@ require_once dirname(__FILE__) . '/../includes/header.php';
 .gradient-bg { background: linear-gradient(135deg, #667eea, #764ba2); }
 </style>
 
-<?php require_once dirname(__FILE__) . '/../includes/footer.php'; 
+<?php require_once dirname(__FILE__) . '/../includes/footer.php'; ?>

@@ -1,5 +1,5 @@
 <?php
-// bookings/book_now.php - Halaman Booking Properti (Dengan Cek Double Booking)
+// bookings/book_now.php - Halaman Booking dengan Cek Double Booking & Payment Termin
 $page_title = "Book Now - StayNest";
 
 require_once dirname(__FILE__) . '/../config/database.php';
@@ -17,6 +17,46 @@ $is_extend = false;
 $existing_booking = null;
 
 // ==============================================
+// CEK DOUBLE BOOKING
+// ==============================================
+function isUnitBooked($property_id, $unit_number, $check_in, $check_out) {
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare("
+            SELECT * FROM bookings 
+            WHERE property_id = ? 
+            AND unit_number = ? 
+            AND status IN ('pending', 'active', 'extended')
+            AND (
+                (check_in <= ? AND check_out > ?) OR
+                (check_in < ? AND check_out >= ?) OR
+                (check_in >= ? AND check_out <= ?)
+            )
+        ");
+        $stmt->execute([$property_id, $unit_number, $check_out, $check_in, $check_out, $check_in, $check_in, $check_out]);
+        return $stmt->rowCount() > 0;
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
+// ==============================================
+// FUNGSI HITUNG HARGA BERDASARKAN DURASI
+// ==============================================
+function calculatePrice($property, $duration) {
+    $price_per_month = $property['price_per_month'] ?? 700000;
+    
+    if ($duration >= 12) {
+        return ($property['price_per_year'] ?? $price_per_month * 12) / 12 * $duration;
+    } elseif ($duration >= 6) {
+        return ($property['price_per_6months'] ?? $price_per_month * 6) / 6 * $duration;
+    } elseif ($duration >= 3) {
+        return ($property['price_per_3months'] ?? $price_per_month * 3) / 3 * $duration;
+    }
+    return $price_per_month * $duration;
+}
+
+// ==============================================
 // CEK EXTEND
 // ==============================================
 if (isset($_GET['extend']) && $_GET['extend'] == 1 && isset($_GET['booking_id'])) {
@@ -24,10 +64,11 @@ if (isset($_GET['extend']) && $_GET['extend'] == 1 && isset($_GET['booking_id'])
     $booking_id = (int)$_GET['booking_id'];
     try {
         $stmt = $pdo->prepare("
-            SELECT b.*, p.name as property_name, p.location as property_location, p.price_per_month, p.image_url
+            SELECT b.*, p.name as property_name, p.location as property_location, 
+                   p.price_per_month, p.price_per_3months, p.price_per_6months, p.price_per_year, p.image_url
             FROM bookings b
             JOIN properties p ON b.property_id = p.id
-            WHERE b.id = ? AND b.user_id = ? AND b.status = 'active'
+            WHERE b.id = ? AND b.user_id = ? AND b.status IN ('active', 'pending')
         ");
         $stmt->execute([$booking_id, $_SESSION['user_id']]);
         $existing_booking = $stmt->fetch();
@@ -39,6 +80,9 @@ if (isset($_GET['extend']) && $_GET['extend'] == 1 && isset($_GET['booking_id'])
                 'name' => $existing_booking['property_name'],
                 'location' => $existing_booking['property_location'],
                 'price_per_month' => $existing_booking['price_per_month'],
+                'price_per_3months' => $existing_booking['price_per_3months'],
+                'price_per_6months' => $existing_booking['price_per_6months'],
+                'price_per_year' => $existing_booking['price_per_year'],
                 'image_url' => $existing_booking['image_url'] ?? '/staynest/assets/images/default-property.jpg'
             ];
         } else {
@@ -66,35 +110,6 @@ if (!$is_extend && $property_id > 0) {
 }
 
 // ==============================================
-// FUNGSI CEK DOUBLE BOOKING
-// ==============================================
-function isUnitBooked($property_id, $unit_number) {
-    global $pdo;
-    try {
-        $stmt = $pdo->prepare("
-            SELECT * FROM bookings 
-            WHERE property_id = ? 
-            AND unit_number = ? 
-            AND status IN ('active', 'pending')
-            AND check_out > CURDATE()
-        ");
-        $stmt->execute([$property_id, $unit_number]);
-        return $stmt->rowCount() > 0;
-    } catch (Exception $e) {
-        return false;
-    }
-}
-
-// ==============================================
-// CEK DOUBLE BOOKING (HANYA UNTUK BOOKING BARU)
-// ==============================================
-if (!$is_extend && empty($error) && $unit_number > 0) {
-    if (isUnitBooked($property_id, $unit_number)) {
-        $error = "⚠️ Unit " . $unit_number . " is already booked! Please choose another unit.";
-    }
-}
-
-// ==============================================
 // AMBIL DATA USER
 // ==============================================
 $user = null;
@@ -119,6 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
     $booking_id = isset($_POST['booking_id']) ? (int)$_POST['booking_id'] : 0;
     $use_old_data = isset($_POST['use_old_data']) && $_POST['use_old_data'] == 1;
     $unit_number_input = isset($_POST['unit_number']) ? (int)$_POST['unit_number'] : 0;
+    $payment_type = $_POST['payment_type'] ?? 'full';
 
     if ($use_account_data && $user) {
         $full_name = $user['full_name'];
@@ -133,18 +149,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
         $unit_number_input = $existing_booking['unit_number'] ?? 0;
     }
 
+    // Validasi
     if (!in_array($duration, [1, 2, 3, 6, 12])) $error = "Select valid duration!";
     if (empty($full_name)) $error = "Full name is required!";
     if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) $error = "Valid email is required!";
     if (empty($phone)) $error = "Phone number is required!";
     if ($unit_number_input <= 0) $error = "Unit number is required!";
+    if (!in_array($payment_type, ['full', 'monthly', 'quarterly', 'yearly'])) $error = "Invalid payment type!";
 
-    // ==============================================
-    // CEK DOUBLE BOOKING SAAT PROSES
-    // ==============================================
+    // CEK DOUBLE BOOKING (hanya untuk booking baru)
     if (empty($error) && !$is_extend_booking) {
-        if (isUnitBooked($property_id, $unit_number_input)) {
-            $error = "⚠️ Unit " . $unit_number_input . " is already booked! Please choose another unit.";
+        $check_in = date('Y-m-d');
+        $check_out = date('Y-m-d', strtotime("+$duration months"));
+        if (isUnitBooked($property_id, $unit_number_input, $check_in, $check_out)) {
+            $error = "⚠️ Unit " . $unit_number_input . " is already booked for this period! Please choose another unit or date.";
         }
     }
 
@@ -152,11 +170,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
         try {
             // EXTEND
             if ($is_extend_booking && $booking_id > 0) {
-                $stmt = $pdo->prepare("SELECT * FROM bookings WHERE id = ? AND user_id = ? AND status = 'active'");
+                $stmt = $pdo->prepare("SELECT * FROM bookings WHERE id = ? AND user_id = ? AND status IN ('active', 'pending')");
                 $stmt->execute([$booking_id, $_SESSION['user_id']]);
                 $old = $stmt->fetch();
                 if ($old) {
-                    $price_per_month = $old['total_price'] / $old['duration_months'];
+                    $price_per_month = calculatePrice($property, $duration) / $duration;
                     $new_total = $old['total_price'] + ($price_per_month * $duration);
                     $new_check_out = date('Y-m-d', strtotime($old['check_out'] . " +$duration months"));
                     $new_duration = $old['duration_months'] + $duration;
@@ -180,21 +198,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
             // BOOKING BARU
             else {
                 $booking_code = 'BKG-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
-                $price_per_month = $property['price_per_month'] ?? 700000;
-                $total_price = $price_per_month * $duration;
+                $total_price = calculatePrice($property, $duration);
                 $check_in = date('Y-m-d');
                 $check_out = date('Y-m-d', strtotime("+$duration months"));
+                $payment_expiry = date('Y-m-d H:i:s', strtotime('+24 hours'));
 
                 $stmt = $pdo->prepare("
                     INSERT INTO bookings (
-                        property_id, user_id, booking_code, check_in, check_out,
+                        property_id, user_id, unit_number, booking_code, check_in, check_out,
                         duration_months, total_price, guests, full_name, email, phone, notes,
-                        unit_number, status, payment_status
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid')
+                        status, payment_status, payment_method, payment_expiry
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?)
                 ");
                 $stmt->execute([
                     $property_id,
                     $_SESSION['user_id'],
+                    $unit_number_input,
                     $booking_code,
                     $check_in,
                     $check_out,
@@ -205,12 +224,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
                     $email,
                     $phone,
                     $notes,
-                    $unit_number_input
+                    $payment_type,
+                    $payment_expiry
                 ]);
 
                 $booking_id = $pdo->lastInsertId();
                 if ($booking_id > 0) {
-                    header('Location: booking_detail.php?id=' . $booking_id);
+                    header('Location: payment.php?id=' . $booking_id);
                     exit;
                 } else {
                     $error = "Booking failed!";
@@ -259,7 +279,7 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                     <h3 class="text-xl font-bold mt-4"><?php echo htmlspecialchars($property['name'] ?? 'Property'); ?></h3>
                     <p class="text-gray-500 text-sm"><i class="fas fa-map-marker-alt mr-1"></i> <?php echo htmlspecialchars($property['location'] ?? ''); ?></p>
                     <p class="text-purple-600 font-bold mt-2">Rp <?php echo number_format($property['price_per_month'] ?? 700000, 0, ',', '.'); ?> / month</p>
-
+                    
                     <?php if ($is_extend && $existing_booking): ?>
                         <div class="mt-4 p-3 bg-blue-50 rounded-lg">
                             <p class="text-sm text-blue-700"><i class="fas fa-info-circle mr-1"></i> Current booking ends: <strong><?php echo date('d M Y', strtotime($existing_booking['check_out'])); ?></strong></p>
@@ -287,10 +307,12 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                         <!-- Unit Number -->
                         <?php if (!$is_extend): ?>
                             <div>
-                                <label class="block text-gray-700 font-medium mb-2">🏠 Unit Number *</label>
+                                <label class="block text-gray-700 font-medium mb-2">🏠 Select Unit *</label>
                                 <div class="grid grid-cols-4 md:grid-cols-6 gap-2">
                                     <?php for ($i = 1; $i <= ($property['total_doors'] ?? 4); $i++): 
-                                        $booked = isUnitBooked($property_id, $i);
+                                        $check_in = date('Y-m-d');
+                                        $check_out = date('Y-m-d', strtotime('+3 months'));
+                                        $booked = isUnitBooked($property_id, $i, $check_in, $check_out);
                                     ?>
                                     <label class="cursor-pointer relative">
                                         <input type="radio" name="unit_number" value="<?php echo $i; ?>" 
@@ -312,19 +334,56 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                             </div>
                         <?php endif; ?>
 
-                        <!-- Durasi -->
+                        <!-- Durasi & Payment -->
                         <div>
-                            <label class="block text-gray-700 font-medium mb-2">Duration (months) *</label>
-                            <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
-                                <?php foreach ([1, 2, 3, 6, 12] as $d): ?>
-                                    <label class="cursor-pointer">
-                                        <input type="radio" name="duration" value="<?php echo $d; ?>" 
-                                               <?php echo (isset($_POST['duration']) && $_POST['duration'] == $d) || $d == 3 ? 'checked' : ''; ?> 
-                                               class="hidden peer">
-                                        <div class="text-center py-2 px-3 border-2 border-gray-200 rounded-lg peer-checked:border-purple-600 peer-checked:bg-purple-50 transition hover:border-purple-300">
-                                            <span class="text-sm font-medium peer-checked:text-purple-600"><?php echo $d; ?> month<?php echo $d > 1 ? 's' : ''; ?></span>
-                                        </div>
-                                    </label>
+                            <label class="block text-gray-700 font-medium mb-2">Duration & Payment *</label>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                <?php 
+                                $durations = [
+                                    1 => ['label' => '1 month', 'value' => 1],
+                                    3 => ['label' => '3 months', 'value' => 3],
+                                    6 => ['label' => '6 months', 'value' => 6],
+                                    12 => ['label' => '12 months', 'value' => 12]
+                                ];
+                                ?>
+                                <?php foreach ($durations as $d): ?>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="duration" value="<?php echo $d['value']; ?>" 
+                                           <?php echo (isset($_POST['duration']) && $_POST['duration'] == $d['value']) || $d['value'] == 3 ? 'checked' : ''; ?> 
+                                           class="hidden peer">
+                                    <div class="text-center py-2 px-2 border-2 border-gray-200 rounded-lg peer-checked:border-purple-600 peer-checked:bg-purple-50 transition hover:border-purple-300">
+                                        <span class="text-sm font-medium peer-checked:text-purple-600"><?php echo $d['label']; ?></span>
+                                        <?php 
+                                        $price = calculatePrice($property, $d['value']);
+                                        ?>
+                                        <span class="block text-xs text-gray-500">Rp <?php echo number_format($price, 0, ',', '.'); ?></span>
+                                    </div>
+                                </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+
+                        <!-- Payment Method -->
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">💳 Payment Type</label>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                <?php 
+                                $payment_types = [
+                                    'full' => 'Full Payment',
+                                    'monthly' => 'Monthly',
+                                    'quarterly' => 'Quarterly',
+                                    'yearly' => 'Yearly'
+                                ];
+                                foreach ($payment_types as $key => $label):
+                                ?>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="payment_type" value="<?php echo $key; ?>" 
+                                           <?php echo (isset($_POST['payment_type']) && $_POST['payment_type'] == $key) || $key == 'full' ? 'checked' : ''; ?> 
+                                           class="hidden peer">
+                                    <div class="text-center py-2 px-2 border-2 border-gray-200 rounded-lg peer-checked:border-green-600 peer-checked:bg-green-50 transition hover:border-green-300">
+                                        <span class="text-sm font-medium peer-checked:text-green-600"><?php echo $label; ?></span>
+                                    </div>
+                                </label>
                                 <?php endforeach; ?>
                             </div>
                         </div>
@@ -400,18 +459,21 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                         <!-- Summary -->
                         <div class="bg-gray-50 rounded-xl p-4">
                             <h4 class="font-semibold text-gray-800 mb-2">💳 Booking Summary</h4>
-                            <div class="flex justify-between text-sm text-gray-600"><span>Price per month</span><span>Rp <?php echo number_format($property['price_per_month'] ?? 700000, 0, ',', '.'); ?></span></div>
-                            <div class="flex justify-between text-sm text-gray-600 mt-1"><span>Duration</span><span id="durationDisplay">3 months</span></div>
+                            <div class="flex justify-between text-sm text-gray-600"><span>Duration</span><span id="durationDisplay">3 months</span></div>
                             <?php if ($is_extend && $existing_booking): ?>
                                 <div class="flex justify-between text-sm text-gray-600 mt-1"><span>Current total</span><span>Rp <?php echo number_format($existing_booking['total_price'], 0, ',', '.'); ?></span></div>
-                                <div class="flex justify-between text-sm text-purple-600 mt-1 font-semibold"><span>New Total</span><span id="totalDisplay">Rp <?php echo number_format(($property['price_per_month'] ?? 700000) * 3 + $existing_booking['total_price'], 0, ',', '.'); ?></span></div>
-                            <?php else: ?>
-                                <div class="border-t border-gray-200 mt-2 pt-2 flex justify-between font-bold text-gray-800"><span>Total</span><span id="totalDisplay">Rp <?php echo number_format(($property['price_per_month'] ?? 700000) * 3, 0, ',', '.'); ?></span></div>
                             <?php endif; ?>
+                            <div class="border-t border-gray-200 mt-2 pt-2 flex justify-between font-bold text-gray-800">
+                                <span>Total</span>
+                                <span id="totalDisplay">Rp <?php echo number_format(calculatePrice($property, 3), 0, ',', '.'); ?></span>
+                            </div>
+                            <div class="mt-2 p-2 bg-yellow-50 rounded-lg border border-yellow-200">
+                                <p class="text-xs text-yellow-700"><i class="fas fa-clock mr-1"></i> Payment must be completed within <strong>24 hours</strong></p>
+                            </div>
                         </div>
 
                         <button type="submit" class="w-full gradient-bg text-white py-3 rounded-xl font-semibold hover:shadow-lg transition transform hover:scale-105">
-                            <i class="fas fa-check-circle mr-2"></i> <?php echo $is_extend ? '✅ Confirm Extension' : '✅ Confirm Booking'; ?>
+                            <i class="fas fa-credit-card mr-2"></i> Proceed to Payment
                         </button>
                     </form>
                 </div>
@@ -457,12 +519,22 @@ document.getElementById('useAccountData')?.addEventListener('change', function()
 });
 document.getElementById('useAccountData')?.dispatchEvent(new Event('change'));
 
+function calculateTotal(duration) {
+    var pricePerMonth = <?php echo $property['price_per_month'] ?? 700000; ?>;
+    var price3 = <?php echo $property['price_per_3months'] ?? $property['price_per_month'] * 3; ?>;
+    var price6 = <?php echo $property['price_per_6months'] ?? $property['price_per_month'] * 6; ?>;
+    var price12 = <?php echo $property['price_per_year'] ?? $property['price_per_month'] * 12; ?>;
+    
+    if (duration >= 12) return (price12 / 12) * duration;
+    if (duration >= 6) return (price6 / 6) * duration;
+    if (duration >= 3) return (price3 / 3) * duration;
+    return pricePerMonth * duration;
+}
+
 document.querySelectorAll('input[name="duration"]').forEach(function(r) {
     r.addEventListener('change', function() {
         var dur = parseInt(this.value);
-        var price = <?php echo $property['price_per_month'] ?? 700000; ?>;
-        var total = price * dur;
-        <?php if ($is_extend && $existing_booking): ?> total += <?php echo $existing_booking['total_price']; ?>; <?php endif; ?>
+        var total = calculateTotal(dur);
         document.getElementById('durationDisplay').textContent = dur + ' month' + (dur > 1 ? 's' : '');
         document.getElementById('totalDisplay').textContent = 'Rp ' + total.toLocaleString('id-ID');
     });
