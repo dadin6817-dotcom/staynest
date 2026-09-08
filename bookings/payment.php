@@ -163,19 +163,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['upload_payment']) && $
                     ");
                     $stmt->execute([$payment_method, $booking_id, $_SESSION['user_id']]);
                     
-                    // Insert payment record
+                    // 🔥 PERBAIKAN: Hapus kolom 'payment_type' dari query
                     $stmt = $pdo->prepare("
                         INSERT INTO payments (
                             booking_id, amount, payment_method, transaction_id, 
-                            status, payment_date, payment_type, payment_proof
-                        ) VALUES (?, ?, ?, ?, 'success', NOW(), ?, ?)
+                            status, payment_date, payment_proof
+                        ) VALUES (?, ?, ?, ?, 'success', NOW(), ?)
                     ");
                     $stmt->execute([
                         $booking_id,
                         $booking['total_price'],
                         $payment_method,
                         $transaction_id,
-                        $booking['payment_method'] ?? 'full',
                         '/staynest/assets/uploads/payments/' . $new_file_name
                     ]);
                     
