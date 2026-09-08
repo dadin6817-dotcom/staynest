@@ -1,5 +1,5 @@
 <?php
-// bookings/book_now.php - Halaman Booking dengan Cek Double Booking & Payment Termin
+// bookings/book_now.php - Halaman Booking Properti
 $page_title = "Book Now - StayNest";
 
 require_once dirname(__FILE__) . '/../config/database.php';
@@ -15,6 +15,39 @@ $property = null;
 $error = '';
 $is_extend = false;
 $existing_booking = null;
+
+// ==============================================
+// CEK COOLDOWN SEBELUM BOOKING
+// ==============================================
+function checkUserCooldown($user_id) {
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare("
+            SELECT cooldown_until FROM bookings 
+            WHERE user_id = ? 
+            AND status = 'expired'
+            AND cooldown_until > NOW()
+            ORDER BY id DESC LIMIT 1
+        ");
+        $stmt->execute([$user_id]);
+        $result = $stmt->fetch();
+        if ($result && !empty($result['cooldown_until'])) {
+            $now = new DateTime();
+            $cooldown = new DateTime($result['cooldown_until']);
+            if ($now < $cooldown) {
+                $diff = $now->diff($cooldown);
+                return [
+                    'active' => true,
+                    'minutes' => $diff->i,
+                    'seconds' => $diff->s
+                ];
+            }
+        }
+        return ['active' => false];
+    } catch (Exception $e) {
+        return ['active' => false];
+    }
+}
 
 // ==============================================
 // CEK DOUBLE BOOKING
@@ -41,7 +74,7 @@ function isUnitBooked($property_id, $unit_number, $check_in, $check_out) {
 }
 
 // ==============================================
-// FUNGSI HITUNG HARGA BERDASARKAN DURASI
+// FUNGSI HITUNG HARGA
 // ==============================================
 function calculatePrice($property, $duration) {
     $price_per_month = $property['price_per_month'] ?? 700000;
@@ -94,9 +127,19 @@ if (isset($_GET['extend']) && $_GET['extend'] == 1 && isset($_GET['booking_id'])
 }
 
 // ==============================================
+// CEK COOLDOWN USER
+// ==============================================
+if (empty($error) && !$is_extend) {
+    $cooldown = checkUserCooldown($_SESSION['user_id']);
+    if ($cooldown['active']) {
+        $error = "⏳ You are in cooldown. Please wait " . $cooldown['minutes'] . "m " . $cooldown['seconds'] . "s before booking again.";
+    }
+}
+
+// ==============================================
 // AMBIL PROPERTI
 // ==============================================
-if (!$is_extend && $property_id > 0) {
+if (!$is_extend && $property_id > 0 && empty($error)) {
     try {
         $stmt = $pdo->prepare("SELECT * FROM properties WHERE id = ?");
         $stmt->execute([$property_id]);
@@ -157,12 +200,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
     if ($unit_number_input <= 0) $error = "Unit number is required!";
     if (!in_array($payment_type, ['full', 'monthly', 'quarterly', 'yearly'])) $error = "Invalid payment type!";
 
-    // CEK DOUBLE BOOKING (hanya untuk booking baru)
+    // CEK COOLDOWN LAGI (untuk booking baru)
+    if (empty($error) && !$is_extend_booking) {
+        $cooldown = checkUserCooldown($_SESSION['user_id']);
+        if ($cooldown['active']) {
+            $error = "⏳ You are in cooldown. Please wait " . $cooldown['minutes'] . "m " . $cooldown['seconds'] . "s before booking again.";
+        }
+    }
+
+    // CEK DOUBLE BOOKING
     if (empty($error) && !$is_extend_booking) {
         $check_in = date('Y-m-d');
         $check_out = date('Y-m-d', strtotime("+$duration months"));
         if (isUnitBooked($property_id, $unit_number_input, $check_in, $check_out)) {
-            $error = "⚠️ Unit " . $unit_number_input . " is already booked for this period! Please choose another unit or date.";
+            $error = "⚠️ Unit " . $unit_number_input . " is already booked for this period!";
         }
     }
 
@@ -181,12 +232,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
 
                     $stmt = $pdo->prepare("
                         UPDATE bookings SET 
-                            check_out = ?, duration_months = ?, total_price = ?, 
-                            status = 'extended', updated_at = NOW(),
-                            full_name = ?, email = ?, phone = ?, guests = ?, notes = ?
+                            check_out = ?,
+                            duration_months = ?,
+                            total_price = ?,
+                            status = 'extended',
+                            updated_at = NOW(),
+                            full_name = ?,
+                            email = ?,
+                            phone = ?,
+                            guests = ?,
+                            notes = ?
                         WHERE id = ? AND user_id = ?
                     ");
-                    $stmt->execute([$new_check_out, $new_duration, $new_total, $full_name, $email, $phone, $guests, $notes, $booking_id, $_SESSION['user_id']]);
+                    $stmt->execute([
+                        $new_check_out,
+                        $new_duration,
+                        $new_total,
+                        $full_name,
+                        $email,
+                        $phone,
+                        $guests,
+                        $notes,
+                        $booking_id,
+                        $_SESSION['user_id']
+                    ]);
 
                     $_SESSION['success'] = "✅ Booking extended successfully!";
                     header('Location: my_bookings.php');
@@ -205,10 +274,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
 
                 $stmt = $pdo->prepare("
                     INSERT INTO bookings (
-                        property_id, user_id, unit_number, booking_code, check_in, check_out,
-                        duration_months, total_price, guests, full_name, email, phone, notes,
-                        status, payment_status, payment_method, payment_expiry
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?)
+                        property_id,
+                        user_id,
+                        unit_number,
+                        booking_code,
+                        check_in,
+                        check_out,
+                        duration_months,
+                        total_price,
+                        guests,
+                        full_name,
+                        email,
+                        phone,
+                        notes,
+                        status,
+                        payment_status,
+                        payment_method,
+                        payment_expiry
+                    ) VALUES (
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                    )
                 ");
                 $stmt->execute([
                     $property_id,
@@ -224,6 +309,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && empty($error)) {
                     $email,
                     $phone,
                     $notes,
+                    'pending',
+                    'unpaid',
                     $payment_type,
                     $payment_expiry
                 ]);
@@ -319,7 +406,7 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                                                <?php echo ($unit_number == $i) ? 'checked' : ''; ?>
                                                <?php echo $booked ? 'disabled' : ''; ?>
                                                class="hidden peer">
-                                        <div class="text-center py-2 px-2 border-2 rounded-lg transition peer-checked:border-purple-600 peer-checked:bg-purple-50 hover:border-purple-300 <?php echo $booked ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'border-gray-200'; ?>">
+                                        <div class="text-center py-2 px-2 border-2 border-gray-200 rounded-lg transition peer-checked:border-purple-600 peer-checked:bg-purple-50 hover:border-purple-300 <?php echo $booked ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'border-gray-200'; ?>">
                                             <span class="text-sm font-medium peer-checked:text-purple-600"><?php echo $i; ?></span>
                                             <?php if ($booked): ?>
                                                 <span class="block text-[8px] text-red-500">🔴 Booked</span>
@@ -334,27 +421,19 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                             </div>
                         <?php endif; ?>
 
-                        <!-- Durasi & Payment -->
+                        <!-- Durasi -->
                         <div>
-                            <label class="block text-gray-700 font-medium mb-2">Duration & Payment *</label>
+                            <label class="block text-gray-700 font-medium mb-2">Duration (months) *</label>
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                <?php 
-                                $durations = [
-                                    1 => ['label' => '1 month', 'value' => 1],
-                                    3 => ['label' => '3 months', 'value' => 3],
-                                    6 => ['label' => '6 months', 'value' => 6],
-                                    12 => ['label' => '12 months', 'value' => 12]
-                                ];
-                                ?>
-                                <?php foreach ($durations as $d): ?>
+                                <?php foreach ([1, 2, 3, 6, 12] as $d): ?>
                                 <label class="cursor-pointer">
-                                    <input type="radio" name="duration" value="<?php echo $d['value']; ?>" 
-                                           <?php echo (isset($_POST['duration']) && $_POST['duration'] == $d['value']) || $d['value'] == 3 ? 'checked' : ''; ?> 
+                                    <input type="radio" name="duration" value="<?php echo $d; ?>" 
+                                           <?php echo (isset($_POST['duration']) && $_POST['duration'] == $d) || $d == 3 ? 'checked' : ''; ?> 
                                            class="hidden peer">
                                     <div class="text-center py-2 px-2 border-2 border-gray-200 rounded-lg peer-checked:border-purple-600 peer-checked:bg-purple-50 transition hover:border-purple-300">
-                                        <span class="text-sm font-medium peer-checked:text-purple-600"><?php echo $d['label']; ?></span>
+                                        <span class="text-sm font-medium peer-checked:text-purple-600"><?php echo $d; ?> month<?php echo $d > 1 ? 's' : ''; ?></span>
                                         <?php 
-                                        $price = calculatePrice($property, $d['value']);
+                                        $price = calculatePrice($property, $d);
                                         ?>
                                         <span class="block text-xs text-gray-500">Rp <?php echo number_format($price, 0, ',', '.'); ?></span>
                                     </div>
@@ -363,7 +442,7 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                             </div>
                         </div>
 
-                        <!-- Payment Method -->
+                        <!-- Payment Type -->
                         <div>
                             <label class="block text-gray-700 font-medium mb-2">💳 Payment Type</label>
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
