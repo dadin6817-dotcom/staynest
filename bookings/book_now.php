@@ -599,7 +599,7 @@ document.getElementById('useAccountData')?.addEventListener('change', function()
 document.getElementById('useAccountData')?.dispatchEvent(new Event('change'));
 
 function calculateTotal(duration) {
-    var pricePerMonth = <?php echo $property['price_per_month'] ?? 700000; ?>;
+    var pricePerMonth = <?php echo $property['Vprice_per_month'] ?? 700000; ?>;
     var price3 = <?php echo $property['price_per_3months'] ?? $property['price_per_month'] * 3; ?>;
     var price6 = <?php echo $property['price_per_6months'] ?? $property['price_per_month'] * 6; ?>;
     var price12 = <?php echo $property['price_per_year'] ?? $property['price_per_month'] * 12; ?>;
