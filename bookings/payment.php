@@ -2,6 +2,11 @@
 // bookings/payment.php - Halaman Payment dengan Upload Bukti
 $page_title = "Payment - StayNest";
 
+// Mulai session jika belum dimulai
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once dirname(__FILE__) . '/../config/database.php';
 
 if (!isset($_SESSION['user_id'])) {
@@ -14,6 +19,8 @@ $booking = null;
 $error = '';
 $success = '';
 $upload_error = '';
+$cooldown_active = false;
+$cooldown_data = null;
 
 // ==============================================
 // CEK COOLDOWN
@@ -23,7 +30,7 @@ function checkCooldown($booking_id) {
     try {
         $stmt = $pdo->prepare("SELECT cooldown_until FROM bookings WHERE id = ?");
         $stmt->execute([$booking_id]);
-        $result = $stmt->fetch();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($result && !empty($result['cooldown_until'])) {
             $now = new DateTime();
             $cooldown = new DateTime($result['cooldown_until']);
@@ -50,12 +57,11 @@ function checkExpired($booking_id) {
     try {
         $stmt = $pdo->prepare("SELECT payment_expiry, status FROM bookings WHERE id = ?");
         $stmt->execute([$booking_id]);
-        $result = $stmt->fetch();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($result) {
             $now = new DateTime();
             $expiry = new DateTime($result['payment_expiry']);
             if ($now > $expiry && $result['status'] == 'pending') {
-                // Set cooldown 2 menit
                 $cooldown_time = new DateTime();
                 $cooldown_time->modify('+2 minutes');
                 $stmt = $pdo->prepare("UPDATE bookings SET status = 'expired', cooldown_until = ? WHERE id = ?");
@@ -69,7 +75,9 @@ function checkExpired($booking_id) {
     }
 }
 
-// Ambil data booking
+// ==============================================
+// AMBIL DATA BOOKING
+// ==============================================
 try {
     $stmt = $pdo->prepare("
         SELECT b.*, p.name as property_name, p.location as property_location
@@ -78,30 +86,34 @@ try {
         WHERE b.id = ? AND b.user_id = ? AND b.status = 'pending'
     ");
     $stmt->execute([$booking_id, $_SESSION['user_id']]);
-    $booking = $stmt->fetch();
-} catch (Exception $e) {}
+    $booking = $stmt->fetch(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $error = "Database error: " . $e->getMessage();
+}
 
+// ==============================================
+// CEK STATUS BOOKING
+// ==============================================
 if (!$booking) {
-    // Cek apakah booking expired dengan cooldown
-    $check = checkCooldown($booking_id);
-    if ($check['active']) {
-        $error = "⏳ Booking is in cooldown. Please wait " . $check['minutes'] . "m " . $check['seconds'] . "s before booking again.";
+    $cooldown_data = checkCooldown($booking_id);
+    if ($cooldown_data['active']) {
+        $error = "⏳ Booking is in cooldown. Please wait " . $cooldown_data['minutes'] . "m " . $cooldown_data['seconds'] . "s before booking again.";
         $cooldown_active = true;
     } else {
         header('Location: my_bookings.php');
         exit;
     }
 } else {
-    // Cek expired
     $is_expired = checkExpired($booking_id);
     if ($is_expired) {
-        $cooldown = checkCooldown($booking_id);
-        if ($cooldown['active']) {
-            $error = "⏰ Payment has expired. Please wait " . $cooldown['minutes'] . "m " . $cooldown['seconds'] . "s before booking again.";
+        $cooldown_data = checkCooldown($booking_id);
+        if ($cooldown_data['active']) {
+            $error = "⏰ Payment has expired. Please wait " . $cooldown_data['minutes'] . "m " . $cooldown_data['seconds'] . "s before booking again.";
+            $cooldown_active = true;
         } else {
             $error = "⏰ Payment has expired. Please book again.";
+            $cooldown_active = false;
         }
-        // Redirect ke my bookings setelah cooldown
         header('Refresh: 5; URL=my_bookings.php');
     }
     $cooldown_active = false;
@@ -113,7 +125,6 @@ if (!$booking) {
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['upload_payment']) && $booking && !$cooldown_active) {
     $payment_method = $_POST['payment_method'] ?? 'BCA';
     
-    // Validasi file
     if (isset($_FILES['payment_proof']) && $_FILES['payment_proof']['error'] == 0) {
         $file = $_FILES['payment_proof'];
         $file_name = $file['name'];
@@ -121,19 +132,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['upload_payment']) && $
         $file_size = $file['size'];
         $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
         
-        // Ekstensi yang diizinkan
         $allowed_ext = ['jpg', 'jpeg', 'png', 'gif', 'pdf'];
         
         if (!in_array($file_ext, $allowed_ext)) {
             $upload_error = "❌ File type not allowed. Please upload JPG, PNG, GIF, or PDF.";
-        } elseif ($file_size > 2097152) { // 2MB max
+        } elseif ($file_size > 2097152) {
             $upload_error = "❌ File size too large. Max 2MB.";
         } else {
-            // Buat nama file unik
             $new_file_name = 'payment_' . $booking_id . '_' . time() . '.' . $file_ext;
             $upload_dir = $_SERVER['DOCUMENT_ROOT'] . '/staynest/assets/uploads/payments/';
             
-            // Buat folder jika belum ada
             if (!is_dir($upload_dir)) {
                 mkdir($upload_dir, 0777, true);
             }
@@ -144,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['upload_payment']) && $
                 try {
                     $transaction_id = 'TXN-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
                     
-                    // Update booking status
+                    // Update booking
                     $stmt = $pdo->prepare("
                         UPDATE bookings SET 
                             payment_status = 'paid',
@@ -155,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['upload_payment']) && $
                     ");
                     $stmt->execute([$payment_method, $booking_id, $_SESSION['user_id']]);
                     
-                    // Insert ke payments
+                    // Insert payment record
                     $stmt = $pdo->prepare("
                         INSERT INTO payments (
                             booking_id, amount, payment_method, transaction_id, 
@@ -187,6 +195,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['upload_payment']) && $
     }
 }
 
+// Include header
 require_once dirname(__FILE__) . '/../includes/header.php';
 ?>
 
@@ -195,10 +204,10 @@ require_once dirname(__FILE__) . '/../includes/header.php';
     
     <?php if ($error): ?>
         <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
-            <i class="fas fa-exclamation-circle mr-2"></i> <?php echo $error; ?>
-            <?php if (isset($cooldown_active) && $cooldown_active): ?>
-                <div class="mt-2 p-3 bg-yellow-50 rounded-lg text-yellow-700 text-sm" id="cooldownTimer">
-                    ⏳ Please wait <span id="cooldownCountdown"><?php echo $check['minutes'] . ':' . str_pad($check['seconds'], 2, '0', STR_PAD_LEFT); ?></span> before booking again
+            <i class="fas fa-exclamation-circle mr-2"></i> <?php echo htmlspecialchars($error); ?>
+            <?php if ($cooldown_active && $cooldown_data && $cooldown_data['active']): ?>
+                <div class="mt-2 p-3 bg-yellow-50 rounded-lg text-yellow-700 text-sm">
+                    ⏳ Please wait <span id="cooldownCountdown"><?php echo $cooldown_data['minutes'] . ':' . str_pad($cooldown_data['seconds'], 2, '0', STR_PAD_LEFT); ?></span> before booking again
                 </div>
             <?php endif; ?>
         </div>
@@ -206,7 +215,7 @@ require_once dirname(__FILE__) . '/../includes/header.php';
     
     <?php if ($upload_error): ?>
         <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
-            <i class="fas fa-exclamation-circle mr-2"></i> <?php echo $upload_error; ?>
+            <i class="fas fa-exclamation-circle mr-2"></i> <?php echo htmlspecialchars($upload_error); ?>
         </div>
     <?php endif; ?>
     
@@ -217,9 +226,7 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                     <h2 class="text-2xl font-bold"><?php echo htmlspecialchars($booking['property_name']); ?></h2>
                     <p class="text-gray-500"><i class="fas fa-map-marker-alt mr-1"></i> <?php echo htmlspecialchars($booking['property_location']); ?></p>
                 </div>
-                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-700">
-                    ⏳ Pending
-                </span>
+                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-700">⏳ Pending</span>
             </div>
             
             <div class="grid md:grid-cols-2 gap-4 mb-6">
@@ -237,14 +244,11 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                 </div>
                 <div class="p-4 bg-gray-50 rounded-lg">
                     <p class="text-sm text-gray-500">Payment Deadline</p>
-                    <p class="font-bold text-red-600">
-                        <?php echo date('d M Y H:i', strtotime($booking['payment_expiry'])); ?>
-                    </p>
+                    <p class="font-bold text-red-600"><?php echo date('d M Y H:i', strtotime($booking['payment_expiry'])); ?></p>
                     <p class="text-xs text-gray-400">(24 hours from booking)</p>
                 </div>
             </div>
             
-            <!-- Virtual Account -->
             <div class="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-6">
                 <p class="text-sm text-purple-700"><i class="fas fa-info-circle mr-1"></i> Virtual Account</p>
                 <p class="text-2xl font-bold text-purple-800 tracking-widest">
@@ -253,7 +257,6 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                 <p class="text-xs text-purple-500 mt-1">Transfer to this virtual account number</p>
             </div>
             
-            <!-- Upload Bukti Pembayaran -->
             <form method="POST" enctype="multipart/form-data" class="mb-6">
                 <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-purple-400 transition">
                     <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3 block"></i>
@@ -284,9 +287,7 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                     <button type="submit" name="upload_payment" class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition transform hover:scale-105">
                         <i class="fas fa-check-circle mr-2"></i> Confirm Payment
                     </button>
-                    <a href="my_bookings.php" class="bg-gray-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-600 transition">
-                        Cancel
-                    </a>
+                    <a href="my_bookings.php" class="bg-gray-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-600 transition">Cancel</a>
                 </div>
             </form>
             
@@ -302,10 +303,10 @@ require_once dirname(__FILE__) . '/../includes/header.php';
 </div>
 
 <script>
-<?php if (isset($cooldown_active) && $cooldown_active && isset($check)): ?>
+<?php if ($cooldown_active && $cooldown_data && $cooldown_data['active']): ?>
 // Cooldown timer
-var cooldownMinutes = <?php echo $check['minutes']; ?>;
-var cooldownSeconds = <?php echo $check['seconds']; ?>;
+var cooldownMinutes = <?php echo (int)$cooldown_data['minutes']; ?>;
+var cooldownSeconds = <?php echo (int)$cooldown_data['seconds']; ?>;
 var countdownElement = document.getElementById('cooldownCountdown');
 
 if (countdownElement) {
@@ -328,4 +329,6 @@ if (countdownElement) {
 <?php endif; ?>
 </script>
 
-<?php require_once dirname(__FILE__) . '/../includes/footer.php'; ?>
+<?php 
+require_once dirname(__FILE__) . '/../includes/footer.php';
+?>
