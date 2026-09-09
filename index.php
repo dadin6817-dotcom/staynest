@@ -1,6 +1,11 @@
 <?php
-// index.php - BERANDA (Homepage - Full English Version - Tanpa Watch Video)
+// index.php - BERANDA (Homepage - Full English Version)
 $page_title = "StayNest - Find Your Cozy Home ✨";
+
+// Mulai session jika belum dimulai
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 require_once dirname(__FILE__) . '/config/database.php';
 require_once dirname(__FILE__) . '/includes/header.php';
@@ -21,10 +26,14 @@ function getPropertyImage($property_id, $property_name) {
     return '/staynest/assets/images/default-property.jpg';
 }
 
-// Fetch featured properties
+// ==============================================
+// AMBIL DATA PROPERTI DARI DATABASE
+// ==============================================
+$featured_properties = [];
+
 try {
-    $stmt = $pdo->query("SELECT * FROM properties ORDER BY is_vip DESC, id DESC LIMIT 6");
-    $featured_properties = $stmt->fetchAll();
+    $stmt = $pdo->query("SELECT * FROM properties WHERE status = 'available' ORDER BY is_vip DESC, id DESC LIMIT 6");
+    $featured_properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch(Exception $e) {
     $featured_properties = [];
 }
@@ -42,7 +51,8 @@ if (empty($featured_properties)) {
             'available_rooms' => 1,
             'occupied_rooms' => 1,
             'price_per_month' => 700000, 
-            'is_vip' => false
+            'is_vip' => 0,
+            'description' => 'Cozy boarding house with modern facilities'
         ],
         [
             'id' => 2, 
@@ -52,7 +62,8 @@ if (empty($featured_properties)) {
             'available_rooms' => 2,
             'occupied_rooms' => 2,
             'price_per_month' => 700000, 
-            'is_vip' => true
+            'is_vip' => 1,
+            'description' => 'Luxury boarding house with VIP facilities'
         ],
         [
             'id' => 3, 
@@ -62,387 +73,12 @@ if (empty($featured_properties)) {
             'available_rooms' => 7,
             'occupied_rooms' => 5,
             'price_per_month' => 800000, 
-            'is_vip' => true
+            'is_vip' => 1,
+            'description' => 'Spacious boarding house with complete facilities'
         ]
     ];
 }
 ?>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StayNest - Find Your Cozy Home ✨</title>
-    
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #ffffff;
-            overflow-x: hidden;
-        }
-        
-        .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        .gradient-bg-pink {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-        
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .hero-section {
-            position: relative;
-            min-height: 85vh;
-            display: flex;
-            align-items: center;
-            overflow: hidden;
-            background: linear-gradient(135deg, #f5f7fa 0%, #eef2ff 40%, #fdf2f8 100%);
-        }
-        
-        .hero-bg-element {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.4;
-            animation: floatElement 15s ease-in-out infinite;
-        }
-        
-        .bg-elem-1 {
-            background: #667eea;
-            width: 400px;
-            height: 400px;
-            top: -100px;
-            right: -100px;
-        }
-        
-        .bg-elem-2 {
-            background: #f093fb;
-            width: 350px;
-            height: 350px;
-            bottom: -80px;
-            left: -80px;
-            animation-delay: -5s;
-        }
-        
-        @keyframes floatElement {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(40px, -40px) scale(1.2); }
-            66% { transform: translate(-30px, 30px) scale(0.8); }
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 14px 32px;
-            border-radius: 50px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-            box-shadow: 0 4px 15px rgba(102,126,234,0.3);
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(102,126,234,0.4);
-        }
-        
-        .search-container {
-            background: white;
-            border-radius: 80px;
-            padding: 8px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
-        }
-        
-        .search-container:focus-within {
-            box-shadow: 0 20px 40px rgba(102,126,234,0.15);
-            transform: scale(1.02);
-        }
-        
-        .search-input {
-            border: none;
-            padding: 18px 25px;
-            border-radius: 80px;
-            width: 100%;
-            font-size: 1rem;
-            outline: none;
-            background: transparent;
-        }
-        
-        .search-input::placeholder {
-            color: #a0aec0;
-        }
-        
-        .search-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            padding: 16px 40px;
-            border-radius: 60px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .search-btn:hover {
-            transform: scale(1.02);
-            box-shadow: 0 5px 20px rgba(102,126,234,0.4);
-        }
-        
-        .feature-card {
-            background: white;
-            border-radius: 1.5rem;
-            padding: 2rem;
-            transition: all 0.4s ease;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            border: 1px solid rgba(0,0,0,0.03);
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 30px 50px rgba(102,126,234,0.12);
-        }
-        
-        .feature-icon {
-            width: 70px;
-            height: 70px;
-            background: linear-gradient(135deg, #667eea15, #764ba215);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-            transition: all 0.3s ease;
-        }
-        
-        .feature-card:hover .feature-icon {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            transform: scale(1.1);
-        }
-        
-        .feature-card:hover .feature-icon i {
-            color: white !important;
-        }
-        
-        .property-card {
-            background: white;
-            border-radius: 1.5rem;
-            overflow: hidden;
-            transition: all 0.4s ease;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            cursor: pointer;
-        }
-        
-        .property-card:hover {
-            transform: translateY(-12px);
-            box-shadow: 0 30px 50px rgba(0,0,0,0.15);
-        }
-        
-        .property-img {
-            position: relative;
-            overflow: hidden;
-            height: 230px;
-        }
-        
-        .property-img img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s ease;
-        }
-        
-        .property-card:hover .property-img img {
-            transform: scale(1.1);
-        }
-        
-        .vip-badge {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background: linear-gradient(135deg, #ffd89b, #c7e9fb);
-            color: #ff6b6b;
-            padding: 5px 12px;
-            border-radius: 50px;
-            font-size: 11px;
-            font-weight: bold;
-            z-index: 2;
-        }
-        
-        .available-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(5px);
-            padding: 5px 12px;
-            border-radius: 50px;
-            font-size: 11px;
-            font-weight: 600;
-            color: #667eea;
-            z-index: 2;
-        }
-        
-        .property-detail-icon {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            color: #64748b;
-            background: #f1f5f9;
-            padding: 5px 12px;
-            border-radius: 20px;
-        }
-        
-        .stat-card {
-            text-align: center;
-            padding: 1.5rem;
-            background: white;
-            border-radius: 1.5rem;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        .stat-card:hover .stat-number,
-        .stat-card:hover .stat-label {
-            color: white !important;
-            -webkit-text-fill-color: white !important;
-        }
-        
-        .stat-label {
-            color: #64748b;
-            margin-top: 0.5rem;
-            font-weight: 500;
-        }
-        
-        .testimonial-card {
-            background: white;
-            border-radius: 1.5rem;
-            padding: 1.5rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-        }
-        
-        .testimonial-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(102,126,234,0.15);
-        }
-        
-        .cta-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .cta-section::before {
-            content: '🏠';
-            position: absolute;
-            font-size: 200px;
-            opacity: 0.1;
-            bottom: -60px;
-            right: -60px;
-            transform: rotate(-15deg);
-        }
-        
-        .cta-section::after {
-            content: '✨';
-            position: absolute;
-            font-size: 150px;
-            opacity: 0.1;
-            top: -40px;
-            left: -40px;
-            transform: rotate(10deg);
-        }
-        
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .animate-fade-up {
-            animation: fadeInUp 0.8s ease-out forwards;
-        }
-        
-        .delay-100 { animation-delay: 0.1s; }
-        .delay-200 { animation-delay: 0.2s; }
-        .delay-300 { animation-delay: 0.3s; }
-        .delay-400 { animation-delay: 0.4s; }
-        
-        .scroll-reveal {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.8s ease;
-        }
-        
-        .scroll-reveal.revealed {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        @media (max-width: 768px) {
-            .btn-primary {
-                padding: 10px 20px;
-                font-size: 14px;
-            }
-            
-            .stat-number {
-                font-size: 1.8rem;
-            }
-            
-            .feature-card {
-                padding: 1.5rem;
-            }
-            
-            .search-container {
-                padding: 5px;
-            }
-            
-            .search-btn {
-                padding: 12px 25px;
-                font-size: 14px;
-            }
-            
-            .property-img {
-                height: 180px;
-            }
-            
-            .hero-section {
-                min-height: 70vh;
-                padding-top: 80px !important;
-            }
-        }
-    </style>
-</head>
-<body>
 
 <!-- ========================================== -->
 <!-- HERO SECTION -->
@@ -478,9 +114,11 @@ if (empty($featured_properties)) {
                 <a href="#properties" class="btn-primary">
                     <i class="fas fa-search"></i> Explore Now
                 </a>
-                <a href="register.php" class="bg-transparent border-2 border-purple-600 text-purple-600 px-8 py-3 rounded-full font-semibold hover:bg-purple-600 hover:text-white transition inline-flex items-center gap-2">
-                    <i class="fas fa-user-plus"></i> Get Started
-                </a>
+                <?php if (!isset($_SESSION['user_id'])): ?>
+                    <a href="register.php" class="bg-transparent border-2 border-purple-600 text-purple-600 px-8 py-3 rounded-full font-semibold hover:bg-purple-600 hover:text-white transition inline-flex items-center gap-2">
+                        <i class="fas fa-user-plus"></i> Get Started
+                    </a>
+                <?php endif; ?>
             </div>
             
             <div class="max-w-2xl mx-auto animate-fade-up delay-400">
@@ -730,6 +368,376 @@ if (empty($featured_properties)) {
         </div>
     </div>
 </section>
+
+<!-- ========================================== -->
+<!-- STYLE TAMBAHAN -->
+<!-- ========================================== -->
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        font-family: 'Inter', sans-serif;
+        background: #ffffff;
+        overflow-x: hidden;
+    }
+    
+    .gradient-text {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .gradient-bg {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .gradient-bg-pink {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .hero-section {
+        position: relative;
+        min-height: 85vh;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        background: linear-gradient(135deg, #f5f7fa 0%, #eef2ff 40%, #fdf2f8 100%);
+    }
+    
+    .hero-bg-element {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.4;
+        animation: floatElement 15s ease-in-out infinite;
+    }
+    
+    .bg-elem-1 {
+        background: #667eea;
+        width: 400px;
+        height: 400px;
+        top: -100px;
+        right: -100px;
+    }
+    
+    .bg-elem-2 {
+        background: #f093fb;
+        width: 350px;
+        height: 350px;
+        bottom: -80px;
+        left: -80px;
+        animation-delay: -5s;
+    }
+    
+    @keyframes floatElement {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        33% { transform: translate(40px, -40px) scale(1.2); }
+        66% { transform: translate(-30px, 30px) scale(0.8); }
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 14px 32px;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        box-shadow: 0 4px 15px rgba(102,126,234,0.3);
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(102,126,234,0.4);
+    }
+    
+    .search-container {
+        background: white;
+        border-radius: 80px;
+        padding: 8px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+    }
+    
+    .search-container:focus-within {
+        box-shadow: 0 20px 40px rgba(102,126,234,0.15);
+        transform: scale(1.02);
+    }
+    
+    .search-input {
+        border: none;
+        padding: 18px 25px;
+        border-radius: 80px;
+        width: 100%;
+        font-size: 1rem;
+        outline: none;
+        background: transparent;
+    }
+    
+    .search-input::placeholder {
+        color: #a0aec0;
+    }
+    
+    .search-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 16px 40px;
+        border-radius: 60px;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .search-btn:hover {
+        transform: scale(1.02);
+        box-shadow: 0 5px 20px rgba(102,126,234,0.4);
+    }
+    
+    .feature-card {
+        background: white;
+        border-radius: 1.5rem;
+        padding: 2rem;
+        transition: all 0.4s ease;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        border: 1px solid rgba(0,0,0,0.03);
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 30px 50px rgba(102,126,234,0.12);
+    }
+    
+    .feature-icon {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, #667eea15, #764ba215);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .feature-card:hover .feature-icon {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        transform: scale(1.1);
+    }
+    
+    .feature-card:hover .feature-icon i {
+        color: white !important;
+    }
+    
+    .property-card {
+        background: white;
+        border-radius: 1.5rem;
+        overflow: hidden;
+        transition: all 0.4s ease;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        cursor: pointer;
+    }
+    
+    .property-card:hover {
+        transform: translateY(-12px);
+        box-shadow: 0 30px 50px rgba(0,0,0,0.15);
+    }
+    
+    .property-img {
+        position: relative;
+        overflow: hidden;
+        height: 230px;
+    }
+    
+    .property-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    
+    .property-card:hover .property-img img {
+        transform: scale(1.1);
+    }
+    
+    .vip-badge {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: linear-gradient(135deg, #ffd89b, #c7e9fb);
+        color: #ff6b6b;
+        padding: 5px 12px;
+        border-radius: 50px;
+        font-size: 11px;
+        font-weight: bold;
+        z-index: 2;
+    }
+    
+    .available-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: rgba(255,255,255,0.95);
+        backdrop-filter: blur(5px);
+        padding: 5px 12px;
+        border-radius: 50px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #667eea;
+        z-index: 2;
+    }
+    
+    .property-detail-icon {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: #64748b;
+        background: #f1f5f9;
+        padding: 5px 12px;
+        border-radius: 20px;
+    }
+    
+    .stat-card {
+        text-align: center;
+        padding: 1.5rem;
+        background: white;
+        border-radius: 1.5rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .stat-card:hover .stat-number,
+    .stat-card:hover .stat-label {
+        color: white !important;
+        -webkit-text-fill-color: white !important;
+    }
+    
+    .stat-label {
+        color: #64748b;
+        margin-top: 0.5rem;
+        font-weight: 500;
+    }
+    
+    .testimonial-card {
+        background: white;
+        border-radius: 1.5rem;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    
+    .testimonial-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(102,126,234,0.15);
+    }
+    
+    .cta-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .cta-section::before {
+        content: '🏠';
+        position: absolute;
+        font-size: 200px;
+        opacity: 0.1;
+        bottom: -60px;
+        right: -60px;
+        transform: rotate(-15deg);
+    }
+    
+    .cta-section::after {
+        content: '✨';
+        position: absolute;
+        font-size: 150px;
+        opacity: 0.1;
+        top: -40px;
+        left: -40px;
+        transform: rotate(10deg);
+    }
+    
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .animate-fade-up {
+        animation: fadeInUp 0.8s ease-out forwards;
+    }
+    
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+    .delay-400 { animation-delay: 0.4s; }
+    
+    .scroll-reveal {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.8s ease;
+    }
+    
+    .scroll-reveal.revealed {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    @media (max-width: 768px) {
+        .btn-primary {
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+        
+        .stat-number {
+            font-size: 1.8rem;
+        }
+        
+        .feature-card {
+            padding: 1.5rem;
+        }
+        
+        .search-container {
+            padding: 5px;
+        }
+        
+        .search-btn {
+            padding: 12px 25px;
+            font-size: 14px;
+        }
+        
+        .property-img {
+            height: 180px;
+        }
+        
+        .hero-section {
+            min-height: 70vh;
+            padding-top: 80px !important;
+        }
+    }
+</style>
 
 <!-- ========================================== -->
 <!-- SCRIPTS -->
