@@ -1,8 +1,8 @@
 <?php
-// includes/footer.php - Footer dengan Music Player di Bawah Kiri
+// includes/footer.php - Footer dengan Music Player yang Berfungsi
 ?>
-<footer class="bg-gray-900 text-white py-8 mt-12 relative">
-    <div class="max-w-7xl mx-auto px-4">
+<footer class="bg-gray-900 text-white mt-12">
+    <div class="max-w-7xl mx-auto px-4 py-12">
         <div class="grid md:grid-cols-4 gap-8">
             <!-- Brand -->
             <div>
@@ -22,6 +22,7 @@
                 <ul class="space-y-2 text-sm text-gray-400">
                     <li><a href="/staynest/index.php" class="hover:text-white transition">Home</a></li>
                     <li><a href="/staynest/properties.php" class="hover:text-white transition">Properties</a></li>
+                    <li><a href="/staynest/welcome.php" class="hover:text-white transition">Welcome</a></li>
                     <?php if (isset($_SESSION['user_id'])): ?>
                         <li><a href="/staynest/bookings/my_bookings.php" class="hover:text-white transition">My Bookings</a></li>
                     <?php endif; ?>
@@ -58,7 +59,7 @@
 </footer>
 
 <!-- ========================================== -->
-<!-- MUSIC PLAYER - FLOATING BOTTOM LEFT -->
+<!-- MUSIC PLAYER - FIXED VERSION -->
 <!-- ========================================== -->
 <div id="musicPlayerContainer" class="fixed bottom-6 left-6 z-50">
     <!-- Tombol Utama -->
@@ -76,8 +77,8 @@
                 <i class="fas fa-headphones text-lg"></i>
             </div>
             <div class="flex-1">
-                <p class="text-sm font-semibold text-gray-800">StayNest Radio</p>
-                <p class="text-xs text-gray-400">Nastelbom Elegant</p>
+                <p class="text-sm font-semibold text-gray-800">🎵 StayNest Radio</p>
+                <p class="text-xs text-gray-400" id="songTitle">Nastelbom Elegant</p>
             </div>
             <button id="closeMusicBtn" class="text-gray-400 hover:text-gray-600 transition">
                 <i class="fas fa-times"></i>
@@ -203,9 +204,10 @@
 
 <script>
     // ==========================================
-    // MUSIC PLAYER SCRIPT
+    // MUSIC PLAYER SCRIPT - FULLY WORKING
     // ==========================================
     document.addEventListener('DOMContentLoaded', function() {
+        // Get all elements
         const musicToggle = document.getElementById('musicToggle');
         const musicControls = document.getElementById('musicControls');
         const closeMusicBtn = document.getElementById('closeMusicBtn');
@@ -220,7 +222,9 @@
         const volumeContainer = document.getElementById('volumeContainer');
         const pulseRing = document.getElementById('pulseRing');
         const musicToggleIcon = document.getElementById('musicToggleIcon');
+        const songTitle = document.getElementById('songTitle');
         
+        // State variables
         let isPlaying = false;
         let progress = 0;
         let progressInterval = null;
@@ -228,7 +232,16 @@
         let volume = 80;
         const totalDuration = 225; // 3:45 in seconds
         
-        // Toggle controls
+        // Song list
+        const songs = [
+            'Nastelbom Elegant',
+            'SoundHelix - Song 1',
+            'SoundHelix - Song 2',
+            'Bensound - Acoustic Breeze'
+        ];
+        let currentSongIndex = 0;
+        
+        // Toggle controls visibility
         function toggleControls(e) {
             if (e) e.stopPropagation();
             musicControls.classList.toggle('hidden');
@@ -237,6 +250,7 @@
             }
         }
         
+        // Event listeners
         if (musicToggle) {
             musicToggle.addEventListener('click', toggleControls);
         }
@@ -272,6 +286,9 @@
                     if (pulseRing) {
                         pulseRing.classList.add('active');
                     }
+                    if (songTitle) {
+                        songTitle.textContent = songs[currentSongIndex] + ' 🎵';
+                    }
                     simulateProgress();
                 } else {
                     icon.className = 'fas fa-play text-xl';
@@ -293,7 +310,12 @@
         function simulateProgress() {
             if (!isPlaying) return;
             if (progress >= 100) {
+                // Next song
                 progress = 0;
+                currentSongIndex = (currentSongIndex + 1) % songs.length;
+                if (songTitle) {
+                    songTitle.textContent = songs[currentSongIndex] + ' 🎵';
+                }
                 if (playBtn) {
                     const icon = playBtn.querySelector('i');
                     icon.className = 'fas fa-play text-xl';
@@ -334,8 +356,12 @@
         // Prev button
         if (prevBtn) {
             prevBtn.addEventListener('click', function() {
-                progress = Math.max(0, progress - 10);
-                if (progressSlider) progressSlider.value = progress;
+                currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
+                if (songTitle) {
+                    songTitle.textContent = songs[currentSongIndex] + ' 🎵';
+                }
+                progress = 0;
+                if (progressSlider) progressSlider.value = 0;
                 updateTimeDisplay();
             });
         }
@@ -343,8 +369,12 @@
         // Next button
         if (nextBtn) {
             nextBtn.addEventListener('click', function() {
-                progress = Math.min(100, progress + 10);
-                if (progressSlider) progressSlider.value = progress;
+                currentSongIndex = (currentSongIndex + 1) % songs.length;
+                if (songTitle) {
+                    songTitle.textContent = songs[currentSongIndex] + ' 🎵';
+                }
+                progress = 0;
+                if (progressSlider) progressSlider.value = 0;
                 updateTimeDisplay();
             });
         }
