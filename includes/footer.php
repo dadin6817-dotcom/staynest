@@ -1,5 +1,5 @@
 <?php
-// includes/footer.php - Footer dengan Music Player yang BERFUNGSI
+// includes/footer.php - Footer dengan Chatbot di Semua Halaman
 ?>
 <footer class="bg-gray-900 text-white mt-12">
     <div class="max-w-7xl mx-auto px-4 py-12">
@@ -54,19 +54,16 @@
 </footer>
 
 <!-- ========================================== -->
-<!-- MUSIC PLAYER - DENGAN AUDIO ASLI -->
+<!-- MUSIC PLAYER -->
 <!-- ========================================== -->
-<div id="musicPlayerContainer" class="fixed bottom-6 left-6 z-50">
-    <!-- Tombol Utama -->
+<div id="musicPlayerContainer" class="fixed bottom-6 left-6 z-[9998]">
     <button id="musicToggle" class="w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition transform hover:scale-110 flex items-center justify-center relative" 
             style="background: linear-gradient(135deg, #667eea, #764ba2); border: none; cursor: pointer;">
         <span class="pulse-ring" id="pulseRing"></span>
         <i class="fas fa-music text-white text-xl" id="musicToggleIcon"></i>
     </button>
     
-    <!-- Kontrol Musik -->
     <div id="musicControls" class="hidden absolute bottom-20 left-0 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-5 w-80 border border-white/20">
-        <!-- Header -->
         <div class="flex items-center gap-3 mb-3">
             <div class="w-12 h-12 rounded-full flex items-center justify-center text-white" style="background: linear-gradient(135deg, #667eea, #764ba2);">
                 <i class="fas fa-headphones text-lg"></i>
@@ -80,24 +77,20 @@
             </button>
         </div>
         
-        <!-- Progress Bar -->
         <div class="mb-3">
-            <div class="relative">
-                <input type="range" id="progressSlider" class="music-progress" min="0" max="100" value="0">
-                <div class="flex justify-between text-xs text-gray-400 mt-1">
-                    <span id="currentTime">0:00</span>
-                    <span id="totalTime">0:00</span>
-                </div>
+            <input type="range" id="progressSlider" class="music-progress" min="0" max="100" value="0">
+            <div class="flex justify-between text-xs text-gray-400 mt-1">
+                <span id="currentTime">0:00</span>
+                <span id="totalTime">0:00</span>
             </div>
         </div>
         
-        <!-- Controls -->
         <div class="flex items-center justify-between">
             <button id="prevBtn" class="text-gray-500 hover:text-purple-600 transition text-lg w-10 h-10 rounded-full hover:bg-purple-50 flex items-center justify-center" style="background: none; border: none; cursor: pointer;">
                 <i class="fas fa-step-backward"></i>
             </button>
             <button id="playBtn" class="w-14 h-14 rounded-full flex items-center justify-center text-white transition transform hover:scale-105 shadow-lg" 
-                    style="background: linear-gradient(135deg, #667eea, #764ba2); border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(102,126,234,0.4);">
+                    style="background: linear-gradient(135deg, #667eea, #764ba2); border: none; cursor: pointer;">
                 <i class="fas fa-play text-xl"></i>
             </button>
             <button id="nextBtn" class="text-gray-500 hover:text-purple-600 transition text-lg w-10 h-10 rounded-full hover:bg-purple-50 flex items-center justify-center" style="background: none; border: none; cursor: pointer;">
@@ -108,17 +101,20 @@
             </button>
         </div>
         
-        <!-- Volume Slider -->
         <div class="mt-3 hidden" id="volumeContainer">
             <input type="range" id="volumeSlider" class="music-progress" min="0" max="100" value="70">
         </div>
     </div>
 </div>
 
-<!-- AUDIO ELEMENT - UNTUK MEMUTAR MUSIK -->
 <audio id="audioPlayer" loop>
     <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
 </audio>
+
+<!-- ========================================== -->
+<!-- CHATBOT - MUNCUL DI SEMUA HALAMAN -->
+<!-- ========================================== -->
+<?php include_once dirname(__FILE__) . '/chatbot.php'; ?>
 
 <style>
     .gradient-text {
@@ -134,7 +130,6 @@
         border: 1px solid rgba(255, 255, 255, 0.2);
         border-radius: 20px;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-        z-index: 9999;
     }
     
     #musicToggle {
@@ -157,9 +152,7 @@
         display: none;
     }
     
-    .pulse-ring.active {
-        display: block;
-    }
+    .pulse-ring.active { display: block; }
     
     @keyframes pulseRing {
         0%, 100% { transform: scale(1); opacity: 0.6; }
@@ -185,27 +178,12 @@
         border-radius: 50%;
         background: linear-gradient(135deg, #667eea, #764ba2);
         cursor: pointer;
-        box-shadow: 0 2px 8px rgba(102,126,234,0.4);
-    }
-    
-    .music-progress::-moz-range-thumb {
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        cursor: pointer;
-        border: none;
     }
 </style>
 
 <script>
-// ==========================================
-// MUSIC PLAYER SCRIPT - DENGAN AUDIO ASLI
-// ==========================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Music Player Loaded');
-    
-    // Get elements
+    // Music Player
     var musicToggle = document.getElementById('musicToggle');
     var musicControls = document.getElementById('musicControls');
     var closeMusicBtn = document.getElementById('closeMusicBtn');
@@ -223,49 +201,33 @@ document.addEventListener('DOMContentLoaded', function() {
     var songTitle = document.getElementById('songTitle');
     var audio = document.getElementById('audioPlayer');
     
-    // Cek apakah elemen ada
-    if (!audio) {
-        console.error('Audio element not found!');
-        return;
-    }
+    if (!audio) return;
     
-    // Daftar lagu
     var songs = [
         { title: 'SoundHelix - Song 1', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
         { title: 'SoundHelix - Song 2', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
-        { title: 'SoundHelix - Song 3', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
-        { title: 'SoundHelix - Song 4', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' }
+        { title: 'SoundHelix - Song 3', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' }
     ];
     
     var currentSongIndex = 0;
     var isPlaying = false;
     
-    // Set lagu pertama
-    if (songTitle) {
-        songTitle.textContent = songs[currentSongIndex].title;
-    }
+    if (songTitle) songTitle.textContent = songs[currentSongIndex].title;
     
-    // Toggle controls visibility
     if (musicToggle) {
         musicToggle.addEventListener('click', function(e) {
             e.stopPropagation();
-            if (musicControls) {
-                musicControls.classList.toggle('hidden');
-            }
+            musicControls.classList.toggle('hidden');
         });
     }
     
-    // Close button
     if (closeMusicBtn) {
         closeMusicBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            if (musicControls) {
-                musicControls.classList.add('hidden');
-            }
+            musicControls.classList.add('hidden');
         });
     }
     
-    // Close when clicking outside
     document.addEventListener('click', function(e) {
         if (musicControls && !musicControls.classList.contains('hidden')) {
             if (!musicControls.contains(e.target) && !musicToggle.contains(e.target)) {
@@ -274,7 +236,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Play/Pause
     if (playBtn) {
         playBtn.addEventListener('click', function() {
             if (isPlaying) {
@@ -291,15 +252,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     playBtn.style.background = 'linear-gradient(135deg, #f093fb, #f5576c)';
                     if (musicToggleIcon) musicToggleIcon.className = 'fas fa-stop text-white text-xl';
                     if (pulseRing) pulseRing.classList.add('active');
-                }).catch(function(error) {
-                    console.error('Error playing audio:', error);
-                    alert('Tidak dapat memutar musik. Pastikan koneksi internet aktif.');
+                }).catch(function(err) {
+                    console.error('Audio error:', err);
                 });
             }
         });
     }
     
-    // Update progress
     if (audio) {
         audio.addEventListener('timeupdate', function() {
             if (audio.duration) {
@@ -311,93 +270,51 @@ document.addEventListener('DOMContentLoaded', function() {
                     currentTimeEl.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
                 }
                 if (totalTimeEl) {
-                    var totalMins = Math.floor(audio.duration / 60);
-                    var totalSecs = Math.floor(audio.duration % 60);
-                    totalTimeEl.textContent = totalMins + ':' + (totalSecs < 10 ? '0' : '') + totalSecs;
+                    var tm = Math.floor(audio.duration / 60);
+                    var ts = Math.floor(audio.duration % 60);
+                    totalTimeEl.textContent = tm + ':' + (ts < 10 ? '0' : '') + ts;
                 }
             }
         });
-        
-        // When song ends
-        audio.addEventListener('ended', function() {
-            // Next song
-            currentSongIndex = (currentSongIndex + 1) % songs.length;
-            audio.src = songs[currentSongIndex].src;
-            if (songTitle) songTitle.textContent = songs[currentSongIndex].title;
-            if (isPlaying) {
-                audio.play();
-            }
-        });
-        
-        // Error handling
-        audio.addEventListener('error', function() {
-            console.error('Audio error:', audio.error);
-            if (songTitle) songTitle.textContent = 'Error loading audio';
-        });
     }
     
-    // Progress slider
     if (progressSlider) {
         progressSlider.addEventListener('input', function() {
-            if (audio.duration) {
-                audio.currentTime = (this.value / 100) * audio.duration;
-            }
+            if (audio.duration) audio.currentTime = (this.value / 100) * audio.duration;
         });
     }
     
-    // Prev button
     if (prevBtn) {
         prevBtn.addEventListener('click', function() {
             currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
             audio.src = songs[currentSongIndex].src;
             if (songTitle) songTitle.textContent = songs[currentSongIndex].title;
-            if (isPlaying) {
-                audio.play();
-            }
+            if (isPlaying) audio.play();
         });
     }
     
-    // Next button
     if (nextBtn) {
         nextBtn.addEventListener('click', function() {
             currentSongIndex = (currentSongIndex + 1) % songs.length;
             audio.src = songs[currentSongIndex].src;
             if (songTitle) songTitle.textContent = songs[currentSongIndex].title;
-            if (isPlaying) {
-                audio.play();
-            }
+            if (isPlaying) audio.play();
         });
     }
     
-    // Volume toggle
     if (volumeBtn) {
         volumeBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            if (volumeContainer) {
-                volumeContainer.classList.toggle('hidden');
-            }
+            volumeContainer.classList.toggle('hidden');
         });
     }
     
-    // Volume slider
     if (volumeSlider) {
         volumeSlider.addEventListener('input', function() {
             audio.volume = this.value / 100;
-            var icon = volumeBtn ? volumeBtn.querySelector('i') : null;
-            if (icon) {
-                if (this.value == 0) {
-                    icon.className = 'fas fa-volume-mute';
-                } else if (this.value < 50) {
-                    icon.className = 'fas fa-volume-down';
-                } else {
-                    icon.className = 'fas fa-volume-up';
-                }
-            }
         });
         audio.volume = volumeSlider.value / 100;
     }
-    
-    console.log('Music Player Ready!');
 });
 </script>
 

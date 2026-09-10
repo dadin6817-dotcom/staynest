@@ -1,5 +1,5 @@
 <?php
-// welcome.php - Halaman Welcome StayNest (MODERN + CHATBOT)
+// welcome.php - Halaman Welcome StayNest (MODERN)
 $page_title = "Welcome to StayNest - Find Your Cozy Home ✨";
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -74,10 +74,6 @@ require_once dirname(__FILE__) . '/includes/header.php';
             </div>
         </div>
     </div>
-    
-    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <i class="fas fa-chevron-down text-white/60 text-2xl"></i>
-    </div>
 </section>
 
 <!-- ========================================== -->
@@ -92,9 +88,6 @@ require_once dirname(__FILE__) . '/includes/header.php';
             <h2 class="text-4xl md:text-5xl font-black text-gray-800 mb-4">
                 More Than Just a <span class="bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">Place to Stay</span>
             </h2>
-            <p class="text-gray-500 text-lg max-w-2xl mx-auto">
-                We provide everything you need for a comfortable and stylish living experience
-            </p>
         </div>
         
         <div class="grid md:grid-cols-3 gap-8">
@@ -103,10 +96,7 @@ require_once dirname(__FILE__) . '/includes/header.php';
                     <i class="fas fa-shield-alt text-3xl text-white"></i>
                 </div>
                 <h3 class="text-2xl font-bold mb-3 text-gray-800">100% Verified</h3>
-                <p class="text-gray-500 leading-relaxed">All properties have been checked directly for your comfort and safety guarantee.</p>
-                <div class="mt-6 flex items-center text-blue-600 font-semibold group-hover:gap-3 gap-2 transition-all">
-                    Learn More <i class="fas fa-arrow-right"></i>
-                </div>
+                <p class="text-gray-500 leading-relaxed">All properties have been checked directly for your comfort and safety.</p>
             </div>
             
             <div class="group bg-white rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-4 border-2 border-transparent hover:border-yellow-200">
@@ -114,10 +104,7 @@ require_once dirname(__FILE__) . '/includes/header.php';
                     <i class="fas fa-bolt text-3xl text-white"></i>
                 </div>
                 <h3 class="text-2xl font-bold mb-3 text-gray-800">Instant Booking</h3>
-                <p class="text-gray-500 leading-relaxed">Fast & easy booking process. Get confirmation within minutes, not days.</p>
-                <div class="mt-6 flex items-center text-orange-500 font-semibold group-hover:gap-3 gap-2 transition-all">
-                    Learn More <i class="fas fa-arrow-right"></i>
-                </div>
+                <p class="text-gray-500 leading-relaxed">Fast & easy booking process. Get confirmation within minutes.</p>
             </div>
             
             <div class="group bg-white rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-4 border-2 border-transparent hover:border-pink-200">
@@ -125,10 +112,7 @@ require_once dirname(__FILE__) . '/includes/header.php';
                     <i class="fas fa-headset text-3xl text-white"></i>
                 </div>
                 <h3 class="text-2xl font-bold mb-3 text-gray-800">24/7 Support</h3>
-                <p class="text-gray-500 leading-relaxed">Our customer service team is ready to help you anytime you need assistance.</p>
-                <div class="mt-6 flex items-center text-purple-600 font-semibold group-hover:gap-3 gap-2 transition-all">
-                    Learn More <i class="fas fa-arrow-right"></i>
-                </div>
+                <p class="text-gray-500 leading-relaxed">Our customer service team is ready to help you anytime.</p>
             </div>
         </div>
     </div>
@@ -170,22 +154,9 @@ require_once dirname(__FILE__) . '/includes/header.php';
         66% { transform: translate(-20px, 20px) scale(0.9); }
     }
     
-    .animate-blob {
-        animation: blob 7s infinite;
-    }
-    
-    .animation-delay-2000 {
-        animation-delay: 2s;
-    }
-    
-    .animation-delay-4000 {
-        animation-delay: 4s;
-    }
+    .animate-blob { animation: blob 7s infinite; }
+    .animation-delay-2000 { animation-delay: 2s; }
+    .animation-delay-4000 { animation-delay: 4s; }
 </style>
-
-<!-- ========================================== -->
-<!-- CHATBOT -->
-<!-- ========================================== -->
-<?php include_once dirname(__FILE__) . '/includes/chatbot.php'; ?>
 
 <?php require_once dirname(__FILE__) . '/includes/footer.php'; ?>
