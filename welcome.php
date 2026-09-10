@@ -1,95 +1,206 @@
 <?php
-// welcome.php - Halaman Welcome StayNest
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-$page_title = "Welcome to StayNest - Find Your Cozy Home";
+// welcome.php - Halaman Welcome StayNest (MODERN & KEREN)
+$page_title = "Welcome to StayNest - Find Your Cozy Home ✨";
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Cek file database
-$database_file = dirname(__FILE__) . '/config/database.php';
-if (!file_exists($database_file)) {
-    die("<h1>Error</h1><p>File config/database.php tidak ditemukan!</p><p>Buat file tersebut terlebih dahulu.</p>");
-}
-require_once $database_file;
-
-// Cek file header
-$header_file = dirname(__FILE__) . '/includes/header.php';
-if (!file_exists($header_file)) {
-    die("<h1>Error</h1><p>File includes/header.php tidak ditemukan!</p>");
-}
-require_once $header_file;
+require_once dirname(__FILE__) . '/config/database.php';
+require_once dirname(__FILE__) . '/includes/header.php';
 ?>
 
-<!-- ========== HERO SECTION ========== -->
-<section class="relative bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 text-white py-24">
-    <div class="max-w-5xl mx-auto px-4 text-center">
-        <h1 class="text-4xl md:text-6xl font-extrabold mb-4">
-            Welcome to <span class="text-yellow-300">StayNest</span> 🏠
+<!-- ========================================== -->
+<!-- HERO SECTION - DENGAN ANIMASI & GRADIENT -->
+<!-- ========================================== -->
+<section class="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500">
+    <!-- Animated Background Bubbles -->
+    <div class="absolute inset-0 overflow-hidden">
+        <div class="absolute w-96 h-96 bg-white/10 rounded-full -top-20 -left-20 animate-blob"></div>
+        <div class="absolute w-96 h-96 bg-yellow-300/10 rounded-full top-1/2 -right-20 animate-blob animation-delay-2000"></div>
+        <div class="absolute w-96 h-96 bg-pink-300/10 rounded-full -bottom-20 left-1/3 animate-blob animation-delay-4000"></div>
+    </div>
+    
+    <!-- Grid Pattern Overlay -->
+    <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle, white 1px, transparent 1px); background-size: 30px 30px;"></div>
+    
+    <div class="relative z-10 max-w-7xl mx-auto px-4 py-20 text-center">
+        <!-- Badge -->
+        <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md rounded-full px-6 py-3 mb-8 border border-white/30 shadow-2xl">
+            <span class="relative flex h-3 w-3">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+            </span>
+            <span class="text-white font-semibold text-sm">✨ Trusted by 5000+ Tenants</span>
+        </div>
+        
+        <!-- Main Title -->
+        <h1 class="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-tight mb-6 drop-shadow-2xl">
+            Welcome to
+            <span class="block bg-gradient-to-r from-yellow-300 via-orange-300 to-yellow-300 bg-clip-text text-transparent animate-pulse">
+                StayNest 🏠
+            </span>
         </h1>
-        <p class="text-xl text-purple-100 mb-8">
-            Find a place you'll love to call home
+        
+        <!-- Subtitle -->
+        <p class="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-4 font-light">
+            Find a place you'll <span class="font-bold text-yellow-300">love to call home</span>
         </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="index.php" class="bg-white text-purple-600 px-8 py-4 rounded-full font-bold hover:shadow-xl transition">
+        
+        <p class="text-base md:text-lg text-white/70 max-w-2xl mx-auto mb-12">
+            Discover cozy spaces that match your lifestyle. Modern, affordable, and totally instagrammable.
+        </p>
+        
+        <!-- CTA Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+            <a href="index.php" 
+               class="group bg-white text-purple-600 px-10 py-5 rounded-2xl font-bold text-lg hover:bg-yellow-300 hover:text-purple-800 transition-all duration-300 transform hover:scale-110 shadow-2xl hover:shadow-yellow-300/50 inline-flex items-center justify-center gap-3">
+                <i class="fas fa-rocket group-hover:rotate-12 transition"></i>
                 Get Started Now
             </a>
-            <a href="properties.php" class="border-2 border-white text-white px-8 py-4 rounded-full font-bold hover:bg-white hover:text-purple-600 transition">
+            <a href="properties.php" 
+               class="group border-2 border-white/50 text-white px-10 py-5 rounded-2xl font-bold text-lg hover:bg-white hover:text-purple-600 transition-all duration-300 transform hover:scale-110 backdrop-blur-sm inline-flex items-center justify-center gap-3">
+                <i class="fas fa-search group-hover:scale-125 transition"></i>
                 Explore Properties
             </a>
         </div>
+        
+        <!-- Stats Floating Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition">
+                <div class="text-4xl font-black text-white mb-1">5000+</div>
+                <div class="text-sm text-white/80">Happy Tenants</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition">
+                <div class="text-4xl font-black text-white mb-1">50+</div>
+                <div class="text-sm text-white/80">Properties</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition">
+                <div class="text-4xl font-black text-white mb-1">4.9⭐</div>
+                <div class="text-sm text-white/80">Rating</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition">
+                <div class="text-4xl font-black text-white mb-1">1000+</div>
+                <div class="text-sm text-white/80">Reviews</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scroll Indicator -->
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+        <i class="fas fa-chevron-down text-white/60 text-2xl"></i>
     </div>
 </section>
 
-<!-- ========== FEATURES ========== -->
-<section class="py-16 bg-white">
+<!-- ========================================== -->
+<!-- FEATURES SECTION - DENGAN ICON BERWARNA -->
+<!-- ========================================== -->
+<section class="py-24 bg-gradient-to-b from-white to-purple-50">
     <div class="max-w-7xl mx-auto px-4">
-        <h2 class="text-3xl font-bold text-center mb-12">Why Choose StayNest?</h2>
-        <div class="grid md:grid-cols-3 gap-6">
-            <div class="bg-gray-50 rounded-2xl p-6 text-center">
-                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-shield-alt text-2xl text-purple-600"></i>
+        <div class="text-center mb-16">
+            <span class="inline-block bg-gradient-to-r from-purple-600 to-pink-500 text-white text-sm font-bold px-6 py-2 rounded-full mb-4 shadow-lg">
+                ✨ WHY CHOOSE US
+            </span>
+            <h2 class="text-4xl md:text-5xl font-black text-gray-800 mb-4">
+                More Than Just a <span class="bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">Place to Stay</span>
+            </h2>
+            <p class="text-gray-500 text-lg max-w-2xl mx-auto">
+                We provide everything you need for a comfortable and stylish living experience
+            </p>
+        </div>
+        
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- Feature 1 -->
+            <div class="group bg-white rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-4 border-2 border-transparent hover:border-purple-200">
+                <div class="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:rotate-12 transition-transform duration-500 shadow-lg">
+                    <i class="fas fa-shield-alt text-3xl text-white"></i>
                 </div>
-                <h3 class="text-xl font-bold mb-2">100% Verified</h3>
-                <p class="text-gray-500 text-sm">All properties checked directly</p>
+                <h3 class="text-2xl font-bold mb-3 text-gray-800">100% Verified</h3>
+                <p class="text-gray-500 leading-relaxed">All properties have been checked directly for your comfort and safety guarantee.</p>
+                <div class="mt-6 flex items-center text-blue-600 font-semibold group-hover:gap-3 gap-2 transition-all">
+                    Learn More <i class="fas fa-arrow-right"></i>
+                </div>
             </div>
-            <div class="bg-gray-50 rounded-2xl p-6 text-center">
-                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-bolt text-2xl text-purple-600"></i>
+            
+            <!-- Feature 2 -->
+            <div class="group bg-white rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-4 border-2 border-transparent hover:border-yellow-200">
+                <div class="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center mb-6 group-hover:rotate-12 transition-transform duration-500 shadow-lg">
+                    <i class="fas fa-bolt text-3xl text-white"></i>
                 </div>
-                <h3 class="text-xl font-bold mb-2">Instant Booking</h3>
-                <p class="text-gray-500 text-sm">Fast & easy booking process</p>
+                <h3 class="text-2xl font-bold mb-3 text-gray-800">Instant Booking</h3>
+                <p class="text-gray-500 leading-relaxed">Fast & easy booking process. Get confirmation within minutes, not days.</p>
+                <div class="mt-6 flex items-center text-orange-500 font-semibold group-hover:gap-3 gap-2 transition-all">
+                    Learn More <i class="fas fa-arrow-right"></i>
+                </div>
             </div>
-            <div class="bg-gray-50 rounded-2xl p-6 text-center">
-                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-headset text-2xl text-purple-600"></i>
+            
+            <!-- Feature 3 -->
+            <div class="group bg-white rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-4 border-2 border-transparent hover:border-pink-200">
+                <div class="w-20 h-20 bg-gradient-to-br from-pink-400 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:rotate-12 transition-transform duration-500 shadow-lg">
+                    <i class="fas fa-headset text-3xl text-white"></i>
                 </div>
-                <h3 class="text-xl font-bold mb-2">24/7 Support</h3>
-                <p class="text-gray-500 text-sm">Customer service ready to help</p>
+                <h3 class="text-2xl font-bold mb-3 text-gray-800">24/7 Support</h3>
+                <p class="text-gray-500 leading-relaxed">Our customer service team is ready to help you anytime you need assistance.</p>
+                <div class="mt-6 flex items-center text-purple-600 font-semibold group-hover:gap-3 gap-2 transition-all">
+                    Learn More <i class="fas fa-arrow-right"></i>
+                </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- ========== CTA ========== -->
-<section class="bg-gradient-to-r from-purple-600 to-purple-800 py-16">
-    <div class="max-w-4xl mx-auto px-4 text-center">
-        <h2 class="text-3xl font-bold text-white mb-4">Ready to Find Your New Home? 🏠</h2>
-        <p class="text-xl text-purple-100 mb-8">Join thousands of happy tenants</p>
-        <a href="index.php" class="inline-block bg-white text-purple-600 px-8 py-4 rounded-full font-bold hover:shadow-xl transition">
-            Get Started Now
-        </a>
+<!-- ========================================== -->
+<!-- CTA SECTION - MENARIK -->
+<!-- ========================================== -->
+<section class="py-24 bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 relative overflow-hidden">
+    <div class="absolute inset-0 opacity-20">
+        <div class="absolute w-96 h-96 bg-white rounded-full -top-40 -left-40 blur-3xl"></div>
+        <div class="absolute w-96 h-96 bg-yellow-300 rounded-full -bottom-40 -right-40 blur-3xl"></div>
+    </div>
+    
+    <div class="relative z-10 max-w-4xl mx-auto px-4 text-center">
+        <h2 class="text-4xl md:text-6xl font-black text-white mb-6 drop-shadow-lg">
+            Ready to Find Your <span class="text-yellow-300">New Home?</span> 🏠
+        </h2>
+        <p class="text-xl md:text-2xl text-white/90 mb-12 max-w-2xl mx-auto">
+            Join thousands of happy tenants who already found their cozy space with StayNest
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="properties.php" 
+               class="group bg-white text-purple-600 px-12 py-5 rounded-2xl font-bold text-lg hover:bg-yellow-300 hover:text-purple-800 transition-all duration-300 transform hover:scale-110 shadow-2xl inline-flex items-center justify-center gap-3">
+                <i class="fas fa-search group-hover:rotate-12 transition"></i>
+                Find Property Now
+            </a>
+            <a href="register.php" 
+               class="border-2 border-white text-white px-12 py-5 rounded-2xl font-bold text-lg hover:bg-white hover:text-purple-600 transition-all duration-300 transform hover:scale-110 inline-flex items-center justify-center gap-3">
+                <i class="fas fa-user-plus"></i>
+                Create Account
+            </a>
+        </div>
     </div>
 </section>
 
-<?php 
-$footer_file = dirname(__FILE__) . '/includes/footer.php';
-if (file_exists($footer_file)) {
-    require_once $footer_file;
-} else {
-    echo "<p style='text-align:center;padding:20px;color:red;'>Footer file not found!</p>";
-}
-?>
+<!-- ========================================== -->
+<!-- ANIMASI CSS -->
+<!-- ========================================== -->
+<style>
+    @keyframes blob {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        33% { transform: translate(30px, -50px) scale(1.1); }
+        66% { transform: translate(-20px, 20px) scale(0.9); }
+    }
+    
+    .animate-blob {
+        animation: blob 7s infinite;
+    }
+    
+    .animation-delay-2000 {
+        animation-delay: 2s;
+    }
+    
+    .animation-delay-4000 {
+        animation-delay: 4s;
+    }
+</style>
+
+<?php require_once dirname(__FILE__) . '/includes/footer.php'; ?>
