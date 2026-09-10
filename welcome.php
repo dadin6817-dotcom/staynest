@@ -1,5 +1,5 @@
 <?php
-// welcome.php - Halaman Welcome StayNest (MODERN)
+// welcome.php - TANPA getPropertyImage
 $page_title = "Welcome to StayNest - Find Your Cozy Home ✨";
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -7,12 +7,11 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once dirname(__FILE__) . '/config/database.php';
+require_once dirname(__FILE__) . '/includes/functions.php';
 require_once dirname(__FILE__) . '/includes/header.php';
 ?>
 
-<!-- ========================================== -->
 <!-- HERO SECTION -->
-<!-- ========================================== -->
 <section class="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500">
     <div class="absolute inset-0 overflow-hidden">
         <div class="absolute w-96 h-96 bg-white/10 rounded-full -top-20 -left-20 animate-blob"></div>
@@ -76,9 +75,7 @@ require_once dirname(__FILE__) . '/includes/header.php';
     </div>
 </section>
 
-<!-- ========================================== -->
-<!-- FEATURES SECTION -->
-<!-- ========================================== -->
+<!-- FEATURES -->
 <section class="py-24 bg-gradient-to-b from-white to-purple-50">
     <div class="max-w-7xl mx-auto px-4">
         <div class="text-center mb-16">
@@ -118,9 +115,7 @@ require_once dirname(__FILE__) . '/includes/header.php';
     </div>
 </section>
 
-<!-- ========================================== -->
-<!-- CTA SECTION -->
-<!-- ========================================== -->
+<!-- CTA -->
 <section class="py-24 bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 relative overflow-hidden">
     <div class="absolute inset-0 opacity-20">
         <div class="absolute w-96 h-96 bg-white rounded-full -top-40 -left-40 blur-3xl"></div>
@@ -153,7 +148,6 @@ require_once dirname(__FILE__) . '/includes/header.php';
         33% { transform: translate(30px, -50px) scale(1.1); }
         66% { transform: translate(-20px, 20px) scale(0.9); }
     }
-    
     .animate-blob { animation: blob 7s infinite; }
     .animation-delay-2000 { animation-delay: 2s; }
     .animation-delay-4000 { animation-delay: 4s; }
