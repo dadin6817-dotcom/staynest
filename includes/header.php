@@ -1,32 +1,35 @@
-]<?php
-// includes/header.php - Navbar Global dengan User Login + Music Player
+<?php
+// includes/header.php - Header dengan Menu My Bookings Selalu Tampil
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$is_logged_in = isset($_SESSION['user_id']) && isset($_SESSION['username']);
+$is_logged_in = isset($_SESSION['user_id']);
 $user_name = $_SESSION['full_name'] ?? 'User';
 $user_role = $_SESSION['role'] ?? 'user';
 $page_title = $page_title ?? 'StayNest - Find Your Cozy Home';
-
-// Tentukan halaman aktif untuk navigasi
 $current_page = basename($_SERVER['PHP_SELF']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($page_title); ?></title>
     
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; overflow-x: hidden; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; }
         
         .gradient-text {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
@@ -35,14 +38,19 @@ $current_page = basename($_SERVER['PHP_SELF']);
             background-clip: text;
         }
         
-        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .gradient-bg-pink { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
         
         .navbar-modern {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
             box-shadow: 0 2px 20px rgba(0,0,0,0.05);
             transition: all 0.3s ease;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 50;
         }
         
         .navbar-scrolled {
@@ -56,12 +64,13 @@ $current_page = basename($_SERVER['PHP_SELF']);
             font-weight: 500;
             text-decoration: none;
             color: #4a5568;
+            padding-bottom: 4px;
         }
         
         .nav-link::after {
             content: '';
             position: absolute;
-            bottom: -5px;
+            bottom: -2px;
             left: 0;
             width: 0;
             height: 2px;
@@ -72,20 +81,13 @@ $current_page = basename($_SERVER['PHP_SELF']);
         
         .nav-link:hover::after,
         .nav-link.active::after { width: 100%; }
-        
-        .nav-link:hover { color: #667eea; transform: translateY(-2px); }
-        
-        .admin-btn {
-            background: linear-gradient(135deg, #f093fb, #f5576c);
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-        .admin-btn:hover { transform: scale(1.05); box-shadow: 0 5px 20px rgba(240,147,251,0.4); }
+        .nav-link:hover { color: #667eea; }
         
         .user-btn {
             background: linear-gradient(135deg, #667eea, #764ba2);
             transition: all 0.3s ease;
             text-decoration: none;
+            color: white;
         }
         .user-btn:hover { transform: scale(1.05); box-shadow: 0 5px 20px rgba(102,126,234,0.4); }
         
@@ -125,145 +127,18 @@ $current_page = basename($_SERVER['PHP_SELF']);
         .user-dropdown-item i { width: 20px; color: #667eea; }
         .user-dropdown-divider { height: 1px; background: #e5e7eb; margin: 8px 0; }
         
-        /* ========================================== */
-        /* MUSIC BUTTON DI NAVBAR */
-        /* ========================================== */
-        #musicToggleBtn {
-            transition: all 0.3s ease;
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            padding: 8px 12px;
-            border-radius: 50px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        #musicToggleBtn:hover { background: rgba(102,126,234,0.1); transform: scale(1.05); }
-        #musicToggleBtn .music-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            background: #22c55e;
-            transition: background 0.3s ease;
-        }
-        #musicToggleBtn .music-dot.off { background: #9ca3af; }
-        
-        /* ========================================== */
-        /* MUSIC PLAYER FLOATING - BAWAH KIRI */
-        /* ========================================== */
-        #musicPlayerContainer {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            z-index: 9998;
-        }
-        
-        #musicToggle {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border: none;
-            box-shadow: 0 8px 30px rgba(102,126,234,0.4);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            color: white;
-        }
-        #musicToggle:hover { transform: scale(1.1); box-shadow: 0 8px 40px rgba(102,126,234,0.6); }
-        #musicToggle i { font-size: 22px; }
-        
-        #musicToggle .pulse-ring {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: rgba(102,126,234,0.3);
-            animation: pulseRing 1.5s ease-in-out infinite;
-            display: none;
-        }
-        #musicToggle .pulse-ring.active { display: block; }
-        
-        @keyframes pulseRing {
-            0%, 100% { transform: scale(1); opacity: 0.6; }
-            50% { transform: scale(1.3); opacity: 0.1; }
-        }
-        
-        #musicControls {
-            position: absolute;
-            bottom: 75px;
-            left: 0;
-            width: 300px;
-            background: rgba(255,255,255,0.98);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-            display: none;
-            border: 1px solid rgba(102,126,234,0.1);
-        }
-        #musicControls.show { display: block; animation: slideUp 0.3s ease-out; }
-        
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        
-        .music-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .music-header-left { display: flex; align-items: center; gap: 10px; }
-        .music-header-left .live-dot {
-            width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulseDot 1.5s infinite;
-        }
-        @keyframes pulseDot {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.3; transform: scale(0.8); }
-        }
-        .music-header-left h3 { font-size: 14px; font-weight: 600; color: #667eea; }
-        .music-close-btn { background: none; border: none; color: #999; font-size: 20px; cursor: pointer; padding: 0 5px; }
-        .music-close-btn:hover { color: #333; }
-        
-        .music-info { background: linear-gradient(135deg, #f5f0ff, #fdf2f8); border-radius: 14px; padding: 12px; text-align: center; margin-bottom: 12px; }
-        .music-info .note-icon { font-size: 24px; display: block; margin-bottom: 2px; }
-        .music-info .song-name { font-size: 13px; font-weight: 600; color: #1a1a2e; }
-        
-        .music-progress-container { margin-bottom: 12px; }
-        .music-progress-container .time-row { display: flex; justify-content: space-between; font-size: 10px; color: #999; margin-bottom: 3px; }
-        .music-progress-track { width: 100%; height: 4px; background: #e8e8e8; border-radius: 4px; cursor: pointer; position: relative; overflow: hidden; }
-        .music-progress-track .progress-fill { height: 100%; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 4px; width: 0%; transition: width 0.1s ease; }
-        
-        .music-controls { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 12px; }
-        .music-controls button { background: none; border: none; cursor: pointer; transition: all 0.2s ease; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #555; }
-        .music-controls button:hover { background: rgba(102,126,234,0.1); color: #667eea; }
-        .music-controls .play-btn { width: 50px; height: 50px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; font-size: 20px; box-shadow: 0 4px 15px rgba(102,126,234,0.3); }
-        .music-controls .play-btn:hover { transform: scale(1.05); box-shadow: 0 6px 25px rgba(102,126,234,0.5); }
-        
-        .music-volume { display: flex; align-items: center; gap: 10px; }
-        .music-volume i { color: #667eea; font-size: 14px; }
-        .music-volume input[type=range] { flex: 1; height: 3px; -webkit-appearance: none; appearance: none; background: #e8e8e8; border-radius: 3px; outline: 0; }
-        .music-volume input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); cursor: pointer; box-shadow: 0 2px 8px rgba(102,126,234,0.3); }
-        .music-volume input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); cursor: pointer; border: none; }
-        .music-volume .vol-percent { font-size: 10px; color: #999; min-width: 35px; text-align: right; }
-        
         @media (max-width: 768px) {
             .navbar-modern { padding: 12px 16px; }
-            #musicControls { width: 280px !important; left: 0 !important; }
         }
     </style>
 </head>
 <body>
 
-<!-- ========================================== -->
-<!-- NAVBAR -->
-<!-- ========================================== -->
-<nav class="navbar-modern fixed top-0 w-full z-50 py-4 px-6 md:px-12" id="mainNavbar">
+<!-- ========== NAVBAR ========== -->
+<nav class="navbar-modern py-4 px-6 md:px-12" id="mainNavbar">
     <div class="max-w-7xl mx-auto flex justify-between items-center">
         <!-- Logo -->
-        <a href="/staynest/index.php" class="flex items-center gap-3 group">
+        <a href="/staynest/welcome.php" class="flex items-center gap-3 group">
             <div class="w-10 h-10 gradient-bg rounded-xl flex items-center justify-center group-hover:scale-110 transition">
                 <i class="fas fa-home text-white text-xl"></i>
             </div>
@@ -272,29 +147,23 @@ $current_page = basename($_SERVER['PHP_SELF']);
         
         <!-- Nav Links Desktop -->
         <div class="hidden md:flex items-center gap-8">
-            <a href="/staynest/index.php" class="nav-link <?php echo $current_page == 'index.php' ? 'active' : ''; ?>">Home</a>
-            <a href="/staynest/properties.php" class="nav-link <?php echo $current_page == 'properties.php' ? 'active' : ''; ?>">Properties</a>
-            <?php if($is_logged_in): ?>
-                <a href="/staynest/bookings/my_bookings.php" class="nav-link <?php echo $current_page == 'my_bookings.php' ? 'active' : ''; ?>">My Bookings</a>
-            <?php endif; ?>
+            <a href="/staynest/welcome.php" class="nav-link <?php echo $current_page == 'welcome.php' ? 'active' : ''; ?>">
+                <i class="fas fa-home mr-1"></i> Home
+            </a>
+            <a href="/staynest/properties.php" class="nav-link <?php echo $current_page == 'properties.php' ? 'active' : ''; ?>">
+                <i class="fas fa-building mr-1"></i> Properties
+            </a>
+            <!-- MENU MY BOOKINGS - SELALU TAMPIL -->
+            <a href="/staynest/bookings/my_bookings.php" class="nav-link <?php echo $current_page == 'my_bookings.php' ? 'active' : ''; ?>">
+                <i class="fas fa-calendar-alt mr-1"></i> My Bookings
+            </a>
         </div>
         
         <!-- Right Side -->
         <div class="flex items-center gap-3">
-            <a href="/staynest/admin/login.php" class="hidden md:block admin-btn text-white px-5 py-2 rounded-full text-sm font-medium hover:shadow-lg transition flex items-center gap-2">
-                <i class="fas fa-user-shield"></i> <span>Admin</span>
-            </a>
-            
-            <!-- Music Button -->
-            <button id="musicToggleBtn" class="hidden md:flex items-center gap-2 text-gray-700 hover:text-purple-600 transition text-sm font-medium rounded-full hover:bg-purple-50 px-3 py-1.5">
-                <i class="fas fa-music"></i>
-                <span id="musicStatus">Off</span>
-                <span class="music-dot off" id="musicDot"></span>
-            </button>
-            
-            <?php if($is_logged_in): ?>
+            <?php if ($is_logged_in): ?>
                 <div class="relative" id="userMenuContainer">
-                    <button id="userMenuBtn" class="user-btn text-white px-4 py-2 rounded-full text-sm font-medium hover:shadow-lg transition flex items-center gap-2">
+                    <button id="userMenuBtn" class="user-btn px-4 py-2 rounded-full text-sm font-medium hover:shadow-lg transition flex items-center gap-2">
                         <i class="fas fa-user-circle"></i>
                         <span><?php echo htmlspecialchars($user_name); ?></span>
                         <i class="fas fa-chevron-down text-xs ml-1"></i>
@@ -311,10 +180,14 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     </div>
                 </div>
             <?php else: ?>
-                <a href="/staynest/login.php" class="user-btn text-white px-5 py-2 rounded-full text-sm font-medium hover:shadow-lg transition flex items-center gap-2">
+                <a href="/staynest/admin/login.php" class="hidden md:flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:shadow-lg transition">
+                    <i class="fas fa-user-shield"></i> Admin
+                </a>
+                
+                <a href="/staynest/login.php" class="user-btn px-5 py-2 rounded-full text-sm font-medium hover:shadow-lg transition flex items-center gap-2">
                     <i class="fas fa-sign-in-alt"></i> Login
                 </a>
-                <a href="/staynest/register.php" class="bg-transparent border-2 border-purple-600 text-purple-600 px-5 py-2 rounded-full text-sm font-medium hover:bg-purple-600 hover:text-white transition flex items-center gap-2">
+                <a href="/staynest/register.php" class="border-2 border-purple-600 text-purple-600 px-5 py-2 rounded-full text-sm font-medium hover:bg-purple-600 hover:text-white transition flex items-center gap-2">
                     <i class="fas fa-user-plus"></i> Register
                 </a>
             <?php endif; ?>
@@ -328,74 +201,43 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <!-- Mobile Menu -->
     <div id="mobileMenu" class="hidden md:hidden mt-4 py-4 border-t border-gray-100">
         <div class="flex flex-col gap-3">
-            <a href="/staynest/index.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">Home</a>
-            <a href="/staynest/properties.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">Properties</a>
-            <?php if($is_logged_in): ?>
-                <a href="/staynest/bookings/my_bookings.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">My Bookings</a>
-                <a href="/staynest/profile.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">Profile</a>
-                <a href="/staynest/logout.php" class="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition">Logout</a>
+            <a href="/staynest/welcome.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">
+                <i class="fas fa-home mr-2 text-purple-600"></i> Home
+            </a>
+            <a href="/staynest/properties.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">
+                <i class="fas fa-building mr-2 text-purple-600"></i> Properties
+            </a>
+            <a href="/staynest/bookings/my_bookings.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">
+                <i class="fas fa-calendar-alt mr-2 text-purple-600"></i> My Bookings
+            </a>
+            
+            <?php if ($is_logged_in): ?>
+                <a href="/staynest/profile.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">
+                    <i class="fas fa-user mr-2 text-purple-600"></i> Profile
+                </a>
+                <a href="/staynest/logout.php" class="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                </a>
             <?php else: ?>
-                <a href="/staynest/login.php" class="px-4 py-2 gradient-bg text-white rounded-lg text-center">Login</a>
-                <a href="/staynest/register.php" class="px-4 py-2 border-2 border-purple-600 text-purple-600 rounded-lg text-center">Register</a>
+                <a href="/staynest/login.php" class="px-4 py-2 gradient-bg text-white rounded-lg text-center">
+                    <i class="fas fa-sign-in-alt mr-2"></i> Login
+                </a>
+                <a href="/staynest/register.php" class="px-4 py-2 border-2 border-purple-600 text-purple-600 rounded-lg text-center">
+                    <i class="fas fa-user-plus mr-2"></i> Register
+                </a>
+                <a href="/staynest/admin/login.php" class="px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-lg text-center">
+                    <i class="fas fa-user-shield mr-2"></i> Admin Panel
+                </a>
             <?php endif; ?>
-            <a href="/staynest/admin/login.php" class="px-4 py-2 admin-btn text-white rounded-lg text-center">Admin Panel</a>
         </div>
     </div>
 </nav>
 
+<!-- Spacer untuk fixed navbar -->
 <div style="height: 80px;"></div>
 
-<!-- ========================================== -->
-<!-- MUSIC PLAYER FLOATING - BAWAH KIRI -->
-<!-- ========================================== -->
-<div id="musicPlayerContainer">
-    <button id="musicToggle" aria-label="Toggle Music Player">
-        <span class="pulse-ring" id="pulseRing"></span>
-        <i class="fas fa-music" id="musicToggleIcon"></i>
-    </button>
-    
-    <div id="musicControls">
-        <div class="music-header">
-            <div class="music-header-left">
-                <span class="live-dot" id="liveDot"></span>
-                <h3><i class="fas fa-music"></i> StayNest Radio</h3>
-            </div>
-            <button class="music-close-btn" id="closeMusicBtn">&times;</button>
-        </div>
-        
-        <div class="music-info">
-            <span class="note-icon">🎧</span>
-            <p class="song-name" id="songName">SoundHelix - Song 1</p>
-        </div>
-        
-        <div class="music-progress-container">
-            <div class="time-row">
-                <span id="currentTime">0:00</span>
-                <span id="totalTime">3:45</span>
-            </div>
-            <div class="music-progress-track" id="progressTrack">
-                <div class="progress-fill" id="progressFill"></div>
-            </div>
-        </div>
-        
-        <div class="music-controls">
-            <button id="prevBtn"><i class="fas fa-step-backward"></i></button>
-            <button class="play-btn" id="playBtn"><i class="fas fa-play"></i></button>
-            <button id="nextBtn"><i class="fas fa-step-forward"></i></button>
-        </div>
-        
-        <div class="music-volume">
-            <i class="fas fa-volume-down"></i>
-            <input type="range" id="volumeSlider" min="0" max="100" value="40">
-            <span class="vol-percent" id="volumePercent">40%</span>
-        </div>
-    </div>
-</div>
-
 <script>
-// ==========================================
-// NAVBAR SCROLL EFFECT
-// ==========================================
+// Navbar scroll effect
 window.addEventListener('scroll', function() {
     var navbar = document.getElementById('mainNavbar');
     if (navbar) {
@@ -404,9 +246,7 @@ window.addEventListener('scroll', function() {
     }
 });
 
-// ==========================================
-// MOBILE MENU TOGGLE
-// ==========================================
+// Mobile menu toggle
 var mobileMenuBtn = document.getElementById('mobileMenuBtn');
 var mobileMenu = document.getElementById('mobileMenu');
 if (mobileMenuBtn && mobileMenu) {
@@ -415,9 +255,7 @@ if (mobileMenuBtn && mobileMenu) {
     });
 }
 
-// ==========================================
-// USER DROPDOWN TOGGLE
-// ==========================================
+// User dropdown toggle
 var userMenuBtn = document.getElementById('userMenuBtn');
 var userDropdown = document.getElementById('userDropdown');
 if (userMenuBtn && userDropdown) {
@@ -431,135 +269,4 @@ if (userMenuBtn && userDropdown) {
         }
     });
 }
-
-// ==========================================
-// MUSIC PLAYER FUNCTIONALITY
-// ==========================================
-document.addEventListener('DOMContentLoaded', function() {
-    const musicToggle = document.getElementById('musicToggle');
-    const musicControls = document.getElementById('musicControls');
-    const closeMusicBtn = document.getElementById('closeMusicBtn');
-    const playBtn = document.getElementById('playBtn');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const volumeSlider = document.getElementById('volumeSlider');
-    const progressFill = document.getElementById('progressFill');
-    const currentTime = document.getElementById('currentTime');
-    const totalTime = document.getElementById('totalTime');
-    const musicToggleBtn = document.getElementById('musicToggleBtn');
-    const musicStatus = document.getElementById('musicStatus');
-    const musicDot = document.getElementById('musicDot');
-    const pulseRing = document.getElementById('pulseRing');
-    const musicToggleIcon = document.getElementById('musicToggleIcon');
-    const liveDot = document.getElementById('liveDot');
-    
-    let isPlaying = false;
-    let progress = 0;
-    let volume = 40;
-    let progressInterval = null;
-    const totalDuration = 225;
-    
-    // Toggle controls
-    musicToggle.addEventListener('click', function(e) {
-        e.stopPropagation();
-        musicControls.classList.toggle('show');
-    });
-    
-    closeMusicBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        musicControls.classList.remove('show');
-    });
-    
-    document.addEventListener('click', function(e) {
-        if (!musicControls.contains(e.target) && !musicToggle.contains(e.target)) {
-            musicControls.classList.remove('show');
-        }
-    });
-    
-    // Play/Pause
-    playBtn.addEventListener('click', function() {
-        isPlaying = !isPlaying;
-        const icon = this.querySelector('i');
-        
-        if (isPlaying) {
-            icon.className = 'fas fa-pause';
-            this.style.background = 'linear-gradient(135deg, #f093fb, #f5576c)';
-            musicToggleIcon.className = 'fas fa-stop';
-            musicStatus.textContent = 'On';
-            musicDot.className = 'music-dot';
-            pulseRing.classList.add('active');
-            liveDot.style.background = '#22c55e';
-            simulateProgress();
-        } else {
-            icon.className = 'fas fa-play';
-            this.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-            musicToggleIcon.className = 'fas fa-music';
-            musicStatus.textContent = 'Off';
-            musicDot.className = 'music-dot off';
-            pulseRing.classList.remove('active');
-            liveDot.style.background = '#9ca3af';
-            if (progressInterval) { clearTimeout(progressInterval); progressInterval = null; }
-        }
-    });
-    
-    function simulateProgress() {
-        if (!isPlaying) return;
-        if (progress >= 100) {
-            progress = 0;
-            playBtn.click();
-            return;
-        }
-        progress += 0.5;
-        progressFill.style.width = progress + '%';
-        updateTimeDisplay();
-        progressInterval = setTimeout(simulateProgress, 100);
-    }
-    
-    function updateTimeDisplay() {
-        const currentSeconds = Math.floor((progress / 100) * totalDuration);
-        const mins = Math.floor(currentSeconds / 60);
-        const secs = currentSeconds % 60;
-        currentTime.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
-    }
-    
-    // Volume
-    volumeSlider.addEventListener('input', function() {
-        volume = parseInt(this.value);
-        document.getElementById('volumePercent').textContent = volume + '%';
-    });
-    
-    // Total time
-    const totalMins = Math.floor(totalDuration / 60);
-    const totalSecs = totalDuration % 60;
-    totalTime.textContent = totalMins + ':' + (totalSecs < 10 ? '0' : '') + totalSecs;
-    
-    // Keyboard shortcut - Spacebar
-    document.addEventListener('keydown', function(e) {
-        if (e.target.tagName !== 'INPUT' && e.key === ' ') {
-            e.preventDefault();
-            playBtn.click();
-        }
-    });
-    
-    // Navbar music button toggle
-    if (musicToggleBtn) {
-        musicToggleBtn.addEventListener('click', function() {
-            musicToggle.click();
-        });
-    }
-});
-
-// ==========================================
-// NAVBAR ACTIVE LINK
-// ==========================================
-document.addEventListener('DOMContentLoaded', function() {
-    const currentPage = window.location.pathname.split('/').pop();
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-        const href = link.getAttribute('href');
-        if (href && href.includes(currentPage)) {
-            link.classList.add('active');
-        }
-    });
-});
 </script>
