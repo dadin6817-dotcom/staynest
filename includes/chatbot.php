@@ -1,600 +1,304 @@
 <?php
-// includes/chatbot.php - Widget Chatbot Component (Floating Button)
-// Jam Operasional: Senin - Sabtu (08:00 - 17:00 WIB) | Minggu TUTUP
-// Kontak: WA 0858-1117-7617 | Email: adinda.auliap24@gmail.com
+// includes/chatbot.php - Chatbot Component
 ?>
+<!-- ========================================== -->
+<!-- CHATBOT WIDGET -->
+<!-- ========================================== -->
+<div id="chatbotContainer" class="fixed bottom-24 right-6 z-50">
+    <!-- Tombol Chatbot -->
+    <button id="chatbotToggle" class="w-16 h-16 rounded-full shadow-2xl hover:shadow-3xl transition transform hover:scale-110 flex items-center justify-center relative" 
+            style="background: linear-gradient(135deg, #667eea, #764ba2); border: none; cursor: pointer;">
+        <span class="chatbot-pulse"></span>
+        <i class="fas fa-robot text-white text-2xl" id="chatbotIcon"></i>
+    </button>
+    
+    <!-- Chatbot Window -->
+    <div id="chatbotWindow" class="hidden absolute bottom-20 right-0 bg-white rounded-2xl shadow-2xl w-96 max-w-[calc(100vw-3rem)] overflow-hidden border border-gray-200">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-purple-600 to-purple-800 p-4 flex items-center gap-3">
+            <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                <i class="fas fa-robot text-white text-lg"></i>
+            </div>
+            <div class="flex-1">
+                <h3 class="text-white font-bold">StayNest Assistant</h3>
+                <p class="text-purple-200 text-xs flex items-center gap-1">
+                    <span class="w-2 h-2 bg-green-400 rounded-full inline-block"></span>
+                    Online - Siap membantu
+                </p>
+            </div>
+            <button id="chatbotClose" class="text-white/80 hover:text-white transition" style="background: none; border: none; cursor: pointer;">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+        </div>
+        
+        <!-- Chat Messages -->
+        <div id="chatMessages" class="p-4 h-80 overflow-y-auto bg-gray-50">
+            <!-- Bot Message -->
+            <div class="flex gap-2 mb-4">
+                <div class="w-8 h-8 bg-gradient-to-r from-purple-600 to-purple-800 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-robot text-white text-xs"></i>
+                </div>
+                <div class="bg-white rounded-2xl rounded-tl-none p-3 shadow-sm max-w-[80%]">
+                    <p class="text-sm text-gray-700">Halo! 👋 Saya StayNest Assistant. Ada yang bisa saya bantu?</p>
+                </div>
+            </div>
+            
+            <!-- Quick Replies -->
+            <div class="flex flex-wrap gap-2 mb-4 ml-10" id="quickReplies">
+                <button class="quick-reply bg-white border border-purple-200 text-purple-600 text-xs px-3 py-1.5 rounded-full hover:bg-purple-50 transition" data-message="Cara booking?">
+                    📝 Cara booking?
+                </button>
+                <button class="quick-reply bg-white border border-purple-200 text-purple-600 text-xs px-3 py-1.5 rounded-full hover:bg-purple-50 transition" data-message="Lihat properti">
+                    🏠 Lihat properti
+                </button>
+                <button class="quick-reply bg-white border border-purple-200 text-purple-600 text-xs px-3 py-1.5 rounded-full hover:bg-purple-50 transition" data-message="Harga sewa">
+                    💰 Harga sewa
+                </button>
+                <button class="quick-reply bg-white border border-purple-200 text-purple-600 text-xs px-3 py-1.5 rounded-full hover:bg-purple-50 transition" data-message="Kontak admin">
+                    📞 Kontak admin
+                </button>
+            </div>
+        </div>
+        
+        <!-- Chat Input -->
+        <div class="p-3 bg-white border-t border-gray-200">
+            <div class="flex gap-2">
+                <input type="text" 
+                       id="chatInput" 
+                       placeholder="Ketik pesan..." 
+                       class="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-600 text-sm">
+                <button id="chatSend" class="w-10 h-10 bg-gradient-to-r from-purple-600 to-purple-800 rounded-full flex items-center justify-center text-white hover:shadow-lg transition" style="border: none; cursor: pointer;">
+                    <i class="fas fa-paper-plane text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <style>
-    .chatbot-button {
-        position: fixed;
-        bottom: 90px;
-        right: 30px;
-        z-index: 9999;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    .chatbot-button .main-btn {
-        width: 60px;
-        height: 60px;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 10px 25px rgba(102,126,234,0.4);
-        transition: all 0.3s ease;
-        position: relative;
-    }
-    .chatbot-button .main-btn:hover { 
-        transform: scale(1.1); 
-        box-shadow: 0 15px 35px rgba(102,126,234,0.5);
-    }
-    .chatbot-button .main-btn i { 
-        font-size: 28px; 
-        color: white; 
-    }
-    
-    .chatbot-notification {
+    .chatbot-pulse {
         position: absolute;
-        top: -5px;
-        right: -5px;
-        background: #ef4444;
-        color: white;
+        width: 100%;
+        height: 100%;
         border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        font-size: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        animation: pulse 1.5s infinite;
+        background: rgba(102, 126, 234, 0.4);
+        animation: chatbotPulse 2s ease-in-out infinite;
     }
     
-    .status-online {
-        position: absolute;
-        bottom: 2px;
-        right: 2px;
-        width: 14px;
-        height: 14px;
-        background: #22c55e;
-        border-radius: 50%;
-        border: 2px solid white;
+    @keyframes chatbotPulse {
+        0%, 100% { transform: scale(1); opacity: 0.6; }
+        50% { transform: scale(1.2); opacity: 0.1; }
     }
     
-    @keyframes pulse {
-        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
-        70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239,68,68,0); }
-        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+    #chatbotWindow {
+        animation: slideUpChat 0.3s ease-out;
     }
     
-    .chatbot-window {
-        position: fixed;
-        bottom: 110px;
-        right: 30px;
-        width: 400px;
-        height: 600px;
-        background: white;
-        border-radius: 25px;
-        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-        z-index: 9999;
-        display: none;
-        flex-direction: column;
-        overflow: hidden;
-        animation: slideUp 0.3s ease-out;
-        font-family: 'Inter', sans-serif;
-    }
-    .chatbot-window.active { display: flex; }
-    
-    @keyframes slideUp { 
-        from { opacity: 0; transform: translateY(20px); } 
-        to { opacity: 1; transform: translateY(0); } 
-    }
-    
-    .chatbot-header { 
-        background: linear-gradient(135deg, #667eea, #764ba2); 
-        padding: 20px; 
-        color: white; 
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-    }
-    
-    .chatbot-avatar { 
-        width: 45px; 
-        height: 45px; 
-        background: rgba(255,255,255,0.2); 
-        border-radius: 50%; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        font-size: 24px; 
-        position: relative;
-    }
-    
-    .chatbot-messages { 
-        flex: 1; 
-        overflow-y: auto; 
-        padding: 20px; 
-        background: #f8fafc; 
-        display: flex; 
-        flex-direction: column; 
-        gap: 12px; 
-    }
-    
-    /* Custom scrollbar */
-    .chatbot-messages::-webkit-scrollbar {
-        width: 5px;
-    }
-    .chatbot-messages::-webkit-scrollbar-track {
-        background: #e2e8f0;
-        border-radius: 10px;
-    }
-    .chatbot-messages::-webkit-scrollbar-thumb {
-        background: #667eea;
-        border-radius: 10px;
-    }
-    
-    .message-chat.bot .message-bubble-chat { 
-        background: white; 
-        color: #1e293b; 
-        border-bottom-left-radius: 4px; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-    }
-    
-    .message-chat.user .message-bubble-chat { 
-        background: linear-gradient(135deg, #667eea, #764ba2); 
-        color: white; 
-        border-bottom-right-radius: 4px; 
-    }
-    
-    .message-bubble-chat { 
-        max-width: 85%; 
-        padding: 12px 16px; 
-        border-radius: 20px; 
-        font-size: 13px; 
-        line-height: 1.5;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-    }
-    
-    .message-chat { 
-        display: flex; 
-        animation: fadeInMessage 0.3s ease-out;
-    }
-    
-    @keyframes fadeInMessage {
-        from { opacity: 0; transform: translateY(10px); }
+    @keyframes slideUpChat {
+        from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
     }
     
-    .message-chat.bot { justify-content: flex-start; }
-    .message-chat.user { justify-content: flex-end; }
-    
-    .chatbot-input-area { 
-        padding: 15px 20px; 
-        background: white; 
-        border-top: 1px solid #e2e8f0; 
-        display: flex; 
-        gap: 10px; 
-        align-items: center; 
+    /* Custom Scrollbar */
+    #chatMessages::-webkit-scrollbar {
+        width: 6px;
     }
-    
-    .chatbot-input-area input { 
-        flex: 1; 
-        border: 1px solid #e2e8f0; 
-        padding: 12px 16px; 
-        border-radius: 50px; 
-        outline: none; 
-        font-size: 14px; 
-        transition: all 0.3s ease;
-    }
-    
-    .chatbot-input-area input:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
-    }
-    
-    .chatbot-input-area button { 
-        width: 45px; 
-        height: 45px; 
-        background: linear-gradient(135deg, #667eea, #764ba2); 
-        border: none; 
-        border-radius: 50%; 
-        color: white; 
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .chatbot-input-area button:hover {
-        transform: scale(1.05);
-        box-shadow: 0 5px 15px rgba(102,126,234,0.4);
-    }
-    
-    .quick-reply-btn { 
-        background: #f1f5f9; 
-        border: 1px solid #e2e8f0; 
-        padding: 8px 16px; 
-        border-radius: 50px; 
-        font-size: 12px; 
-        cursor: pointer; 
-        display: inline-block; 
-        margin: 5px;
-        transition: all 0.3s ease;
-    }
-    
-    .quick-reply-btn:hover { 
-        background: linear-gradient(135deg, #667eea, #764ba2); 
-        color: white;
-        transform: translateY(-2px);
-        border-color: transparent;
-    }
-    
-    .offline-notice {
-        background: #fef2f2;
-        border-left: 3px solid #ef4444;
-        padding: 10px;
+    #chatMessages::-webkit-scrollbar-track {
+        background: #f1f1f1;
         border-radius: 10px;
-        margin-bottom: 10px;
-        font-size: 11px;
     }
-    
-    .typing-indicator-chat {
-        display: inline-flex;
-        gap: 4px;
-        padding: 12px 16px;
-        background: white;
-        border-radius: 20px;
-    }
-    
-    .typing-indicator-chat span {
-        width: 8px;
-        height: 8px;
-        background: #94a3b8;
-        border-radius: 50%;
-        animation: typingChat 1.4s infinite;
-    }
-    
-    .typing-indicator-chat span:nth-child(2) { animation-delay: 0.2s; }
-    .typing-indicator-chat span:nth-child(3) { animation-delay: 0.4s; }
-    
-    @keyframes typingChat {
-        0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-        30% { transform: translateY(-10px); opacity: 1; }
-    }
-    
-    .operational-info {
-        background: #e0e7ff;
-        padding: 8px 12px;
+    #chatMessages::-webkit-scrollbar-thumb {
+        background: #c7d2fe;
         border-radius: 10px;
-        font-size: 11px;
-        color: #4338ca;
-        margin-top: 8px;
-        text-align: center;
     }
-    
-    @media (max-width: 480px) { 
-        .chatbot-window { 
-            width: calc(100vw - 40px); 
-            right: 20px; 
-            bottom: 100px; 
-            height: 550px; 
-        } 
-        .chatbot-button { 
-            bottom: 20px; 
-            right: 20px; 
-        }
-        .chatbot-button .main-btn { 
-            width: 50px; 
-            height: 50px; 
-        }
-        .chatbot-button .main-btn i { 
-            font-size: 24px; 
-        }
-        .message-bubble-chat {
-            max-width: 90%;
-            font-size: 12px;
-        }
-        .quick-reply-btn {
-            font-size: 10px;
-            padding: 6px 12px;
-        }
+    #chatMessages::-webkit-scrollbar-thumb:hover {
+        background: #a5b4fc;
     }
 </style>
 
-<div class="chatbot-button" id="chatbotButtonStayNest">
-    <div class="main-btn">
-        <i class="fas fa-comment-dots"></i>
-        <div class="chatbot-notification" id="chatbotNotification" style="display: none;">1</div>
-        <span class="status-online" id="statusOnline"></span>
-    </div>
-</div>
-
-<div class="chatbot-window" id="chatbotWindowStayNest">
-    <div class="chatbot-header">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <div class="chatbot-avatar">
-                <i class="fas fa-robot"></i>
-            </div>
-            <div>
-                <h3 style="font-size:16px; font-weight:bold; margin:0">StayNest Support</h3>
-                <p style="font-size:11px; opacity:0.8; margin:0" id="statusText">🟢 Online - Siap membantu</p>
-            </div>
-        </div>
-        <button id="chatbotCloseStayNest" style="background:none;border:none;color:white;font-size:28px;cursor:pointer; line-height:1">&times;</button>
-    </div>
-    <div class="chatbot-messages" id="chatbotMessagesStayNest">
-        <div class="message-chat bot">
-            <div class="message-bubble-chat">
-                <strong>👋 Halo! Saya StayNest Assistant!</strong><br><br>
-                Ada yang bisa saya bantu tentang kontrakan? 😊<br><br>
-                💬 <strong>Saya bisa bantu:</strong><br>
-                • Info harga kontrakan<br>
-                • Lokasi properti<br>
-                • Fasilitas yang tersedia<br>
-                • Cara booking<br>
-                • Ketersediaan unit<br>
-                • Info unit VIP<br><br>
-                <strong>Pilih pertanyaan di bawah ini:</strong>
-                <div style="margin-top: 10px;">
-                    <div class="quick-reply-btn" data-message="Lihat properti">🏠 Lihat Properti</div>
-                    <div class="quick-reply-btn" data-message="Cara booking">📝 Cara Booking</div>
-                    <div class="quick-reply-btn" data-message="Harga">💰 Harga</div>
-                    <div class="quick-reply-btn" data-message="Lokasi">📍 Lokasi</div>
-                    <div class="quick-reply-btn" data-message="Fasilitas">🏠 Fasilitas</div>
-                    <div class="quick-reply-btn" data-message="Ketersediaan">✅ Ketersediaan</div>
-                    <div class="quick-reply-btn" data-message="VIP">👑 Unit VIP</div>
-                    <div class="quick-reply-btn" data-message="Kontak">📞 Kontak</div>
-                    <div class="quick-reply-btn" data-message="Jam operasional">⏰ Jam Operasional</div>
-                    <div class="quick-reply-btn" data-message="Bantuan">🆘 Bantuan</div>
-                </div>
-                <div class="operational-info">
-                    ⏰ Jam Operasional: Senin - Sabtu (08:00 - 17:00 WIB) | Minggu TUTUP
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="chatbot-input-area">
-        <input type="text" id="chatbotInputStayNest" placeholder="Ketik pesan Anda disini..." autocomplete="off">
-        <button id="chatbotSendStayNest">
-            <i class="fas fa-paper-plane"></i>
-        </button>
-    </div>
-</div>
-
 <script>
-(function() {
-    const chatButton = document.getElementById('chatbotButtonStayNest');
-    const chatWindow = document.getElementById('chatbotWindowStayNest');
-    const chatClose = document.getElementById('chatbotCloseStayNest');
-    const chatMessages = document.getElementById('chatbotMessagesStayNest');
-    const chatInput = document.getElementById('chatbotInputStayNest');
-    const chatSend = document.getElementById('chatbotSendStayNest');
-    const notification = document.getElementById('chatbotNotification');
-    const statusText = document.getElementById('statusText');
-    const statusOnline = document.getElementById('statusOnline');
+// ==========================================
+// CHATBOT SCRIPT
+// ==========================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Chatbot Loaded');
     
-    let isOpen = false;
-    let isOperational = true;
+    var chatbotToggle = document.getElementById('chatbotToggle');
+    var chatbotWindow = document.getElementById('chatbotWindow');
+    var chatbotClose = document.getElementById('chatbotClose');
+    var chatInput = document.getElementById('chatInput');
+    var chatSend = document.getElementById('chatSend');
+    var chatMessages = document.getElementById('chatMessages');
+    var chatbotIcon = document.getElementById('chatbotIcon');
+    var quickReplies = document.querySelectorAll('.quick-reply');
     
-    // Tentukan base URL untuk API
-    const baseUrl = window.location.origin + '/staynest';
-    const apiUrl = baseUrl + '/api/chatbot.php';
-    
-    // Fungsi untuk mendapatkan hari dalam bahasa Indonesia
-    function getCurrentDayName() {
-        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-        const today = new Date();
-        return days[today.getDay()];
-    }
-    
-    // Cek status operasional
-    async function checkOperationalStatus() {
-        try {
-            const response = await fetch(apiUrl);
-            const data = await response.json();
-            if (data.operational_hours) {
-                isOperational = data.operational_hours.current_status === 'Online';
-                const currentDay = getCurrentDayName();
-                
-                if (isOperational) {
-                    if (statusText) statusText.innerHTML = '🟢 Online - Siap membantu (Senin-Sabtu 08:00-17:00)';
-                    if (statusOnline) statusOnline.style.background = '#22c55e';
-                } else {
-                    if (currentDay === 'Minggu') {
-                        if (statusText) statusText.innerHTML = '❌ Offline - Hari Minggu TUTUP';
-                    } else {
-                        if (statusText) statusText.innerHTML = '⏰ Offline - Diluar jam operasional (08:00-17:00)';
-                    }
-                    if (statusOnline) statusOnline.style.background = '#ef4444';
+    // Toggle Chatbot
+    if (chatbotToggle) {
+        chatbotToggle.addEventListener('click', function() {
+            chatbotWindow.classList.toggle('hidden');
+            if (!chatbotWindow.classList.contains('hidden')) {
+                if (chatbotIcon) {
+                    chatbotIcon.className = 'fas fa-times text-white text-2xl';
+                }
+                chatInput.focus();
+            } else {
+                if (chatbotIcon) {
+                    chatbotIcon.className = 'fas fa-robot text-white text-2xl';
                 }
             }
-        } catch (error) {
-            console.error('Error checking status:', error);
-            // Fallback: anggap online
-            if (statusText) statusText.innerHTML = '🟢 Online - Siap membantu';
-            if (statusOnline) statusOnline.style.background = '#22c55e';
-        }
+        });
     }
     
-    // Panggil cek status
-    checkOperationalStatus();
-    // Cek setiap 5 menit
-    setInterval(checkOperationalStatus, 300000);
-    
-    function scrollToBottom() {
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+    // Close Chatbot
+    if (chatbotClose) {
+        chatbotClose.addEventListener('click', function() {
+            chatbotWindow.classList.add('hidden');
+            if (chatbotIcon) {
+                chatbotIcon.className = 'fas fa-robot text-white text-2xl';
+            }
+        });
     }
     
-    function showTypingIndicator() {
-        const typingDiv = document.createElement('div');
-        typingDiv.className = 'message-chat bot';
-        typingDiv.id = 'typingIndicatorChat';
-        typingDiv.innerHTML = `
-            <div class="typing-indicator-chat">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        `;
-        chatMessages.appendChild(typingDiv);
-        scrollToBottom();
-    }
-    
-    function removeTypingIndicator() {
-        const indicator = document.getElementById('typingIndicatorChat');
-        if (indicator) indicator.remove();
-    }
-    
-    function addMessage(text, sender) {
-        const div = document.createElement('div');
-        div.className = `message-chat ${sender}`;
-        const bubble = document.createElement('div');
-        bubble.className = 'message-bubble-chat';
-        // Proses bold text dengan **
-        let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        formattedText = formattedText.replace(/\n/g, '<br>');
-        bubble.innerHTML = formattedText;
-        div.appendChild(bubble);
-        chatMessages.appendChild(div);
-        scrollToBottom();
-    }
-    
-    async function sendMessage(message) {
+    // Send Message
+    function sendMessage(message) {
         if (!message.trim()) return;
         
-        // Tampilkan pesan user
-        addMessage(message, 'user');
-        const sentMessage = message;
+        // Add user message
+        var userMessage = document.createElement('div');
+        userMessage.className = 'flex gap-2 mb-4 justify-end';
+        userMessage.innerHTML = `
+            <div class="bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-2xl rounded-tr-none p-3 shadow-sm max-w-[80%]">
+                <p class="text-sm">${escapeHtml(message)}</p>
+            </div>
+            <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-user text-gray-600 text-xs"></i>
+            </div>
+        `;
+        chatMessages.appendChild(userMessage);
+        
+        // Clear input
         chatInput.value = '';
         
-        // Tampilkan typing indicator
-        showTypingIndicator();
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
         
-        try {
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ message: sentMessage })
-            });
+        // Show typing indicator
+        var typingIndicator = document.createElement('div');
+        typingIndicator.className = 'flex gap-2 mb-4 typing-indicator';
+        typingIndicator.innerHTML = `
+            <div class="w-8 h-8 bg-gradient-to-r from-purple-600 to-purple-800 rounded-full flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-robot text-white text-xs"></i>
+            </div>
+            <div class="bg-white rounded-2xl rounded-tl-none p-3 shadow-sm">
+                <div class="flex gap-1">
+                    <span class="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></span>
+                    <span class="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></span>
+                    <span class="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(typingIndicator);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Get bot response
+        setTimeout(function() {
+            typingIndicator.remove();
+            var botResponse = getBotResponse(message);
             
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            
-            const data = await response.json();
-            removeTypingIndicator();
-            
-            if (data.response) {
-                addMessage(data.response, 'bot');
-                // Update status operasional dari response
-                if (data.is_operational !== undefined) {
-                    isOperational = data.is_operational;
-                    const currentDay = getCurrentDayName();
-                    if (!isOperational && statusText) {
-                        if (currentDay === 'Minggu') {
-                            statusText.innerHTML = '❌ Offline - Hari Minggu TUTUP';
-                        } else {
-                            statusText.innerHTML = '⏰ Offline - Diluar jam operasional (08:00-17:00)';
-                        }
-                        if (statusOnline) statusOnline.style.background = '#ef4444';
-                    }
-                }
-            } else {
-                addMessage('Maaf, terjadi kesalahan. Silakan coba lagi. 😅', 'bot');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            removeTypingIndicator();
-            addMessage('Maaf, terjadi kesalahan koneksi. Silakan coba lagi nanti. 😅\n\n📞 Atau hubungi kami di:\nWA: 0858-1117-7617\nEmail: adinda.auliap24@gmail.com', 'bot');
+            var botMessage = document.createElement('div');
+            botMessage.className = 'flex gap-2 mb-4';
+            botMessage.innerHTML = `
+                <div class="w-8 h-8 bg-gradient-to-r from-purple-600 to-purple-800 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-robot text-white text-xs"></i>
+                </div>
+                <div class="bg-white rounded-2xl rounded-tl-none p-3 shadow-sm max-w-[80%]">
+                    <p class="text-sm text-gray-700">${botResponse}</p>
+                </div>
+            `;
+            chatMessages.appendChild(botMessage);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 1000);
+    }
+    
+    // Escape HTML
+    function escapeHtml(text) {
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // Bot Response Logic
+    function getBotResponse(message) {
+        var msg = message.toLowerCase();
+        
+        // Booking
+        if (msg.includes('booking') || msg.includes('pesan') || msg.includes('sewa')) {
+            return '📝 Untuk booking:<br>1. Pilih properti di halaman <a href="properties.php" class="text-purple-600 underline">Properties</a><br>2. Klik "View Details"<br>3. Isi tanggal check-in & check-out<br>4. Klik "Book Now"<br>5. Upload bukti pembayaran<br><br>Ada yang ingin ditanyakan lagi? 😊';
         }
+        
+        // Properti
+        if (msg.includes('properti') || msg.includes('property') || msg.includes('lihat')) {
+            return '🏠 Kami memiliki 3 properti unggulan:<br>• <strong>StayNest Vela</strong> - Babelan<br>• <strong>StayNest Aera</strong> - Tambun<br>• <strong>StayNest Elora</strong> - Babelan<br><br>Lihat semua di <a href="properties.php" class="text-purple-600 underline">halaman Properties</a> ya!';
+        }
+        
+        // Harga
+        if (msg.includes('harga') || msg.includes('price') || msg.includes('biaya') || msg.includes('sewa')) {
+            return '💰 Harga sewa mulai dari:<br>• Rp 700.000/bulan (Standard)<br>• Rp 800.000/bulan (VIP)<br><br>Harga sudah termasuk:<br>✅ WiFi<br>✅ Listrik<br>✅ Air<br>✅ Keamanan 24 jam';
+        }
+        
+        // Kontak
+        if (msg.includes('kontak') || msg.includes('admin') || msg.includes('hubungi') || msg.includes('telp')) {
+            return '📞 Hubungi kami:<br>• Email: info@staynest.com<br>• WhatsApp: +62 812 3456 7890<br>• Instagram: @staynest.id<br><br>Kami siap membantu 24/7! 😊';
+        }
+        
+        // Pembayaran
+        if (msg.includes('bayar') || msg.includes('payment') || msg.includes('transfer')) {
+            return '💳 Metode pembayaran:<br>• Transfer Bank: BCA, BRI, BNI, Mandiri, BSI<br>• Upload bukti transfer di halaman Payment<br>• Konfirmasi otomatis dalam 1x24 jam<br><br>Virtual Account tersedia setelah booking!';
+        }
+        
+        // Fasilitas
+        if (msg.includes('fasilitas') || msg.includes('fasilitas') || msg.includes('kamar')) {
+            return '🏠 Fasilitas kami:<br>✅ AC & WiFi<br>✅ Kamar mandi dalam<br>✅ Kasur & lemari<br>✅ Parkir luas<br>✅ CCTV 24 jam<br>✅ Dapur bersama<br>✅ Laundry';
+        }
+        
+        // Terima kasih
+        if (msg.includes('terima kasih') || msg.includes('makasih') || msg.includes('thanks')) {
+            return 'Sama-sama! 😊 Senang bisa membantu. Jika ada pertanyaan lain, jangan ragu untuk bertanya ya! 🙏';
+        }
+        
+        // Halo
+        if (msg.includes('halo') || msg.includes('hai') || msg.includes('hi') || msg.includes('hello')) {
+            return 'Halo! 👋 Selamat datang di StayNest! Ada yang bisa saya bantu?<br><br>Coba tanya:<br>• "Cara booking?"<br>• "Lihat properti"<br>• "Harga sewa"<br>• "Kontak admin"';
+        }
+        
+        // Default
+        return 'Terima kasih atas pertanyaannya! 🙏<br><br>Untuk informasi lebih lanjut, silakan:<br>• Lihat <a href="properties.php" class="text-purple-600 underline">halaman Properties</a><br>• Hubungi admin: info@staynest.com<br>• WhatsApp: +62 812 3456 7890<br><br>Ada yang bisa saya bantu lagi? 😊';
     }
     
-    // Event listeners
-    if (chatButton) {
-        chatButton.onclick = (e) => {
-            e.stopPropagation();
-            chatWindow.classList.toggle('active');
-            isOpen = !isOpen;
-            if (isOpen) {
-                if (notification) notification.style.display = 'none';
-                if (chatInput) {
-                    setTimeout(() => chatInput.focus(), 100);
-                }
-                // Refresh status saat membuka chat
-                checkOperationalStatus();
-                // Scroll ke bawah
-                setTimeout(scrollToBottom, 100);
-            }
-        };
-    }
-    
-    if (chatClose) {
-        chatClose.onclick = () => {
-            chatWindow.classList.remove('active');
-            isOpen = false;
-        };
-    }
-    
-    if (chatSend) {
-        chatSend.onclick = () => {
-            sendMessage(chatInput.value);
-        };
-    }
-    
+    // Send on Enter
     if (chatInput) {
-        chatInput.onkeypress = (e) => {
+        chatInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                e.preventDefault();
-                sendMessage(chatInput.value);
+                sendMessage(this.value);
             }
-        };
-    }
-    
-    // Quick reply buttons
-    function bindQuickReplies() {
-        const quickReplyBtns = document.querySelectorAll('.quick-reply-btn');
-        quickReplyBtns.forEach(btn => {
-            // Hapus event listener lama
-            const oldListener = btn._listener;
-            if (oldListener) btn.removeEventListener('click', oldListener);
-            
-            // Tambah event listener baru
-            const listener = (e) => {
-                e.stopPropagation();
-                const msg = btn.getAttribute('data-message');
-                sendMessage(msg);
-            };
-            btn.addEventListener('click', listener);
-            btn._listener = listener;
         });
     }
     
-    bindQuickReplies();
+    // Send on Button Click
+    if (chatSend) {
+        chatSend.addEventListener('click', function() {
+            sendMessage(chatInput.value);
+        });
+    }
     
-    // Observer untuk quick reply yang baru ditambahkan
-    const observer = new MutationObserver(() => bindQuickReplies());
-    observer.observe(chatMessages, { childList: true, subtree: true });
-    
-    // Tutup window jika klik di luar
-    document.addEventListener('click', function(event) {
-        if (isOpen && chatWindow && !chatWindow.contains(event.target) && !chatButton.contains(event.target)) {
-            chatWindow.classList.remove('active');
-            isOpen = false;
-        }
+    // Quick Replies
+    quickReplies.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var message = this.getAttribute('data-message');
+            sendMessage(message);
+        });
     });
     
-    // Mencegah klik di dalam window menutup window
-    if (chatWindow) {
-        chatWindow.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-    }
-    
-    console.log('Chatbot widget loaded successfully!');
-})();
+    console.log('Chatbot Ready!');
+});
 </script>
