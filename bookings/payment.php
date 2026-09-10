@@ -1,8 +1,7 @@
 <?php
-// bookings/payment.php - Halaman Payment dengan Upload Bukti
+// bookings/payment.php - Halaman Payment dengan E-Wallet
 $page_title = "Payment - StayNest";
 
-// Mulai session jika belum dimulai
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -152,7 +151,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['upload_payment']) && $
                 try {
                     $transaction_id = 'TXN-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -6));
                     
-                    // Update booking
                     $stmt = $pdo->prepare("
                         UPDATE bookings SET 
                             payment_status = 'paid',
@@ -163,7 +161,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['upload_payment']) && $
                     ");
                     $stmt->execute([$payment_method, $booking_id, $_SESSION['user_id']]);
                     
-                    // 🔥 PERBAIKAN: Hapus kolom 'payment_type' dari query
                     $stmt = $pdo->prepare("
                         INSERT INTO payments (
                             booking_id, amount, payment_method, transaction_id, 
@@ -194,7 +191,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['upload_payment']) && $
     }
 }
 
-// Include header
 require_once dirname(__FILE__) . '/../includes/header.php';
 ?>
 
@@ -204,11 +200,6 @@ require_once dirname(__FILE__) . '/../includes/header.php';
     <?php if ($error): ?>
         <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
             <i class="fas fa-exclamation-circle mr-2"></i> <?php echo htmlspecialchars($error); ?>
-            <?php if ($cooldown_active && $cooldown_data && $cooldown_data['active']): ?>
-                <div class="mt-2 p-3 bg-yellow-50 rounded-lg text-yellow-700 text-sm">
-                    ⏳ Please wait <span id="cooldownCountdown"><?php echo $cooldown_data['minutes'] . ':' . str_pad($cooldown_data['seconds'], 2, '0', STR_PAD_LEFT); ?></span> before booking again
-                </div>
-            <?php endif; ?>
         </div>
     <?php endif; ?>
     
@@ -219,7 +210,8 @@ require_once dirname(__FILE__) . '/../includes/header.php';
     <?php endif; ?>
     
     <?php if ($booking && !$cooldown_active): ?>
-        <div class="bg-white rounded-xl shadow-lg p-6">
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+            <!-- Header Booking -->
             <div class="flex justify-between items-start mb-6">
                 <div>
                     <h2 class="text-2xl font-bold"><?php echo htmlspecialchars($booking['property_name']); ?></h2>
@@ -228,6 +220,7 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                 <span class="px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-700">⏳ Pending</span>
             </div>
             
+            <!-- Detail Booking -->
             <div class="grid md:grid-cols-2 gap-4 mb-6">
                 <div class="p-4 bg-gray-50 rounded-lg">
                     <p class="text-sm text-gray-500">Booking Code</p>
@@ -244,10 +237,10 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                 <div class="p-4 bg-gray-50 rounded-lg">
                     <p class="text-sm text-gray-500">Payment Deadline</p>
                     <p class="font-bold text-red-600"><?php echo date('d M Y H:i', strtotime($booking['payment_expiry'])); ?></p>
-                    <p class="text-xs text-gray-400">(24 hours from booking)</p>
                 </div>
             </div>
             
+            <!-- Virtual Account -->
             <div class="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-6">
                 <p class="text-sm text-purple-700"><i class="fas fa-info-circle mr-1"></i> Virtual Account</p>
                 <p class="text-2xl font-bold text-purple-800 tracking-widest">
@@ -256,8 +249,10 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                 <p class="text-xs text-purple-500 mt-1">Transfer to this virtual account number</p>
             </div>
             
+            <!-- FORM UPLOAD -->
             <form method="POST" enctype="multipart/form-data" class="mb-6">
-                <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-purple-400 transition">
+                <!-- Upload Bukti -->
+                <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-purple-400 transition mb-6">
                     <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3 block"></i>
                     <p class="text-gray-600 font-medium">Upload Payment Proof</p>
                     <p class="text-xs text-gray-400">JPG, PNG, GIF, PDF (Max 2MB)</p>
@@ -265,31 +260,106 @@ require_once dirname(__FILE__) . '/../includes/header.php';
                            class="mt-3 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer">
                 </div>
                 
-                <div class="mt-4">
-                    <label class="block text-gray-700 font-medium mb-2">Payment Method</label>
-                    <div class="grid grid-cols-3 md:grid-cols-5 gap-2">
-                        <?php $banks = ['BCA', 'BRI', 'BNI', 'MANDIRI', 'BSI']; ?>
-                        <?php foreach ($banks as $bank): ?>
+                <!-- ========================================== -->
+                <!-- PAYMENT METHOD - DENGAN E-WALLET -->
+                <!-- ========================================== -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-semibold mb-3">💳 Payment Method</label>
+                    
+                    <!-- Bank Transfer -->
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500 mb-2">
+                            <i class="fas fa-university mr-1"></i> Bank Transfer
+                        </p>
+                        <div class="grid grid-cols-3 md:grid-cols-5 gap-2">
+                            <?php $banks = ['BCA', 'BRI', 'BNI', 'MANDIRI', 'BSI']; ?>
+                            <?php foreach ($banks as $bank): ?>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="payment_method" value="<?php echo $bank; ?>" 
+                                           <?php echo $bank == 'BCA' ? 'checked' : ''; ?>
+                                           class="hidden peer">
+                                    <div class="text-center py-3 px-2 border-2 border-gray-200 rounded-xl peer-checked:border-purple-600 peer-checked:bg-purple-50 transition hover:border-purple-300">
+                                        <i class="fas fa-university text-purple-600 block mb-1"></i>
+                                        <span class="text-xs md:text-sm font-medium peer-checked:text-purple-600"><?php echo $bank; ?></span>
+                                    </div>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    
+                    <!-- E-Wallet -->
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-500 mb-2">
+                            <i class="fas fa-mobile-alt mr-1"></i> E-Wallet
+                        </p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <!-- DANA -->
                             <label class="cursor-pointer">
-                                <input type="radio" name="payment_method" value="<?php echo $bank; ?>" 
-                                       <?php echo $bank == 'BCA' ? 'checked' : ''; ?>
-                                       class="hidden peer">
-                                <div class="text-center py-2 px-2 border-2 border-gray-200 rounded-lg peer-checked:border-purple-600 peer-checked:bg-purple-50 transition hover:border-purple-300">
-                                    <span class="text-sm font-medium peer-checked:text-purple-600"><?php echo $bank; ?></span>
+                                <input type="radio" name="payment_method" value="DANA" class="hidden peer">
+                                <div class="text-center py-3 px-2 border-2 border-gray-200 rounded-xl peer-checked:border-blue-500 peer-checked:bg-blue-50 transition hover:border-blue-300">
+                                    <div class="w-10 h-10 mx-auto mb-1 rounded-full flex items-center justify-center" style="background: linear-gradient(135deg, #108EE9, #0A6EBD);">
+                                        <span class="text-white font-bold text-xs">DANA</span>
+                                    </div>
+                                    <span class="text-xs md:text-sm font-medium peer-checked:text-blue-600">DANA</span>
                                 </div>
                             </label>
-                        <?php endforeach; ?>
+                            
+                            <!-- GoPay -->
+                            <label class="cursor-pointer">
+                                <input type="radio" name="payment_method" value="GOPAY" class="hidden peer">
+                                <div class="text-center py-3 px-2 border-2 border-gray-200 rounded-xl peer-checked:border-green-500 peer-checked:bg-green-50 transition hover:border-green-300">
+                                    <div class="w-10 h-10 mx-auto mb-1 rounded-full flex items-center justify-center" style="background: linear-gradient(135deg, #00AED6, #0084A8);">
+                                        <span class="text-white font-bold text-xs">GO</span>
+                                    </div>
+                                    <span class="text-xs md:text-sm font-medium peer-checked:text-green-600">GoPay</span>
+                                </div>
+                            </label>
+                            
+                            <!-- OVO -->
+                            <label class="cursor-pointer">
+                                <input type="radio" name="payment_method" value="OVO" class="hidden peer">
+                                <div class="text-center py-3 px-2 border-2 border-gray-200 rounded-xl peer-checked:border-purple-500 peer-checked:bg-purple-50 transition hover:border-purple-300">
+                                    <div class="w-10 h-10 mx-auto mb-1 rounded-full flex items-center justify-center" style="background: linear-gradient(135deg, #4C3494, #2E1F5E);">
+                                        <span class="text-white font-bold text-xs">OVO</span>
+                                    </div>
+                                    <span class="text-xs md:text-sm font-medium peer-checked:text-purple-600">OVO</span>
+                                </div>
+                            </label>
+                            
+                            <!-- ShopeePay -->
+                            <label class="cursor-pointer">
+                                <input type="radio" name="payment_method" value="SHOPEEPAY" class="hidden peer">
+                                <div class="text-center py-3 px-2 border-2 border-gray-200 rounded-xl peer-checked:border-orange-500 peer-checked:bg-orange-50 transition hover:border-orange-300">
+                                    <div class="w-10 h-10 mx-auto mb-1 rounded-full flex items-center justify-center" style="background: linear-gradient(135deg, #EE4D2D, #C73E1D);">
+                                        <span class="text-white font-bold text-[8px]">SHOPEE</span>
+                                    </div>
+                                    <span class="text-xs md:text-sm font-medium peer-checked:text-orange-600">ShopeePay</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Info E-Wallet -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-4">
+                        <p class="text-sm text-blue-700">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            <strong>E-Wallet Payment:</strong> Transfer ke nomor <strong>0812-3456-7890</strong> (a/n StayNest) lalu upload bukti transfer.
+                        </p>
                     </div>
                 </div>
                 
-                <div class="flex gap-4 mt-6">
+                <!-- Tombol Aksi -->
+                <div class="flex gap-4">
                     <button type="submit" name="upload_payment" class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition transform hover:scale-105">
                         <i class="fas fa-check-circle mr-2"></i> Confirm Payment
                     </button>
-                    <a href="my_bookings.php" class="bg-gray-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-600 transition">Cancel</a>
+                    <a href="my_bookings.php" class="bg-gray-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-600 transition">
+                        Cancel
+                    </a>
                 </div>
             </form>
             
+            <!-- Info -->
             <div class="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                 <p class="text-xs text-yellow-700">
                     <i class="fas fa-clock mr-1"></i> 
@@ -301,33 +371,4 @@ require_once dirname(__FILE__) . '/../includes/header.php';
     <?php endif; ?>
 </div>
 
-<script>
-<?php if ($cooldown_active && $cooldown_data && $cooldown_data['active']): ?>
-// Cooldown timer
-var cooldownMinutes = <?php echo (int)$cooldown_data['minutes']; ?>;
-var cooldownSeconds = <?php echo (int)$cooldown_data['seconds']; ?>;
-var countdownElement = document.getElementById('cooldownCountdown');
-
-if (countdownElement) {
-    var timer = setInterval(function() {
-        if (cooldownSeconds <= 0) {
-            if (cooldownMinutes <= 0) {
-                clearInterval(timer);
-                countdownElement.textContent = '0:00';
-                location.reload();
-                return;
-            }
-            cooldownMinutes--;
-            cooldownSeconds = 59;
-        } else {
-            cooldownSeconds--;
-        }
-        countdownElement.textContent = cooldownMinutes + ':' + (cooldownSeconds < 10 ? '0' : '') + cooldownSeconds;
-    }, 1000);
-}
-<?php endif; ?>
-</script>
-
-<?php 
-require_once dirname(__FILE__) . '/../includes/footer.php';
-?>
+<?php require_once dirname(__FILE__) . '/../includes/footer.php'; ?>

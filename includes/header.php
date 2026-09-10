@@ -1,5 +1,5 @@
 <?php
-// includes/header.php - Header dengan Menu My Bookings Selalu Tampil
+// includes/header.php - Header dengan Menu Admin Selalu Tampil
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -41,6 +41,14 @@ $current_page = basename($_SERVER['PHP_SELF']);
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
+        
+        .admin-btn {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: white;
+        }
+        .admin-btn:hover { transform: scale(1.05); box-shadow: 0 5px 20px rgba(240,147,251,0.4); }
         
         .navbar-modern {
             background: rgba(255, 255, 255, 0.95);
@@ -153,7 +161,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <a href="/staynest/properties.php" class="nav-link <?php echo $current_page == 'properties.php' ? 'active' : ''; ?>">
                 <i class="fas fa-building mr-1"></i> Properties
             </a>
-            <!-- MENU MY BOOKINGS - SELALU TAMPIL -->
             <a href="/staynest/bookings/my_bookings.php" class="nav-link <?php echo $current_page == 'my_bookings.php' ? 'active' : ''; ?>">
                 <i class="fas fa-calendar-alt mr-1"></i> My Bookings
             </a>
@@ -161,6 +168,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
         
         <!-- Right Side -->
         <div class="flex items-center gap-3">
+            <!-- ADMIN BUTTON - SELALU TAMPIL -->
+            <a href="/staynest/admin/login.php" class="admin-btn hidden md:flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium hover:shadow-lg transition">
+                <i class="fas fa-user-shield"></i> Admin
+            </a>
+            
             <?php if ($is_logged_in): ?>
                 <div class="relative" id="userMenuContainer">
                     <button id="userMenuBtn" class="user-btn px-4 py-2 rounded-full text-sm font-medium hover:shadow-lg transition flex items-center gap-2">
@@ -172,18 +184,13 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     <div class="user-dropdown" id="userDropdown">
                         <a href="/staynest/profile.php" class="user-dropdown-item"><i class="fas fa-user"></i> My Profile</a>
                         <a href="/staynest/bookings/my_bookings.php" class="user-dropdown-item"><i class="fas fa-calendar-check"></i> My Bookings</a>
-                        <?php if($user_role == 'admin'): ?>
-                            <a href="/staynest/admin/index.php" class="user-dropdown-item"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-                        <?php endif; ?>
+                        <div class="user-dropdown-divider"></div>
+                        <a href="/staynest/admin/login.php" class="user-dropdown-item"><i class="fas fa-user-shield text-pink-500"></i> Admin Panel</a>
                         <div class="user-dropdown-divider"></div>
                         <a href="/staynest/logout.php" class="user-dropdown-item text-red-600"><i class="fas fa-sign-out-alt"></i> Logout</a>
                     </div>
                 </div>
             <?php else: ?>
-                <a href="/staynest/admin/login.php" class="hidden md:flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:shadow-lg transition">
-                    <i class="fas fa-user-shield"></i> Admin
-                </a>
-                
                 <a href="/staynest/login.php" class="user-btn px-5 py-2 rounded-full text-sm font-medium hover:shadow-lg transition flex items-center gap-2">
                     <i class="fas fa-sign-in-alt"></i> Login
                 </a>
@@ -211,6 +218,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 <i class="fas fa-calendar-alt mr-2 text-purple-600"></i> My Bookings
             </a>
             
+            <!-- ADMIN MOBILE - SELALU TAMPIL -->
+            <a href="/staynest/admin/login.php" class="px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-lg text-center">
+                <i class="fas fa-user-shield mr-2"></i> Admin Panel
+            </a>
+            
             <?php if ($is_logged_in): ?>
                 <a href="/staynest/profile.php" class="px-4 py-2 hover:bg-purple-50 rounded-lg transition">
                     <i class="fas fa-user mr-2 text-purple-600"></i> Profile
@@ -224,9 +236,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 </a>
                 <a href="/staynest/register.php" class="px-4 py-2 border-2 border-purple-600 text-purple-600 rounded-lg text-center">
                     <i class="fas fa-user-plus mr-2"></i> Register
-                </a>
-                <a href="/staynest/admin/login.php" class="px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-lg text-center">
-                    <i class="fas fa-user-shield mr-2"></i> Admin Panel
                 </a>
             <?php endif; ?>
         </div>
