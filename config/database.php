@@ -282,4 +282,4 @@ function isDatabaseConnected() {
     return isset($pdo);
 }
 
-?>
+?> 
