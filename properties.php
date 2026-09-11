@@ -1,5 +1,5 @@
 <?php
-// properties.php - Halaman Properties (REVISI)
+// properties.php - Halaman Properties
 $page_title = "Properties - StayNest";
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once dirname(__FILE__) . '/config/database.php';
-require_once dirname(__FILE__) . '/includes/functions.php';  // ← FUNGSI getPropertyImage DI SINI
+require_once dirname(__FILE__) . '/includes/functions.php';
 require_once dirname(__FILE__) . '/includes/header.php';
 
 // ==============================================
@@ -41,7 +41,7 @@ try {
     $properties = [];
 }
 
-// Data fallback
+// Fallback data
 if (empty($properties)) {
     $properties = [
         ['id' => 1, 'name' => 'StayNest Vela', 'location' => 'Kavling Harapan Manunggal Utara, Babelan, Bekasi', 'total_doors' => 2, 'available_rooms' => 1, 'occupied_rooms' => 1, 'price_per_month' => 700000, 'is_vip' => 0, 'description' => 'Cozy boarding house with modern facilities'],
@@ -51,7 +51,8 @@ if (empty($properties)) {
 }
 ?>
 
-<div class="max-w-7xl mx-auto px-4 py-8" style="margin-top: 80px;">
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Header -->
     <div class="text-center mb-12">
         <h1 class="text-4xl md:text-5xl font-extrabold text-gray-800 mb-4">
             🏢 Our <span class="gradient-text">Properties</span>
@@ -64,11 +65,14 @@ if (empty($properties)) {
     <!-- Search & Filter -->
     <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
         <form action="properties.php" method="GET" class="flex flex-col md:flex-row gap-4">
-            <input type="text" 
-                   name="search" 
-                   value="<?php echo htmlspecialchars($search); ?>"
-                   placeholder="Search by name or location..." 
-                   class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-600">
+            <div class="flex-1 relative">
+                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" 
+                       name="search" 
+                       value="<?php echo htmlspecialchars($search); ?>"
+                       placeholder="Search by name or location..." 
+                       class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-600">
+            </div>
             <button type="submit" 
                     class="bg-purple-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-purple-700 transition">
                 <i class="fas fa-search mr-2"></i> Search
@@ -79,40 +83,61 @@ if (empty($properties)) {
                 </a>
             <?php endif; ?>
         </form>
+        
+        <!-- Popular Locations -->
+        <div class="flex flex-wrap gap-2 mt-4">
+            <span class="text-sm text-gray-500">Popular:</span>
+            <a href="properties.php?location=Babelan" class="text-sm px-3 py-1 bg-gray-100 rounded-full hover:bg-purple-100 hover:text-purple-600 transition">📍 Babelan</a>
+            <a href="properties.php?location=Alamanda" class="text-sm px-3 py-1 bg-gray-100 rounded-full hover:bg-purple-100 hover:text-purple-600 transition">📍 Alamanda</a>
+            <a href="properties.php?location=VIP" class="text-sm px-3 py-1 bg-gray-100 rounded-full hover:bg-purple-100 hover:text-purple-600 transition">📍 VIP Village</a>
+            <a href="properties.php?location=Tambun" class="text-sm px-3 py-1 bg-gray-100 rounded-full hover:bg-purple-100 hover:text-purple-600 transition">📍 Tambun</a>
+        </div>
     </div>
 
+    <!-- Result Count -->
     <div class="mb-4 text-gray-500">
-        Found <?php echo count($properties); ?> properties
+        Found <strong><?php echo count($properties); ?></strong> properties
     </div>
 
+    <!-- Properties Grid -->
     <?php if (empty($properties)): ?>
         <div class="bg-white rounded-2xl shadow-lg p-12 text-center">
             <i class="fas fa-home text-6xl text-gray-300 mb-4"></i>
-            <h3 class="text-xl font-semibold text-gray-600">No Properties Found</h3>
+            <h3 class="text-xl font-semibold text-gray-600 mb-2">No Properties Found</h3>
             <p class="text-gray-500">Try adjusting your search filters.</p>
+            <a href="properties.php" class="inline-block mt-4 bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition">
+                <i class="fas fa-sync mr-2"></i> Reset Filters
+            </a>
         </div>
     <?php else: ?>
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <?php foreach ($properties as $property): 
                 $img = getPropertyImage($property['id']);
-                $price = "Rp " . number_format($property['price_per_month'] ?? 700000, 0, ',', '.');
+                $price = formatRupiah($property['price_per_month'] ?? 700000);
             ?>
-            <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition transform hover:-translate-y-2">
-                <div class="relative h-56 bg-gradient-to-r from-purple-400 to-blue-400">
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition transform hover:-translate-y-2 group">
+                <!-- Image -->
+                <div class="relative h-56 bg-gradient-to-r from-purple-400 to-blue-400 overflow-hidden">
                     <img src="<?php echo htmlspecialchars($img); ?>" 
                          alt="<?php echo htmlspecialchars($property['name']); ?>"
-                         class="w-full h-full object-cover"
+                         class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                          onerror="this.src='/staynest/assets/images/default-property.jpg'">
                     
+                    <!-- Badges -->
                     <?php if ($property['is_vip']): ?>
-                        <div class="absolute top-4 left-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">⭐ VIP</div>
+                        <div class="absolute top-4 left-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
+                            ⭐ VIP
+                        </div>
                     <?php endif; ?>
                     
                     <div class="absolute top-4 right-4 bg-white/95 backdrop-blur-sm text-xs font-bold px-4 py-1.5 rounded-full shadow-lg text-purple-600">
                         🛏 <?php echo $property['available_rooms']; ?> Available
                     </div>
+                    
+                    <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/30 to-transparent"></div>
                 </div>
 
+                <!-- Content -->
                 <div class="p-6">
                     <h3 class="text-xl font-bold text-gray-800"><?php echo htmlspecialchars($property['name']); ?></h3>
                     <p class="text-gray-500 text-sm mt-1 flex items-center gap-1">
@@ -121,7 +146,7 @@ if (empty($properties)) {
                     </p>
                     
                     <p class="text-gray-600 text-sm mt-2 line-clamp-2">
-                        <?php echo htmlspecialchars(substr($property['description'] ?? '', 0, 100)) . '...'; ?>
+                        <?php echo htmlspecialchars(substr($property['description'] ?? '', 0, 100)); ?>...
                     </p>
                     
                     <div class="flex flex-wrap gap-2 mt-3">
@@ -139,9 +164,9 @@ if (empty($properties)) {
                             <p class="text-xs text-gray-400">/ month</p>
                         </div>
                         
-                        <a href="detail.php?id=<?php echo $property['id']; ?>" 
+                        <a href="bookings/book_now.php?property_id=<?php echo $property['id']; ?>" 
                            class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:shadow-lg transition transform hover:scale-105 flex items-center gap-2">
-                            View Details <i class="fas fa-arrow-right text-xs"></i>
+                            Book Now <i class="fas fa-arrow-right text-xs"></i>
                         </a>
                     </div>
                 </div>

@@ -10,19 +10,19 @@ require_once dirname(__FILE__) . '/config/database.php';
 require_once dirname(__FILE__) . '/includes/functions.php';
 require_once dirname(__FILE__) . '/includes/header.php';
 
-// Ambil properties dari database
-$featured_properties = [];
+// Ambil properti dari database
+$properties = [];
 
 try {
     $stmt = $pdo->query("SELECT * FROM properties WHERE status = 'available' ORDER BY is_vip DESC, id DESC LIMIT 6");
-    $featured_properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch(Exception $e) {
-    $featured_properties = [];
+    $properties = [];
 }
 
 // Fallback data
-if (empty($featured_properties)) {
-    $featured_properties = [
+if (empty($properties)) {
+    $properties = [
         ['id' => 1, 'name' => 'StayNest Vela', 'location' => 'Babelan, Bekasi', 'total_doors' => 2, 'available_rooms' => 1, 'occupied_rooms' => 1, 'price_per_month' => 700000, 'is_vip' => 0, 'description' => 'Cozy boarding house'],
         ['id' => 2, 'name' => 'StayNest Aera', 'location' => 'Tambun, Bekasi', 'total_doors' => 4, 'available_rooms' => 2, 'occupied_rooms' => 2, 'price_per_month' => 700000, 'is_vip' => 1, 'description' => 'Luxury boarding house'],
         ['id' => 3, 'name' => 'StayNest Elora', 'location' => 'Babelan, Bekasi', 'total_doors' => 12, 'available_rooms' => 7, 'occupied_rooms' => 5, 'price_per_month' => 800000, 'is_vip' => 1, 'description' => 'Spacious boarding house']
@@ -30,7 +30,7 @@ if (empty($featured_properties)) {
 }
 ?>
 
-<!-- HERO SECTION -->
+<!-- HERO SECTION - HOME -->
 <section class="bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 text-white py-20">
     <div class="max-w-7xl mx-auto px-4">
         <div class="text-center">
@@ -41,7 +41,6 @@ if (empty($featured_properties)) {
                 Discover cozy spaces that match your lifestyle
             </p>
             
-            <!-- Search Form -->
             <form action="properties.php" method="GET" class="max-w-2xl mx-auto flex flex-col md:flex-row gap-3 bg-white rounded-full p-2 shadow-2xl">
                 <input type="text" 
                        name="search" 
@@ -101,24 +100,21 @@ if (empty($featured_properties)) {
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <?php foreach($featured_properties as $property): 
+            <?php foreach($properties as $property): 
                 $property_image = getPropertyImage($property['id']);
                 $price_display = formatRupiah($property['price_per_month']);
             ?>
-            <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition transform hover:-translate-y-2 cursor-pointer" 
-                 onclick="window.location.href='bookings/book_now.php?property_id=<?php echo $property['id']; ?>'">
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition transform hover:-translate-y-2">
                 <div class="relative h-56 bg-gray-200">
                     <img src="<?php echo htmlspecialchars($property_image); ?>" 
                          alt="<?php echo htmlspecialchars($property['name']); ?>" 
                          class="w-full h-full object-cover"
                          onerror="this.src='/staynest/assets/images/default-property.jpg'">
-                    
                     <?php if($property['is_vip']): ?>
                         <div class="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-xs font-bold px-3 py-1 rounded-full shadow-lg">
                             ⭐ VIP
                         </div>
                     <?php endif; ?>
-                    
                     <div class="absolute top-3 right-3 bg-white/95 backdrop-blur-sm text-xs font-bold px-3 py-1 rounded-full shadow-lg text-purple-600">
                         🛏 <?php echo $property['available_rooms']; ?> left
                     </div>
@@ -146,8 +142,7 @@ if (empty($featured_properties)) {
                             <p class="text-xs text-gray-400">/ month</p>
                         </div>
                         <a href="bookings/book_now.php?property_id=<?php echo $property['id']; ?>" 
-                           class="bg-purple-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-purple-700 transition flex items-center gap-2 shadow-md"
-                           onclick="event.stopPropagation()">
+                           class="bg-purple-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-purple-700 transition flex items-center gap-2 shadow-md">
                             Book Now <i class="fas fa-arrow-right text-xs"></i>
                         </a>
                     </div>
