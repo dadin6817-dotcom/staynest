@@ -1,5 +1,5 @@
 <?php
-// welcome.php - TANPA getPropertyImage
+// welcome.php - Halaman Welcome StayNest
 $page_title = "Welcome to StayNest - Find Your Cozy Home ✨";
 
 if (session_status() === PHP_SESSION_NONE) {
