@@ -1,5 +1,5 @@
 <?php
-// index.php - Halaman Home StayNest
+// index.php - Halaman Home StayNest (BUKAN WELCOME)
 $page_title = "Home - StayNest";
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -10,7 +10,9 @@ require_once dirname(__FILE__) . '/config/database.php';
 require_once dirname(__FILE__) . '/includes/functions.php';
 require_once dirname(__FILE__) . '/includes/header.php';
 
-// Ambil properti dari database
+// ==============================================
+// AMBIL DATA PROPERTI
+// ==============================================
 $properties = [];
 
 try {
@@ -30,17 +32,20 @@ if (empty($properties)) {
 }
 ?>
 
-<!-- HERO SECTION - HOME -->
-<section class="bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 text-white py-20">
-    <div class="max-w-7xl mx-auto px-4">
+<!-- ========================================== -->
+<!-- HERO SECTION - HOME (BUKAN WELCOME) -->
+<!-- ========================================== -->
+<section class="relative bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 text-white py-24 overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 relative z-10">
         <div class="text-center">
-            <h1 class="text-4xl md:text-6xl font-extrabold mb-4">
-                Find Your <span class="text-yellow-300">Perfect Stay</span> 🏠
+            <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-4">
+                🏠 Find Your <span class="text-yellow-300">Perfect Stay</span>
             </h1>
-            <p class="text-xl text-purple-100 max-w-2xl mx-auto mb-8">
+            <p class="text-xl md:text-2xl text-purple-100 max-w-2xl mx-auto mb-10">
                 Discover cozy spaces that match your lifestyle
             </p>
             
+            <!-- Search Form -->
             <form action="properties.php" method="GET" class="max-w-2xl mx-auto flex flex-col md:flex-row gap-3 bg-white rounded-full p-2 shadow-2xl">
                 <input type="text" 
                        name="search" 
@@ -52,41 +57,46 @@ if (empty($properties)) {
                 </button>
             </form>
             
+            <!-- Popular Locations -->
             <div class="flex flex-wrap gap-2 justify-center mt-6">
                 <span class="text-sm text-purple-200">Popular:</span>
-                <a href="properties.php?location=Babelan" class="text-sm px-3 py-1 bg-white/20 rounded-full hover:bg-white/30 transition text-white">📍 Babelan</a>
-                <a href="properties.php?location=Alamanda" class="text-sm px-3 py-1 bg-white/20 rounded-full hover:bg-white/30 transition text-white">📍 Alamanda</a>
-                <a href="properties.php?location=VIP" class="text-sm px-3 py-1 bg-white/20 rounded-full hover:bg-white/30 transition text-white">📍 VIP Village</a>
+                <a href="properties.php?location=Babelan" class="text-sm px-3 py-1 bg-white/20 rounded-full hover:bg-white/30 transition">📍 Babelan</a>
+                <a href="properties.php?location=Alamanda" class="text-sm px-3 py-1 bg-white/20 rounded-full hover:bg-white/30 transition">📍 Alamanda</a>
+                <a href="properties.php?location=VIP" class="text-sm px-3 py-1 bg-white/20 rounded-full hover:bg-white/30 transition">📍 VIP Village</a>
             </div>
         </div>
     </div>
 </section>
 
-<!-- STATS -->
+<!-- ========================================== -->
+<!-- STATS SECTION -->
+<!-- ========================================== -->
 <section class="py-16 bg-white">
     <div class="max-w-7xl mx-auto px-4">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div class="text-center p-4 hover:bg-purple-50 rounded-2xl transition">
-                <div class="text-3xl md:text-4xl font-bold text-purple-600">5000+</div>
+            <div class="text-center p-6 bg-gray-50 rounded-2xl hover:bg-purple-50 transition">
+                <div class="text-4xl font-bold text-purple-600">5000+</div>
                 <div class="text-gray-500 text-sm mt-1">Happy Tenants</div>
             </div>
-            <div class="text-center p-4 hover:bg-purple-50 rounded-2xl transition">
-                <div class="text-3xl md:text-4xl font-bold text-purple-600">50+</div>
+            <div class="text-center p-6 bg-gray-50 rounded-2xl hover:bg-purple-50 transition">
+                <div class="text-4xl font-bold text-purple-600">50+</div>
                 <div class="text-gray-500 text-sm mt-1">Properties</div>
             </div>
-            <div class="text-center p-4 hover:bg-purple-50 rounded-2xl transition">
-                <div class="text-3xl md:text-4xl font-bold text-purple-600">4.9</div>
-                <div class="text-gray-500 text-sm mt-1">⭐ Rating</div>
+            <div class="text-center p-6 bg-gray-50 rounded-2xl hover:bg-purple-50 transition">
+                <div class="text-4xl font-bold text-purple-600">4.9⭐</div>
+                <div class="text-gray-500 text-sm mt-1">Rating</div>
             </div>
-            <div class="text-center p-4 hover:bg-purple-50 rounded-2xl transition">
-                <div class="text-3xl md:text-4xl font-bold text-purple-600">1000+</div>
+            <div class="text-center p-6 bg-gray-50 rounded-2xl hover:bg-purple-50 transition">
+                <div class="text-4xl font-bold text-purple-600">1000+</div>
                 <div class="text-gray-500 text-sm mt-1">Reviews</div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- FEATURED PROPERTIES -->
+<!-- ========================================== -->
+<!-- FEATURED PROPERTIES SECTION -->
+<!-- ========================================== -->
 <section id="properties" class="py-16 bg-gray-50">
     <div class="max-w-7xl mx-auto px-4">
         <div class="flex justify-between items-center mb-8">
@@ -153,7 +163,9 @@ if (empty($properties)) {
     </div>
 </section>
 
-<!-- FEATURES -->
+<!-- ========================================== -->
+<!-- FEATURES SECTION -->
+<!-- ========================================== -->
 <section class="py-16 bg-white">
     <div class="max-w-7xl mx-auto px-4">
         <div class="text-center mb-12">
@@ -169,7 +181,7 @@ if (empty($properties)) {
                     <i class="fas fa-shield-alt text-2xl text-purple-600"></i>
                 </div>
                 <h3 class="text-xl font-bold mb-2">100% Verified</h3>
-                <p class="text-gray-500 text-sm">All properties have been checked directly for your comfort and safety</p>
+                <p class="text-gray-500 text-sm">All properties have been checked directly</p>
             </div>
             
             <div class="bg-gray-50 rounded-2xl p-6 text-center hover:shadow-xl transition transform hover:-translate-y-2">
@@ -177,7 +189,7 @@ if (empty($properties)) {
                     <i class="fas fa-bolt text-2xl text-purple-600"></i>
                 </div>
                 <h3 class="text-xl font-bold mb-2">Instant Booking</h3>
-                <p class="text-gray-500 text-sm">Fast & easy booking process, get confirmation within minutes</p>
+                <p class="text-gray-500 text-sm">Fast & easy booking process</p>
             </div>
             
             <div class="bg-gray-50 rounded-2xl p-6 text-center hover:shadow-xl transition transform hover:-translate-y-2">
@@ -185,13 +197,15 @@ if (empty($properties)) {
                     <i class="fas fa-headset text-2xl text-purple-600"></i>
                 </div>
                 <h3 class="text-xl font-bold mb-2">24/7 Support</h3>
-                <p class="text-gray-500 text-sm">Our customer service team is ready to help you anytime you need</p>
+                <p class="text-gray-500 text-sm">Ready to help you anytime</p>
             </div>
         </div>
     </div>
 </section>
 
+<!-- ========================================== -->
 <!-- TESTIMONIALS -->
+<!-- ========================================== -->
 <section class="py-16 bg-gradient-to-r from-purple-50 to-pink-50">
     <div class="max-w-7xl mx-auto px-4">
         <div class="text-center mb-12">
@@ -202,7 +216,7 @@ if (empty($properties)) {
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition">
+            <div class="bg-white rounded-2xl p-6 shadow-lg">
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-12 h-12 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full flex items-center justify-center text-white font-bold text-xl">A</div>
                     <div>
@@ -213,10 +227,10 @@ if (empty($properties)) {
                         </div>
                     </div>
                 </div>
-                <p class="text-gray-600">"Super easy to find a boarding house with StayNest! Fast process and the place matches the photos. Highly recommended! 🔥"</p>
+                <p class="text-gray-600">"Super easy to find a boarding house with StayNest! Fast process and the place matches the photos. 🔥"</p>
             </div>
             
-            <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition">
+            <div class="bg-white rounded-2xl p-6 shadow-lg">
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-12 h-12 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full flex items-center justify-center text-white font-bold text-xl">S</div>
                     <div>
@@ -227,10 +241,10 @@ if (empty($properties)) {
                         </div>
                     </div>
                 </div>
-                <p class="text-gray-600">"The design is super aesthetic! Perfect for anyone looking for an instagrammable place. Thank you StayNest! ✨"</p>
+                <p class="text-gray-600">"The design is super aesthetic! Perfect for anyone looking for an instagrammable place. ✨"</p>
             </div>
             
-            <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition">
+            <div class="bg-white rounded-2xl p-6 shadow-lg">
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-12 h-12 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full flex items-center justify-center text-white font-bold text-xl">B</div>
                     <div>
@@ -241,13 +255,15 @@ if (empty($properties)) {
                         </div>
                     </div>
                 </div>
-                <p class="text-gray-600">"Customer service is super responsive! They help immediately when there's an issue. Very satisfied with the service! 👏"</p>
+                <p class="text-gray-600">"Customer service is super responsive! Very satisfied with the service! 👏"</p>
             </div>
         </div>
     </div>
 </section>
 
-<!-- CTA -->
+<!-- ========================================== -->
+<!-- CTA SECTION -->
+<!-- ========================================== -->
 <section class="bg-gradient-to-r from-purple-600 to-purple-800 py-16">
     <div class="max-w-4xl mx-auto px-4 text-center">
         <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">
