@@ -10,9 +10,7 @@ require_once dirname(__FILE__) . '/config/database.php';
 require_once dirname(__FILE__) . '/includes/functions.php';
 require_once dirname(__FILE__) . '/includes/header.php';
 
-// ==============================================
-// AMBIL DATA PROPERTI
-// ==============================================
+// Ambil properti dari database
 $properties = [];
 
 try {
@@ -164,104 +162,6 @@ if (empty($properties)) {
 </section>
 
 <!-- ========================================== -->
-<!-- FEATURES SECTION -->
-<!-- ========================================== -->
-<section class="py-16 bg-white">
-    <div class="max-w-7xl mx-auto px-4">
-        <div class="text-center mb-12">
-            <span class="inline-block bg-purple-100 text-purple-600 text-sm font-semibold px-4 py-1 rounded-full mb-4">✨ Why Choose Us</span>
-            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-                More than just a <span class="gradient-text">place to stay</span>
-            </h2>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-gray-50 rounded-2xl p-6 text-center hover:shadow-xl transition transform hover:-translate-y-2">
-                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-shield-alt text-2xl text-purple-600"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-2">100% Verified</h3>
-                <p class="text-gray-500 text-sm">All properties have been checked directly</p>
-            </div>
-            
-            <div class="bg-gray-50 rounded-2xl p-6 text-center hover:shadow-xl transition transform hover:-translate-y-2">
-                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-bolt text-2xl text-purple-600"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-2">Instant Booking</h3>
-                <p class="text-gray-500 text-sm">Fast & easy booking process</p>
-            </div>
-            
-            <div class="bg-gray-50 rounded-2xl p-6 text-center hover:shadow-xl transition transform hover:-translate-y-2">
-                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-headset text-2xl text-purple-600"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-2">24/7 Support</h3>
-                <p class="text-gray-500 text-sm">Ready to help you anytime</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ========================================== -->
-<!-- TESTIMONIALS -->
-<!-- ========================================== -->
-<section class="py-16 bg-gradient-to-r from-purple-50 to-pink-50">
-    <div class="max-w-7xl mx-auto px-4">
-        <div class="text-center mb-12">
-            <span class="inline-block bg-purple-100 text-purple-600 text-sm font-semibold px-4 py-1 rounded-full mb-4">💬 Testimonials</span>
-            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-                What <span class="gradient-text">Our Tenants Say</span>
-            </h2>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white rounded-2xl p-6 shadow-lg">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-12 h-12 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full flex items-center justify-center text-white font-bold text-xl">A</div>
-                    <div>
-                        <h4 class="font-bold">Ahmad R.</h4>
-                        <div class="text-yellow-400 text-sm">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                    </div>
-                </div>
-                <p class="text-gray-600">"Super easy to find a boarding house with StayNest! Fast process and the place matches the photos. 🔥"</p>
-            </div>
-            
-            <div class="bg-white rounded-2xl p-6 shadow-lg">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-12 h-12 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full flex items-center justify-center text-white font-bold text-xl">S</div>
-                    <div>
-                        <h4 class="font-bold">Sarah M.</h4>
-                        <div class="text-yellow-400 text-sm">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                    </div>
-                </div>
-                <p class="text-gray-600">"The design is super aesthetic! Perfect for anyone looking for an instagrammable place. ✨"</p>
-            </div>
-            
-            <div class="bg-white rounded-2xl p-6 shadow-lg">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-12 h-12 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full flex items-center justify-center text-white font-bold text-xl">B</div>
-                    <div>
-                        <h4 class="font-bold">Budi P.</h4>
-                        <div class="text-yellow-400 text-sm">
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                            <i class="fas fa-star"></i><i class="fas fa-star"></i>
-                        </div>
-                    </div>
-                </div>
-                <p class="text-gray-600">"Customer service is super responsive! Very satisfied with the service! 👏"</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ========================================== -->
 <!-- CTA SECTION -->
 <!-- ========================================== -->
 <section class="bg-gradient-to-r from-purple-600 to-purple-800 py-16">
@@ -277,14 +177,5 @@ if (empty($properties)) {
         </a>
     </div>
 </section>
-
-<style>
-.gradient-text {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-</style>
 
 <?php require_once dirname(__FILE__) . '/includes/footer.php'; ?>
