@@ -1,5 +1,5 @@
 <?php
-// index.php - Halaman Home StayNest (BUKAN WELCOME)
+// index.php - Halaman Home Utama
 $page_title = "Home - StayNest";
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -30,9 +30,7 @@ if (empty($properties)) {
 }
 ?>
 
-<!-- ========================================== -->
-<!-- HERO SECTION - HOME (BUKAN WELCOME) -->
-<!-- ========================================== -->
+<!-- HERO SECTION - HOME -->
 <section class="relative bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 text-white py-24 overflow-hidden">
     <div class="max-w-7xl mx-auto px-4 relative z-10">
         <div class="text-center">
@@ -66,9 +64,7 @@ if (empty($properties)) {
     </div>
 </section>
 
-<!-- ========================================== -->
 <!-- STATS SECTION -->
-<!-- ========================================== -->
 <section class="py-16 bg-white">
     <div class="max-w-7xl mx-auto px-4">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -92,9 +88,7 @@ if (empty($properties)) {
     </div>
 </section>
 
-<!-- ========================================== -->
 <!-- FEATURED PROPERTIES SECTION -->
-<!-- ========================================== -->
 <section id="properties" class="py-16 bg-gray-50">
     <div class="max-w-7xl mx-auto px-4">
         <div class="flex justify-between items-center mb-8">
@@ -158,23 +152,6 @@ if (empty($properties)) {
             </div>
             <?php endforeach; ?>
         </div>
-    </div>
-</section>
-
-<!-- ========================================== -->
-<!-- CTA SECTION -->
-<!-- ========================================== -->
-<section class="bg-gradient-to-r from-purple-600 to-purple-800 py-16">
-    <div class="max-w-4xl mx-auto px-4 text-center">
-        <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">
-            Ready to Find Your New Home? 🏠
-        </h2>
-        <p class="text-xl text-purple-100 mb-8">
-            Join thousands of happy tenants who already found their cozy space
-        </p>
-        <a href="properties.php" class="inline-block bg-white text-purple-600 px-8 py-4 rounded-full font-bold text-lg hover:shadow-xl transition transform hover:scale-105">
-            Get Started Now <i class="fas fa-arrow-right ml-2"></i>
-        </a>
     </div>
 </section>
 
